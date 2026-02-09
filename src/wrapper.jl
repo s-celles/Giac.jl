@@ -222,6 +222,16 @@ const _EXPR_TYPE_MATRIX = 6
 const _stub_expressions = Dict{UInt, String}()
 const _stub_counter = Ref{UInt}(0)
 
+# Shared CxxWrap context for evaluation (lazily initialized)
+const _cxxwrap_context = Ref{Any}(nothing)
+
+function _get_cxxwrap_context()
+    if _cxxwrap_context[] === nothing && GiacCxxBindings._have_library
+        _cxxwrap_context[] = GiacCxxBindings.GiacContext()
+    end
+    return _cxxwrap_context[]
+end
+
 function _make_stub_ptr(expr::String)::Ptr{Cvoid}
     _stub_counter[] += 1
     ptr = Ptr{Cvoid}(_stub_counter[])
@@ -235,17 +245,19 @@ end
 
 function _giac_eval_string(expr::String, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        # Use CxxWrap bindings - create a Gen and evaluate it
-        # For now, we store the expression string and use Gen objects internally
-        # The ptr is just a handle to track the expression
-        return _make_stub_ptr(expr)  # TODO: integrate with Gen objects
+        # Use CxxWrap bindings for real evaluation
+        ctx = _get_cxxwrap_context()
+        result_std = GiacCxxBindings.giac_eval(ctx, expr)
+        # Convert C++ std::string to Julia String
+        result = String(result_std)
+        # Store the result string and return a handle
+        return _make_stub_ptr(result)
     end
+    # Stub mode: just store the expression as-is
     return _make_stub_ptr(expr)
 end
 
 function _giac_expr_to_string(ptr::Ptr{Cvoid})::String
-    # For now, always use stub mode for string conversion
-    # TODO: integrate with Gen objects
     return _get_stub_expr(ptr)
 end
 
