@@ -348,13 +348,6 @@ function _giac_free_matrix(ptr::Ptr{Cvoid})
     nothing
 end
 
-function _giac_matrix_getindex(ptr::Ptr{Cvoid}, i::Int, j::Int)::Ptr{Cvoid}
-    if _stub_mode[]
-        return C_NULL
-    end
-    throw(GiacError("CxxWrap integration not yet implemented", :eval))
-end
-
 # ============================================================================
 # Calculus operations - use string-based GIAC evaluation
 # ============================================================================
@@ -536,56 +529,118 @@ function _giac_equal(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid}):
     return false
 end
 
-# Matrix operations
+# ============================================================================
+# Matrix operations - use string-based GIAC evaluation
+# ============================================================================
+
 function _giac_det(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        return _giac_eval_string("det($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_inv_matrix(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        return _giac_eval_string("inv($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_trace(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        return _giac_eval_string("trace($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_mul(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        a_str = _get_stub_expr(a_ptr)
+        b_str = _get_stub_expr(b_ptr)
+        return _giac_eval_string("($a_str)*($b_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_add(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        a_str = _get_stub_expr(a_ptr)
+        b_str = _get_stub_expr(b_ptr)
+        return _giac_eval_string("($a_str)+($b_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_sub(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        a_str = _get_stub_expr(a_ptr)
+        b_str = _get_stub_expr(b_ptr)
+        return _giac_eval_string("($a_str)-($b_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_scalar_mul(m_ptr::Ptr{Cvoid}, scalar_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        s_str = _get_stub_expr(scalar_ptr)
+        return _giac_eval_string("($s_str)*($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_transpose(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        return _giac_eval_string("tran($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_det(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        return _giac_eval_string("det($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_inv(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        return _giac_eval_string("inv($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_matrix_trace(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(m_ptr)
+        return _giac_eval_string("trace($m_str)", ctx_ptr)
+    end
     return C_NULL
 end
 
 function _giac_create_matrix(expr::String, rows::Int, cols::Int, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
-    if _stub_mode[]
-        return _make_stub_ptr(expr)
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        # Evaluate the matrix expression to normalize it
+        return _giac_eval_string(expr, ctx_ptr)
     end
-    throw(GiacError("CxxWrap integration not yet implemented", :eval))
+    # Stub mode: just store the expression
+    return _make_stub_ptr(expr)
+end
+
+function _giac_matrix_getindex(ptr::Ptr{Cvoid}, i::Int, j::Int)::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        m_str = _get_stub_expr(ptr)
+        # GIAC uses 0-based indexing, but we receive 0-based indices from Julia (already adjusted)
+        return _giac_eval_string("($m_str)[$i][$j]", C_NULL)
+    end
+    return C_NULL
 end
 
 # ============================================================================
