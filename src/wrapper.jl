@@ -286,8 +286,25 @@ function _giac_free_context(ptr::Ptr{Cvoid})
 end
 
 function _giac_expr_type(ptr::Ptr{Cvoid})::Symbol
-    # For now, always return :symbolic
-    # TODO: integrate with Gen.type() from CxxWrap
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        expr_str = _get_stub_expr(ptr)
+        # Try to detect type from string representation
+        # Integer: only digits, possibly with leading minus
+        if occursin(r"^-?\d+$", expr_str)
+            return :integer
+        # Rational: digits/digits
+        elseif occursin(r"^-?\d+/-?\d+$", expr_str)
+            return :rational
+        # Float: digits with decimal point
+        elseif occursin(r"^-?\d+\.\d+$", expr_str)
+            return :float
+        # Complex: contains i or I
+        elseif occursin(r"\bi\b", expr_str) || occursin(r"\bI\b", expr_str)
+            return :complex
+        else
+            return :symbolic
+        end
+    end
     return :symbolic
 end
 
@@ -314,26 +331,54 @@ function _type_code_to_symbol(code::Cint)::Symbol
 end
 
 function _giac_to_int64(ptr::Ptr{Cvoid})::Int64
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        expr_str = _get_stub_expr(ptr)
+        return parse(Int64, expr_str)
+    end
     return 0
 end
 
 function _giac_to_float64(ptr::Ptr{Cvoid})::Float64
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        expr_str = _get_stub_expr(ptr)
+        return parse(Float64, expr_str)
+    end
     return 0.0
 end
 
 function _giac_complex_real(ptr::Ptr{Cvoid})::Float64
+    # Complex parsing would require more sophisticated handling
+    # For now, return 0.0 as placeholder
     return 0.0
 end
 
 function _giac_complex_imag(ptr::Ptr{Cvoid})::Float64
+    # Complex parsing would require more sophisticated handling
+    # For now, return 0.0 as placeholder
     return 0.0
 end
 
 function _giac_rational_num(ptr::Ptr{Cvoid})::Int64
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        expr_str = _get_stub_expr(ptr)
+        # Parse rational: num/den
+        parts = split(expr_str, "/")
+        if length(parts) == 2
+            return parse(Int64, parts[1])
+        end
+    end
     return 0
 end
 
 function _giac_rational_den(ptr::Ptr{Cvoid})::Int64
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        expr_str = _get_stub_expr(ptr)
+        # Parse rational: num/den
+        parts = split(expr_str, "/")
+        if length(parts) == 2
+            return parse(Int64, parts[2])
+        end
+    end
     return 1
 end
 
