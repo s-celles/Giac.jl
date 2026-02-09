@@ -1,13 +1,18 @@
 @testset "Calculus" begin
     @testset "Differentiation" begin
         # T061-T064 [US4]: Test differentiation
-        # With actual library, these would compute derivatives
         f = giac_eval("x^2")
         x = giac_eval("x")
 
-        # Test that diff function works (returns GiacExpr or throws)
-        # In stub mode, it will throw GiacError since C_NULL is returned
-        @test_throws GiacError giac_diff(f, x)
+        if is_stub_mode()
+            # In stub mode, it will throw GiacError since C_NULL is returned
+            @test_throws GiacError giac_diff(f, x)
+        else
+            # With real GIAC, differentiation works
+            @test string(giac_diff(f, x)) == "2*x"
+            @test string(giac_diff(giac_eval("x^3"), x)) == "3*x^2"
+            @test string(giac_diff(giac_eval("x^3"), x, 2)) == "6*x"
+        end
 
         # Test negative order throws ArgumentError
         @test_throws ArgumentError giac_diff(f, x, -1)
@@ -22,11 +27,15 @@
         f = giac_eval("x^2")
         x = giac_eval("x")
 
-        # Test that integrate function works (returns GiacExpr or throws in stub mode)
-        @test_throws GiacError giac_integrate(f, x)
-
-        # Definite integration
-        @test_throws GiacError giac_integrate(f, x, 0, 1)
+        if is_stub_mode()
+            # In stub mode, throws GiacError
+            @test_throws GiacError giac_integrate(f, x)
+            @test_throws GiacError giac_integrate(f, x, 0, 1)
+        else
+            # With real GIAC, integration works
+            @test contains(string(giac_integrate(f, x)), "x^3")
+            @test string(giac_integrate(f, x, 0, 1)) == "1/3"
+        end
     end
 
     @testset "Limits" begin
@@ -35,8 +44,13 @@
         x = giac_eval("x")
         point = giac_eval("0")
 
-        # Test limit computation (throws in stub mode)
-        @test_throws GiacError giac_limit(f, x, point)
+        if is_stub_mode()
+            # In stub mode, throws GiacError
+            @test_throws GiacError giac_limit(f, x, point)
+        else
+            # With real GIAC, limits work
+            @test string(giac_limit(f, x, point)) == "1"
+        end
     end
 
     @testset "Series" begin
@@ -45,8 +59,15 @@
         x = giac_eval("x")
         point = giac_eval("0")
 
-        # Test series expansion (throws in stub mode)
-        @test_throws GiacError giac_series(f, x, point, 5)
+        if is_stub_mode()
+            # In stub mode, throws GiacError
+            @test_throws GiacError giac_series(f, x, point, 5)
+        else
+            # With real GIAC, series expansion works
+            result = string(giac_series(f, x, point, 4))
+            @test contains(result, "1")
+            @test contains(result, "x")
+        end
 
         # Test negative order throws ArgumentError
         @test_throws ArgumentError giac_series(f, x, point, -1)

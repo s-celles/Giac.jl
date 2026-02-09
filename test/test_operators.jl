@@ -5,29 +5,50 @@
         a = giac_eval("2")
         b = giac_eval("3")
 
-        # In stub mode, operators will throw GiacError because C_NULL is returned
-        # These tests verify the operator methods exist and handle errors correctly
-        @test_throws GiacError a + b
-        @test_throws GiacError a - b
-        @test_throws GiacError a * b
-        @test_throws GiacError a / b
-        @test_throws GiacError a ^ b
-        @test_throws GiacError -a
+        if is_stub_mode()
+            # In stub mode, operators will throw GiacError because C_NULL is returned
+            @test_throws GiacError a + b
+            @test_throws GiacError a - b
+            @test_throws GiacError a * b
+            @test_throws GiacError a / b
+            @test_throws GiacError a ^ b
+            @test_throws GiacError -a
+        else
+            # With real GIAC, operators return results
+            @test string(a + b) == "5"
+            @test string(a - b) == "-1"
+            @test string(a * b) == "6"
+            @test string(a / b) == "2/3"
+            @test string(a ^ b) == "8"
+            @test string(-a) == "-2"
+        end
     end
 
     @testset "Mixed Type Arithmetic" begin
         # T054-T057 [US3]: Test mixed type operations
         a = giac_eval("x")
 
-        # In stub mode, these will throw because operators return C_NULL
-        @test_throws GiacError a + 1
-        @test_throws GiacError 1 + a
-        @test_throws GiacError a - 1
-        @test_throws GiacError 1 - a
-        @test_throws GiacError a * 2
-        @test_throws GiacError 2 * a
-        @test_throws GiacError a / 2
-        @test_throws GiacError 2 / a
+        if is_stub_mode()
+            # In stub mode, these will throw because operators return C_NULL
+            @test_throws GiacError a + 1
+            @test_throws GiacError 1 + a
+            @test_throws GiacError a - 1
+            @test_throws GiacError 1 - a
+            @test_throws GiacError a * 2
+            @test_throws GiacError 2 * a
+            @test_throws GiacError a / 2
+            @test_throws GiacError 2 / a
+        else
+            # With real GIAC, mixed type operations work
+            @test string(a + 1) == "x+1"
+            @test string(1 + a) == "1+x"
+            @test string(a - 1) == "x-1"
+            @test string(1 - a) == "1-x"
+            @test string(a * 2) in ["2*x", "x*2"]  # GIAC may not reorder
+            @test string(2 * a) == "2*x"
+            @test string(a / 2) == "x/2"
+            @test string(2 / a) == "2/x"
+        end
     end
 
     @testset "Comparison Operators" begin
