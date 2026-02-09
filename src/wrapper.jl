@@ -67,9 +67,10 @@ const _wrapper_lib_handle = Ref{Ptr{Cvoid}}(C_NULL)
 # Find libgiac given a wrapper path
 function _find_giac_library(wrapper_path::String)
     wrapper_dir = dirname(wrapper_path)
-    for giac_name in ["libgiac.so", "libgiac.so.1", "libgiac.dylib"]
+    for giac_name in ["libgiac.so", "libgiac.so.0", "libgiac.so.1", "libgiac.dylib"]
         for parent in [wrapper_dir, dirname(wrapper_dir), dirname(dirname(wrapper_dir))]
-            for subdir in ["", "lib", "build_julia", "../giac/build_julia"]
+            # Check GIAC 2.0.0 location first, then fallback locations
+            for subdir in ["", "lib", "../giac-2.0.0/src/.libs", "build_julia", "../giac/build_julia"]
                 test_path = joinpath(parent, subdir, giac_name)
                 if isfile(test_path)
                     return test_path
@@ -99,9 +100,10 @@ module GiacCxxBindings
     # Helper function to find libgiac
     function _find_giac_lib(wrapper_path::String)
         wrapper_dir = dirname(wrapper_path)
-        for giac_name in ["libgiac.so", "libgiac.so.1", "libgiac.dylib"]
+        for giac_name in ["libgiac.so", "libgiac.so.0", "libgiac.so.1", "libgiac.dylib"]
             for parent in [wrapper_dir, dirname(wrapper_dir), dirname(dirname(wrapper_dir))]
-                for subdir in ["", "lib", "build_julia", "../giac/build_julia"]
+                # Check GIAC 2.0.0 location first, then fallback locations
+                for subdir in ["", "lib", "../giac-2.0.0/src/.libs", "build_julia", "../giac/build_julia"]
                     test_path = joinpath(parent, subdir, giac_name)
                     if isfile(test_path)
                         return test_path
