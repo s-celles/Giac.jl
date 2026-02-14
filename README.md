@@ -202,6 +202,36 @@ println("Number of commands: ", length(cmds))  # 2215
 println("Help entries: ", help_count())  # 2215
 ```
 
+## Command Suggestions
+
+When you mistype a command, Giac.jl automatically suggests similar commands:
+
+```julia
+using Giac
+
+# Typo in "factor" shows suggestions
+help(:factr)
+# factr
+# ═════
+#
+# Description:
+#   [No help found for: factr. Did you mean: factor, ifactor, cfactor, fractr?]
+
+# Get suggestions programmatically
+suggest_commands(:factr)        # ["factor", "cfactor", "ifactor", ...]
+suggest_commands(:integrat)     # ["integrate", "integral", ...]
+
+# Configure number of suggestions
+get_suggestion_count()          # 4 (default)
+set_suggestion_count(6)         # Show more suggestions
+
+# Get suggestions with edit distances
+Giac.suggest_commands_with_distances(:factr)
+# [("factor", 1), ("cfactor", 2), ("ifactor", 2), ...]
+```
+
+The suggestion system uses Levenshtein edit distance with an adaptive threshold based on input length.
+
 ## Linear Algebra
 
 ```julia
@@ -253,6 +283,9 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 | `command_info(cmd)` | Get CommandInfo with name, category, aliases |
 | `list_categories()` | List all command categories |
 | `commands_in_category(cat)` | List commands in a category |
+| `suggest_commands(input)` | Suggest similar commands for mistyped input |
+| `set_suggestion_count(n)` | Set number of suggestions (default: 4) |
+| `get_suggestion_count()` | Get current suggestion count |
 
 ### Types
 

@@ -316,3 +316,272 @@ end
         end
     end
 end
+
+# ============================================================================
+# 005-nearest-command-suggestions: Levenshtein Distance Tests
+# ============================================================================
+
+@testset "_levenshtein" begin
+    @testset "identical strings" begin
+        # T004: Test _levenshtein with identical strings
+        @test Giac._levenshtein("factor", "factor") == 0
+        @test Giac._levenshtein("", "") == 0
+        @test Giac._levenshtein("sin", "sin") == 0
+        @test Giac._levenshtein("a", "a") == 0
+    end
+
+    @testset "single-char edits" begin
+        # T005: Test _levenshtein with single-char edits
+        # Deletion
+        @test Giac._levenshtein("factor", "factr") == 1
+        @test Giac._levenshtein("abc", "ab") == 1
+        # Insertion
+        @test Giac._levenshtein("factr", "factor") == 1
+        @test Giac._levenshtein("ab", "abc") == 1
+        # Substitution
+        @test Giac._levenshtein("sin", "son") == 1
+        @test Giac._levenshtein("abc", "adc") == 1
+    end
+
+    @testset "multiple edits" begin
+        # T006: Test _levenshtein with multiple edits
+        @test Giac._levenshtein("sin", "cos") == 3  # s→c, i→o, n→s
+        @test Giac._levenshtein("kitten", "sitting") == 3
+        @test Giac._levenshtein("abc", "xyz") == 3
+        @test Giac._levenshtein("", "abc") == 3
+        @test Giac._levenshtein("abc", "") == 3
+    end
+
+    @testset "edge cases" begin
+        @test Giac._levenshtein("", "a") == 1
+        @test Giac._levenshtein("a", "") == 1
+        @test Giac._levenshtein("ab", "ba") == 2  # Not a swap algorithm
+    end
+end
+
+@testset "_max_threshold" begin
+    # T008: Test _max_threshold with various input lengths
+    @testset "short inputs" begin
+        @test Giac._max_threshold("a") == 0   # 1÷2 = 0
+        @test Giac._max_threshold("ab") == 1  # 2÷2 = 1
+    end
+
+    @testset "medium inputs" begin
+        @test Giac._max_threshold("abc") == 1   # 3÷2 = 1
+        @test Giac._max_threshold("abcd") == 2  # 4÷2 = 2
+        @test Giac._max_threshold("abcde") == 2 # 5÷2 = 2
+        @test Giac._max_threshold("abcdef") == 3 # 6÷2 = 3
+    end
+
+    @testset "long inputs" begin
+        @test Giac._max_threshold("abcdefg") == 3   # 7÷2 = 3
+        @test Giac._max_threshold("abcdefgh") == 4  # 8÷2 = 4
+        @test Giac._max_threshold("abcdefghi") == 4 # 9÷2 = 4, but capped at 4
+        @test Giac._max_threshold("integrate") == 4 # 9÷2 = 4
+        @test Giac._max_threshold("verylongcommand") == 4  # Capped at 4
+    end
+end
+
+# ============================================================================
+# 005-nearest-command-suggestions: User Story 1 - Get Suggestions
+# ============================================================================
+
+@testset "suggest_commands (US1)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping suggestion tests - GIAC library not available (stub mode)"
+        @test_skip true
+    else
+        @testset "returns Vector{String}" begin
+            # T010: Test suggest_commands(:factr) returns Vector{String}
+            result = suggest_commands(:factr)
+            @test result isa Vector{String}
+        end
+
+        @testset "sorted by distance then alphabetically" begin
+            # T011: Test that suggestions are sorted by distance then alphabetically
+            result = Giac.suggest_commands_with_distances(:factr)
+            if length(result) >= 2
+                # Check distance ordering
+                for i in 1:(length(result)-1)
+                    @test result[i][2] <= result[i+1][2]
+                    # If same distance, check alphabetical
+                    if result[i][2] == result[i+1][2]
+                        @test result[i][1] <= result[i+1][1]
+                    end
+                end
+            end
+        end
+
+        @testset "exact match returns empty" begin
+            # T012: Test that exact match returns empty suggestions
+            @test isempty(suggest_commands(:factor))
+            @test isempty(suggest_commands(:sin))
+        end
+
+        @testset "adaptive threshold" begin
+            # T013: Test for adaptive threshold (short vs long input)
+            # Short input - strict threshold
+            short_result = suggest_commands(:si)
+            # Long input - more relaxed threshold
+            long_result = suggest_commands(:integrat)
+            # Both should be non-empty if similar commands exist
+            # The long input should potentially find more matches due to higher threshold
+            @test long_result isa Vector{String}
+            @test short_result isa Vector{String}
+        end
+
+        @testset "no results when distance exceeds threshold" begin
+            # T014: Test that no results when distance exceeds threshold
+            # Very different string that won't match anything
+            result = suggest_commands(:xyzzyqwerty)
+            @test isempty(result)
+        end
+
+        @testset "factor typo suggestions" begin
+            # Verify "factor" appears in suggestions for "factr"
+            result = suggest_commands(:factr)
+            @test "factor" in result
+        end
+
+        @testset "case insensitive" begin
+            # T017: Input normalization - case insensitive
+            lower_result = suggest_commands(:factr)
+            upper_result = suggest_commands(:FACTR)
+            @test lower_result == upper_result
+        end
+
+        @testset "respects n parameter" begin
+            # Test that n parameter limits results
+            result_default = suggest_commands(:fact)
+            result_limited = suggest_commands(:fact, n=2)
+            @test length(result_limited) <= 2
+            if length(result_default) > 2
+                @test length(result_limited) < length(result_default)
+            end
+        end
+    end
+end
+
+# ============================================================================
+# 005-nearest-command-suggestions: User Story 2 - Configuration
+# ============================================================================
+
+@testset "Suggestion Configuration (US2)" begin
+    # Save original count for restoration
+    original_count = get_suggestion_count()
+
+    @testset "get_suggestion_count returns default 4" begin
+        # T021: Test get_suggestion_count() returns default 4
+        # Reset to default first
+        set_suggestion_count(4)
+        @test get_suggestion_count() == 4
+    end
+
+    @testset "set_suggestion_count updates count" begin
+        # T022: Test set_suggestion_count(n) updates count
+        set_suggestion_count(6)
+        @test get_suggestion_count() == 6
+        set_suggestion_count(2)
+        @test get_suggestion_count() == 2
+    end
+
+    @testset "invalid count resets to default" begin
+        # T023: Test that invalid count (<=0) resets to default
+        set_suggestion_count(0)
+        @test get_suggestion_count() == 4
+        set_suggestion_count(-5)
+        @test get_suggestion_count() == 4
+    end
+
+    @testset "suggest_commands respects configured count" begin
+        # T024: Test that suggest_commands respects configured count
+        if !Giac.is_stub_mode()
+            set_suggestion_count(2)
+            result = suggest_commands(:fact)
+            @test length(result) <= 2
+
+            set_suggestion_count(6)
+            result = suggest_commands(:fact)
+            @test length(result) <= 6
+        end
+    end
+
+    # Restore original count
+    set_suggestion_count(original_count)
+end
+
+# ============================================================================
+# 005-nearest-command-suggestions: User Story 3 - With Distances
+# ============================================================================
+
+@testset "suggest_commands_with_distances (US3)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping distance tests - GIAC library not available (stub mode)"
+        @test_skip true
+    else
+        @testset "returns Vector{Tuple{String, Int}}" begin
+            # T029: Test returns Vector{Tuple{String, Int}}
+            result = Giac.suggest_commands_with_distances(:factr)
+            @test result isa Vector{Tuple{String, Int}}
+        end
+
+        @testset "distances are correct" begin
+            # T030: Test that distances are correct in results
+            result = Giac.suggest_commands_with_distances(:factr)
+            for (cmd, dist) in result
+                @test dist == Giac._levenshtein("factr", lowercase(cmd))
+            end
+        end
+
+        @testset "results sorted by distance" begin
+            # T031: Test that results are sorted by distance
+            result = Giac.suggest_commands_with_distances(:factr)
+            if length(result) >= 2
+                for i in 1:(length(result)-1)
+                    @test result[i][2] <= result[i+1][2]
+                end
+            end
+        end
+    end
+end
+
+# ============================================================================
+# 005-nearest-command-suggestions: Helper Functions
+# ============================================================================
+
+@testset "_format_suggestions" begin
+    @testset "empty suggestions" begin
+        @test Giac._format_suggestions(String[]) == ""
+    end
+
+    @testset "single suggestion" begin
+        result = Giac._format_suggestions(["factor"])
+        @test result == " Did you mean: factor?"
+    end
+
+    @testset "multiple suggestions" begin
+        result = Giac._format_suggestions(["factor", "ifactor", "cfactor"])
+        @test result == " Did you mean: factor, ifactor, cfactor?"
+    end
+end
+
+# ============================================================================
+# 005-nearest-command-suggestions: Integration Tests
+# ============================================================================
+
+@testset "help() with suggestions (T035)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping help suggestions test - GIAC library not available (stub mode)"
+        @test_skip true
+    else
+        @testset "help(:factr) includes suggestions" begin
+            # T035: Test that help(:factr) includes suggestions in description
+            result = help(:factr)
+            @test result isa Giac.HelpResult
+            # Should contain "Did you mean:" in the description
+            @test occursin("Did you mean:", result.description)
+            # Should suggest "factor"
+            @test occursin("factor", result.description)
+        end
+    end
+end

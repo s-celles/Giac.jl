@@ -2,6 +2,21 @@
 # Metadata, categories, discovery, and validation for GIAC commands
 
 # ============================================================================
+# Suggestion Configuration (005-nearest-command-suggestions)
+# ============================================================================
+
+"""
+Default number of command suggestions to display.
+"""
+const DEFAULT_SUGGESTION_COUNT = 4
+
+"""
+Global configuration for the number of suggestions to return.
+Use `set_suggestion_count(n)` to modify and `get_suggestion_count()` to read.
+"""
+const _suggestion_count = Ref{Int}(DEFAULT_SUGGESTION_COUNT)
+
+# ============================================================================
 # HelpResult Type (004-formatted-help-output)
 # ============================================================================
 
@@ -543,15 +558,259 @@ result.examples     # ["factor(x^4-1)", "factor(x^4-4,sqrt(2))", ...]
 """
 function help(cmd::Union{Symbol, String})::HelpResult
     cmd_str = string(cmd)
+
+    # Check if command exists in VALID_COMMANDS (005-nearest-command-suggestions)
+    if !isempty(VALID_COMMANDS) && cmd_str ∉ VALID_COMMANDS
+        suggestions = suggest_commands(cmd_str)
+        suggestion_text = _format_suggestions(suggestions)
+        return HelpResult(cmd_str, "[No help found for: $cmd_str.$suggestion_text]", String[], String[])
+    end
+
     help_text = giac_help(cmd)
 
     if isempty(help_text)
         if is_stub_mode()
             return HelpResult(cmd_str, "[Help not available in stub mode]", String[], String[])
         else
-            return HelpResult(cmd_str, "[No help found for: $cmd_str]", String[], String[])
+            # Get suggestions for unknown commands (005-nearest-command-suggestions)
+            suggestions = suggest_commands(cmd_str)
+            suggestion_text = _format_suggestions(suggestions)
+            return HelpResult(cmd_str, "[No help found for: $cmd_str.$suggestion_text]", String[], String[])
         end
     end
 
     return _parse_help(help_text, cmd_str)
+end
+
+# ============================================================================
+# Command Suggestions (005-nearest-command-suggestions)
+# ============================================================================
+
+"""
+    _levenshtein(s1::String, s2::String) -> Int
+
+Compute the Levenshtein edit distance between two strings.
+
+The Levenshtein distance is the minimum number of single-character edits
+(insertions, deletions, or substitutions) required to change one string
+into the other.
+
+Uses an optimized single-row dynamic programming approach with O(min(m,n)) space.
+
+# Arguments
+- `s1`: First string
+- `s2`: Second string
+
+# Returns
+- `Int`: The edit distance (0 = identical, higher = more different)
+
+# Examples
+```julia
+Giac._levenshtein("factor", "factor")   # 0 (identical)
+Giac._levenshtein("factor", "factr")    # 1 (delete 'o')
+Giac._levenshtein("sin", "cos")         # 2 (s→c, i→o)
+```
+"""
+function _levenshtein(s1::String, s2::String)::Int
+    m, n = length(s1), length(s2)
+
+    # Ensure s1 is the shorter string for space optimization
+    if m > n
+        s1, s2, m, n = s2, s1, n, m
+    end
+
+    # Handle edge cases
+    if m == 0
+        return n
+    end
+
+    # Use single row with in-place updates
+    # prev[j] represents the distance to transform s1[1:i-1] to s2[1:j-1]
+    prev = collect(0:n)
+
+    for i in 1:m
+        curr = i  # Distance to transform s1[1:i] to empty string
+        for j in 1:n
+            cost = s1[i] != s2[j] ? 1 : 0
+            # Minimum of: delete from s1, insert to s1, substitute
+            temp = min(prev[j+1] + 1, curr + 1, prev[j] + cost)
+            prev[j] = curr
+            curr = temp
+        end
+        prev[n+1] = curr
+    end
+
+    return prev[n+1]
+end
+
+"""
+    _max_threshold(input::String) -> Int
+
+Compute the maximum edit distance threshold for a given input length.
+
+Uses adaptive threshold: min(floor(length/2), 4)
+- Short inputs (1-2 chars): max distance 1
+- Medium inputs (3-4 chars): max distance 2
+- Longer inputs: max distance up to 4
+
+# Arguments
+- `input`: The input string
+
+# Returns
+- `Int`: Maximum allowed edit distance
+"""
+function _max_threshold(input::String)::Int
+    len = length(input)
+    return min(len ÷ 2, 4)
+end
+
+"""
+    get_suggestion_count() -> Int
+
+Get the current default number of command suggestions.
+
+# Returns
+- `Int`: Current suggestion count (default: 4)
+
+# Example
+```julia
+get_suggestion_count()  # 4 (default)
+```
+
+# See also
+- [`set_suggestion_count`](@ref): Set the suggestion count
+"""
+function get_suggestion_count()::Int
+    return _suggestion_count[]
+end
+
+"""
+    set_suggestion_count(n::Int) -> Nothing
+
+Set the default number of command suggestions.
+
+# Arguments
+- `n`: Number of suggestions (must be > 0, otherwise resets to default 4)
+
+# Example
+```julia
+set_suggestion_count(6)
+get_suggestion_count()  # 6
+
+set_suggestion_count(-1)  # Invalid, resets to default
+get_suggestion_count()  # 4
+```
+
+# See also
+- [`get_suggestion_count`](@ref): Get the current count
+"""
+function set_suggestion_count(n::Int)::Nothing
+    _suggestion_count[] = n > 0 ? n : DEFAULT_SUGGESTION_COUNT
+    return nothing
+end
+
+"""
+    suggest_commands_with_distances(input::Union{Symbol, String}; n::Int=get_suggestion_count()) -> Vector{Tuple{String, Int}}
+
+Find commands similar to the given input, including edit distances.
+
+# Arguments
+- `input`: The mistyped command name (Symbol or String)
+- `n`: Maximum number of suggestions to return (default: `get_suggestion_count()`)
+
+# Returns
+- `Vector{Tuple{String, Int}}`: Pairs of (command_name, edit_distance), sorted by
+  distance (ascending), then alphabetically
+
+# Example
+```julia
+suggest_commands_with_distances(:factr)
+# [("factor", 1), ("cfactor", 2), ("ifactor", 2), ...]
+
+suggest_commands_with_distances("integrat", n=2)
+# [("integrate", 1), ...]
+```
+
+# See also
+- [`suggest_commands`](@ref): Returns only command names (no distances)
+"""
+function suggest_commands_with_distances(input::Union{Symbol, String}; n::Int=get_suggestion_count())::Vector{Tuple{String, Int}}
+    input_str = lowercase(string(input))
+
+    if isempty(input_str)
+        return Tuple{String, Int}[]
+    end
+
+    threshold = _max_threshold(input_str)
+
+    # Compute distances for all commands within threshold
+    candidates = Tuple{String, Int}[]
+    for cmd in VALID_COMMANDS
+        dist = _levenshtein(input_str, lowercase(cmd))
+        if dist > 0 && dist <= threshold  # Exclude exact matches (dist=0)
+            push!(candidates, (cmd, dist))
+        end
+    end
+
+    # Sort by (distance ASC, command ASC)
+    sort!(candidates, by = x -> (x[2], x[1]))
+
+    # Return top N
+    return candidates[1:min(n, length(candidates))]
+end
+
+"""
+    suggest_commands(input::Union{Symbol, String}; n::Int=get_suggestion_count()) -> Vector{String}
+
+Find commands similar to the given input using edit distance.
+
+This function helps users recover from typos by suggesting valid GIAC commands
+that are similar to the input.
+
+# Arguments
+- `input`: The mistyped command name (Symbol or String)
+- `n`: Maximum number of suggestions to return (default: `get_suggestion_count()`)
+
+# Returns
+- `Vector{String}`: Similar command names, sorted by edit distance (ascending),
+  then alphabetically. Returns empty vector if no similar commands found.
+
+# Example
+```julia
+suggest_commands(:factr)
+# ["factor", "cfactor", "ifactor", ...]
+
+suggest_commands("integrat", n=2)
+# ["integrate", ...]
+
+suggest_commands(:factor)  # Exact match
+# []  (empty, no suggestions needed)
+```
+
+# See also
+- [`suggest_commands_with_distances`](@ref): Also returns edit distances
+- [`set_suggestion_count`](@ref): Configure default suggestion count
+"""
+function suggest_commands(input::Union{Symbol, String}; n::Int=get_suggestion_count())::Vector{String}
+    results = suggest_commands_with_distances(input; n=n)
+    return [cmd for (cmd, _) in results]
+end
+
+"""
+    _format_suggestions(suggestions::Vector{String}) -> String
+
+Format a list of suggestions for display in error messages.
+
+# Arguments
+- `suggestions`: Vector of command names to suggest
+
+# Returns
+- `String`: Formatted suggestion text, e.g., "Did you mean: factor, ifactor, cfactor?"
+  Returns empty string if no suggestions.
+"""
+function _format_suggestions(suggestions::Vector{String})::String
+    if isempty(suggestions)
+        return ""
+    end
+    return " Did you mean: " * join(suggestions, ", ") * "?"
 end

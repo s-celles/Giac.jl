@@ -46,6 +46,9 @@ export giac_eval, to_julia, is_stub_mode, list_commands, help_count
 # Command invocation (003-giac-commands)
 export giac_cmd, search_commands, commands_in_category, command_info, list_categories, giac_help, help
 
+# Command suggestions (005-nearest-command-suggestions)
+export suggest_commands, set_suggestion_count, get_suggestion_count
+
 # Conversion functions (extended by GiacSymbolicsExt)
 export to_giac, to_symbolics
 

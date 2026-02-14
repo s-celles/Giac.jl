@@ -65,66 +65,6 @@ function _build_command_string(cmd::String, args::Vector{String})::String
 end
 
 # ============================================================================
-# Levenshtein Distance for "Did you mean?" suggestions
-# ============================================================================
-
-"""
-    _levenshtein_distance(s1::String, s2::String)
-
-Calculate the Levenshtein edit distance between two strings.
-Used for "did you mean?" suggestions when a command is not found.
-"""
-function _levenshtein_distance(s1::String, s2::String)::Int
-    m, n = length(s1), length(s2)
-
-    # Create distance matrix
-    d = zeros(Int, m + 1, n + 1)
-
-    for i in 0:m
-        d[i + 1, 1] = i
-    end
-    for j in 0:n
-        d[1, j + 1] = j
-    end
-
-    for j in 1:n
-        for i in 1:m
-            cost = s1[i] == s2[j] ? 0 : 1
-            d[i + 1, j + 1] = min(
-                d[i, j + 1] + 1,      # deletion
-                d[i + 1, j] + 1,      # insertion
-                d[i, j] + cost        # substitution
-            )
-        end
-    end
-
-    return d[m + 1, n + 1]
-end
-
-"""
-    _find_similar_commands(cmd::String, valid_commands::Set{String}; max_distance::Int=3, max_results::Int=3)
-
-Find commands similar to `cmd` using Levenshtein distance.
-Returns up to `max_results` suggestions within `max_distance` edits.
-"""
-function _find_similar_commands(cmd::String, valid_commands::Set{String}; max_distance::Int=3, max_results::Int=3)::Vector{String}
-    suggestions = Tuple{String, Int}[]
-
-    for valid_cmd in valid_commands
-        dist = _levenshtein_distance(cmd, valid_cmd)
-        if dist <= max_distance
-            push!(suggestions, (valid_cmd, dist))
-        end
-    end
-
-    # Sort by distance (closest first)
-    sort!(suggestions, by=x -> x[2])
-
-    # Return just the command names
-    return [s[1] for s in suggestions[1:min(max_results, length(suggestions))]]
-end
-
-# ============================================================================
 # Core Command Invocation
 # ============================================================================
 
@@ -171,8 +111,9 @@ function giac_cmd(cmd::Symbol, args...)::GiacExpr
 
     # Validate command exists
     if !isempty(VALID_COMMANDS) && cmd_str ∉ VALID_COMMANDS
-        suggestions = _find_similar_commands(cmd_str, VALID_COMMANDS)
-        suggestion_text = isempty(suggestions) ? "" : " Did you mean: $(join(suggestions, ", "))?"
+        # Use suggest_commands from command_registry.jl (005-nearest-command-suggestions)
+        suggestions = suggest_commands(cmd_str)
+        suggestion_text = _format_suggestions(suggestions)
         throw(GiacError("Unknown command: $cmd_str.$suggestion_text", :eval))
     end
 
