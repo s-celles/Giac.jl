@@ -13,7 +13,7 @@ A Julia wrapper for the [GIAC](https://www-fourier.univ-grenoble-alpes.fr/~paris
 - **Calculus**: Differentiation, integration, limits, series expansion
 - **Algebra**: Factorization, expansion, simplification, equation solving, GCD
 - **Linear Algebra**: Matrix determinant, inverse, trace, transpose
-- **Command Discovery**: Search commands, browse by category, get help text
+- **Command Discovery**: Search commands, browse by category, built-in `help(:cmd)`
 - **Base Extensions**: Use `sin(expr)`, `cos(expr)`, `exp(expr)` with GiacExpr
 - **Type Conversion**: Convert results to Julia native types (Int64, Float64, Rational)
 - **Symbolics.jl Integration**: Bidirectional conversion with Symbolics.jl
@@ -149,9 +149,6 @@ search_commands("sin")        # ["sin", "sinc", "sinh", ...]
 # Search with regex
 search_commands(r"^a.*n$")    # Commands starting with 'a' and ending with 'n'
 
-# Get help for a command
-giac_help(:factor)            # Returns help string
-
 # Get command metadata
 info = command_info(:factor)
 info.name                     # "factor"
@@ -171,16 +168,28 @@ commands_in_category(:algebra)       # ["factor", "expand", "simplify", ...]
 ```julia
 using Giac
 
-# Get help for a specific command
-println(giac_help(:factor))
+# Display formatted help for a command
+help(:factor)
+# Description: Factorizes a polynomial.
+# Related: ifactor, partfrac, normal
+# Examples:
+# factor(x^4-1);factor(x^4-4,sqrt(2))...
+
+help(:sin)
+# Description: Sine or Option of the convert or convertir command (id trigsin).
+# Related: asin, convert, trigsin
+# Examples:
+# sin(0); convert(cos(x)^4+sin(x)^2,sin)
+
+# Get help as a string (for programmatic use)
+help_text = giac_help(:factor)
 
 # List all available commands
 cmds = list_commands()
-println("Number of commands: ", length(cmds))  # 2224
-println("First 10: ", cmds[1:10])
+println("Number of commands: ", length(cmds))  # 2215
 
 # Get help count
-println("Help entries: ", help_count())  # 2224
+println("Help entries: ", help_count())  # 2215
 ```
 
 ## Linear Algebra
@@ -222,14 +231,15 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 | `is_stub_mode()` | Check if running without GIAC library |
 | `to_julia(expr)` | Convert GiacExpr to Julia type |
 
-### Command Discovery
+### Command Discovery & Help
 
 | Function | Description |
 |----------|-------------|
+| `help(cmd)` | Display formatted help for a command |
+| `giac_help(cmd)` | Get help text as a string |
 | `list_commands()` | List all available GIAC commands |
 | `help_count()` | Number of commands in help database |
 | `search_commands(pattern)` | Search commands by prefix or regex |
-| `giac_help(cmd)` | Get help text for a command |
 | `command_info(cmd)` | Get CommandInfo with name, category, aliases |
 | `list_categories()` | List all command categories |
 | `commands_in_category(cat)` | List commands in a category |
