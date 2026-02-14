@@ -20,6 +20,10 @@ using LinearAlgebra
     include("test_algebra.jl")
     include("test_linalg.jl")
     include("test_memory.jl")
+
+    # Command invocation tests (003-giac-commands)
+    include("test_commands.jl")
+    include("test_command_registry.jl")
 end
 
 # Aqua.jl package quality tests

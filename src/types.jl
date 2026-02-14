@@ -87,6 +87,58 @@ function Base.show(io::IO, ::MIME"text/plain", expr::GiacExpr)
     print(io, "GiacExpr: ", string(expr))
 end
 
+# ============================================================================
+# Method Syntax Support (003-giac-commands)
+# ============================================================================
+
+"""
+    Base.getproperty(expr::GiacExpr, name::Symbol)
+
+Enable method-style syntax for GIAC commands on GiacExpr objects.
+
+Allows calling GIAC commands as methods: `expr.factor()` is equivalent to
+`giac_cmd(:factor, expr)`.
+
+# Behavior
+- If `name` is a struct field (`:ptr`), returns the field value
+- Otherwise, returns a closure that invokes `giac_cmd(name, expr, args...)`
+
+# Examples
+```julia
+expr = giac_eval("x^2 - 1")
+x = giac_eval("x")
+
+# Method syntax (equivalent to giac_cmd calls)
+result = expr.factor()           # Same as giac_cmd(:factor, expr)
+deriv = expr.diff(x)             # Same as giac_cmd(:diff, expr, x)
+
+# Chaining
+result = expr.expand().simplify().factor()
+```
+
+# See also
+- `giac_cmd`: Direct command invocation
+"""
+function Base.getproperty(expr::GiacExpr, name::Symbol)
+    # Handle struct field access
+    if name === :ptr
+        return getfield(expr, :ptr)
+    end
+
+    # Return a closure that invokes giac_cmd with this expression as first argument
+    return (args...) -> giac_cmd(name, expr, args...)
+end
+
+"""
+    Base.propertynames(expr::GiacExpr)
+
+Return property names for GiacExpr. Includes struct fields only.
+GIAC commands are accessed dynamically via getproperty.
+"""
+function Base.propertynames(::GiacExpr, ::Bool=false)
+    return (:ptr,)
+end
+
 """
     GiacContext
 

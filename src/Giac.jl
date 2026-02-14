@@ -32,6 +32,8 @@ using LinearAlgebra
 include("types.jl")
 include("utils.jl")
 include("wrapper.jl")
+include("command_registry.jl")
+include("commands.jl")
 include("api.jl")
 include("operators.jl")
 
@@ -40,6 +42,9 @@ export GiacExpr, GiacContext, GiacMatrix, GiacError
 
 # Core functions
 export giac_eval, to_julia, is_stub_mode, list_commands, help_count
+
+# Command invocation (003-giac-commands)
+export giac_cmd, search_commands, commands_in_category, command_info, list_categories, giac_help
 
 # Conversion functions (extended by GiacSymbolicsExt)
 export to_giac, to_symbolics
@@ -77,6 +82,8 @@ function __init__()
     try
         init_giac_library()
         DEFAULT_CONTEXT[] = GiacContext()
+        # Initialize command registry (003-giac-commands)
+        _init_command_registry()
     catch e
         @error "Failed to initialize GIAC library" exception=e
         rethrow()

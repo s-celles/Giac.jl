@@ -6,11 +6,15 @@ A Julia wrapper for the [GIAC](https://www-fourier.univ-grenoble-alpes.fr/~paris
 
 ## Features
 
+- **Dynamic Command Invocation**: Access all 2200+ GIAC commands via `giac_cmd(:cmd, args...)`
+- **Method Syntax**: Call commands as methods: `expr.factor()`, `expr.diff(x)`
 - **Expression Evaluation**: Parse and evaluate mathematical expressions
 - **Arithmetic Operations**: +, -, *, /, ^, unary negation, equality
 - **Calculus**: Differentiation, integration, limits, series expansion
 - **Algebra**: Factorization, expansion, simplification, equation solving, GCD
 - **Linear Algebra**: Matrix determinant, inverse, trace, transpose
+- **Command Discovery**: Search commands, browse by category, get help text
+- **Base Extensions**: Use `sin(expr)`, `cos(expr)`, `exp(expr)` with GiacExpr
 - **Type Conversion**: Convert results to Julia native types (Int64, Float64, Rational)
 - **Symbolics.jl Integration**: Bidirectional conversion with Symbolics.jl
 
@@ -102,17 +106,73 @@ to_julia(giac_eval("42"))    # 42::Int64
 to_julia(giac_eval("3/4"))   # 3//4::Rational{Int64}
 ```
 
+## Dynamic Command Invocation
+
+Call any of GIAC's 2200+ commands dynamically:
+
+```julia
+using Giac
+
+x = giac_eval("x")
+expr = giac_eval("x^2 - 1")
+
+# Function syntax with giac_cmd
+result = giac_cmd(:factor, expr)           # (x-1)*(x+1)
+deriv = giac_cmd(:diff, expr, x)           # 2*x
+integral = giac_cmd(:integrate, expr, x)   # x^3/3-x
+
+# Method syntax on GiacExpr (equivalent to giac_cmd)
+result = expr.factor()                     # (x-1)*(x+1)
+deriv = expr.diff(x)                       # 2*x
+
+# Chaining methods
+result = giac_eval("(x+1)^3").expand().simplify()
+
+# Natural Julia syntax with Base extensions
+y = giac_eval("y")
+sin(y)         # sin(y)
+cos(y)         # cos(y)
+exp(y)         # exp(y)
+log(y)         # ln(y)
+sqrt(y)        # sqrt(y)
+sin(y) + cos(y)  # sin(y)+cos(y)
+```
+
+## Command Discovery
+
+```julia
+using Giac
+
+# Search for commands by prefix
+search_commands("sin")        # ["sin", "sinc", "sinh", ...]
+
+# Search with regex
+search_commands(r"^a.*n$")    # Commands starting with 'a' and ending with 'n'
+
+# Get help for a command
+giac_help(:factor)            # Returns help string
+
+# Get command metadata
+info = command_info(:factor)
+info.name                     # "factor"
+info.category                 # :algebra
+
+# List available categories
+list_categories()             # [:trigonometry, :calculus, :algebra, ...]
+
+# Get commands in a category
+commands_in_category(:trigonometry)  # ["sin", "cos", "tan", "asin", ...]
+commands_in_category(:calculus)      # ["diff", "integrate", "limit", ...]
+commands_in_category(:algebra)       # ["factor", "expand", "simplify", ...]
+```
+
 ## Help System
 
 ```julia
 using Giac
 
 # Get help for a specific command
-println(giac_eval("help(factor)"))
-# "Description: Factorizes a polynomial.
-# Related: ifactor, partfrac, normal
-# Examples:
-# factor(x^4-1);factor(x^4-4,sqrt(2));..."
+println(giac_help(:factor))
 
 # List all available commands
 cmds = list_commands()
@@ -158,10 +218,21 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 | Function | Description |
 |----------|-------------|
 | `giac_eval(expr)` | Evaluate a GIAC expression string |
+| `giac_cmd(cmd, args...)` | Invoke any GIAC command dynamically |
 | `is_stub_mode()` | Check if running without GIAC library |
 | `to_julia(expr)` | Convert GiacExpr to Julia type |
+
+### Command Discovery
+
+| Function | Description |
+|----------|-------------|
 | `list_commands()` | List all available GIAC commands |
 | `help_count()` | Number of commands in help database |
+| `search_commands(pattern)` | Search commands by prefix or regex |
+| `giac_help(cmd)` | Get help text for a command |
+| `command_info(cmd)` | Get CommandInfo with name, category, aliases |
+| `list_categories()` | List all command categories |
+| `commands_in_category(cat)` | List commands in a category |
 
 ### Calculus
 
