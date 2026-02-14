@@ -44,7 +44,7 @@ export GiacExpr, GiacContext, GiacMatrix, GiacError
 export giac_eval, to_julia, is_stub_mode, list_commands, help_count
 
 # Command invocation (003-giac-commands)
-export giac_cmd, search_commands, commands_in_category, command_info, list_categories, giac_help
+export giac_cmd, search_commands, commands_in_category, command_info, list_categories, giac_help, help
 
 # Conversion functions (extended by GiacSymbolicsExt)
 export to_giac, to_symbolics

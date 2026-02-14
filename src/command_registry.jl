@@ -313,8 +313,62 @@ function giac_help(cmd::Union{Symbol, String})::String
         result = with_giac_lock() do
             giac_eval("help($cmd_str)")
         end
-        return string(result)
+        raw_str = string(result)
+        # Clean up the string: remove outer quotes and unescape
+        return _clean_help_string(raw_str)
     catch
         return ""
     end
+end
+
+"""
+    _clean_help_string(s::String) -> String
+
+Clean up a GIAC help string by removing outer quotes and unescaping.
+"""
+function _clean_help_string(s::String)::String
+    # Remove outer quotes if present
+    if startswith(s, '"') && endswith(s, '"') && length(s) >= 2
+        s = s[2:end-1]
+    end
+    # Unescape common escape sequences
+    s = replace(s, "\\n" => "\n")
+    s = replace(s, "\\\"" => "\"")
+    s = replace(s, "\\\\" => "\\")
+    return s
+end
+
+"""
+    help(cmd::Union{Symbol, String})
+
+Display formatted help for a GIAC command.
+
+# Arguments
+- `cmd`: Command name as Symbol or String
+
+# Example
+```julia
+using Giac
+help(:factor)
+# Description: Factorizes a polynomial.
+# Related: ifactor, partfrac, normal
+# Examples:
+# factor(x^4-1);factor(x^4-4,sqrt(2))...
+```
+
+# See also
+- `giac_help`: Returns help as a string instead of printing
+"""
+function help(cmd::Union{Symbol, String})
+    help_text = giac_help(cmd)
+    if isempty(help_text)
+        if is_stub_mode()
+            println("Help not available in stub mode")
+        else
+            println("No help found for: $cmd")
+        end
+    else
+        println(help_text)
+    end
+    nothing
 end
