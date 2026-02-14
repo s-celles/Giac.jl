@@ -39,7 +39,7 @@ include("operators.jl")
 export GiacExpr, GiacContext, GiacMatrix, GiacError
 
 # Core functions
-export giac_eval, to_julia, is_stub_mode
+export giac_eval, to_julia, is_stub_mode, list_commands, help_count
 
 # Conversion functions (extended by GiacSymbolicsExt)
 export to_giac, to_symbolics
@@ -81,6 +81,38 @@ function __init__()
         @error "Failed to initialize GIAC library" exception=e
         rethrow()
     end
+end
+
+"""
+    list_commands()
+
+Return a vector of all available GIAC command names.
+
+# Example
+```julia
+cmds = list_commands()
+println("Number of commands: ", length(cmds))
+println("First 10: ", cmds[1:10])
+```
+"""
+function list_commands()
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        cmds_str = GiacCxxBindings.list_commands()
+        return split(cmds_str, '\n')
+    end
+    return String[]
+end
+
+"""
+    help_count()
+
+Return the number of commands in the GIAC help database.
+"""
+function help_count()
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        return GiacCxxBindings.help_count()
+    end
+    return 0
 end
 
 end # module Giac

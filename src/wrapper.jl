@@ -188,10 +188,13 @@ function _init_xcasroot(wrapper_lib_path::String)
     for path in search_paths
         aide_cas_path = joinpath(path, "aide_cas")
         if isfile(aide_cas_path)
-            # Path must end with / for GIAC
+            # Path must end with / for GIAC's xcasroot
             xcasroot_path = path * "/"
             GiacCxxBindings.set_xcasroot(xcasroot_path)
-            @debug "GIAC xcasroot set to $xcasroot_path"
+            # Pre-initialize help database to avoid fallback error messages
+            if GiacCxxBindings.init_help(aide_cas_path)
+                @debug "GIAC help initialized from $aide_cas_path"
+            end
             return
         end
     end

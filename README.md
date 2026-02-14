@@ -102,6 +102,27 @@ to_julia(giac_eval("42"))    # 42::Int64
 to_julia(giac_eval("3/4"))   # 3//4::Rational{Int64}
 ```
 
+## Help System
+
+```julia
+using Giac
+
+# Get help for a specific command
+println(giac_eval("help(factor)"))
+# "Description: Factorizes a polynomial.
+# Related: ifactor, partfrac, normal
+# Examples:
+# factor(x^4-1);factor(x^4-4,sqrt(2));..."
+
+# List all available commands
+cmds = list_commands()
+println("Number of commands: ", length(cmds))  # 2224
+println("First 10: ", cmds[1:10])
+
+# Get help count
+println("Help entries: ", help_count())  # 2224
+```
+
 ## Linear Algebra
 
 ```julia
@@ -139,6 +160,8 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 | `giac_eval(expr)` | Evaluate a GIAC expression string |
 | `is_stub_mode()` | Check if running without GIAC library |
 | `to_julia(expr)` | Convert GiacExpr to Julia type |
+| `list_commands()` | List all available GIAC commands |
+| `help_count()` | Number of commands in help database |
 
 ### Calculus
 
