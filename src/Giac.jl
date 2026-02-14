@@ -38,7 +38,7 @@ include("api.jl")
 include("operators.jl")
 
 # Types
-export GiacExpr, GiacContext, GiacMatrix, GiacError
+export GiacExpr, GiacContext, GiacMatrix, GiacError, HelpResult
 
 # Core functions
 export giac_eval, to_julia, is_stub_mode, list_commands, help_count

@@ -2,6 +2,161 @@
 # Metadata, categories, discovery, and validation for GIAC commands
 
 # ============================================================================
+# HelpResult Type (004-formatted-help-output)
+# ============================================================================
+
+"""
+    HelpResult
+
+A structured representation of parsed GIAC command help information.
+
+# Fields
+- `command::String`: The command name being documented
+- `description::String`: Description text from GIAC help
+- `related::Vector{String}`: List of related command names
+- `examples::Vector{String}`: List of individual example expressions
+
+# Example
+```julia
+result = help(:factor)
+result.command      # "factor"
+result.description  # "Factorizes a polynomial."
+result.related      # ["ifactor", "partfrac", "normal"]
+result.examples     # ["factor(x^4-1)", "factor(x^4-4,sqrt(2))", ...]
+```
+
+# See also
+- [`help`](@ref): Get formatted help for a command
+- [`giac_help`](@ref): Get raw help string
+"""
+struct HelpResult
+    command::String
+    description::String
+    related::Vector{String}
+    examples::Vector{String}
+end
+
+# ============================================================================
+# HelpResult Display Methods (004-formatted-help-output)
+# ============================================================================
+
+"""
+    Base.show(io::IO, ::MIME"text/plain", result::HelpResult)
+
+Formatted multi-line display for REPL and notebooks.
+"""
+function Base.show(io::IO, ::MIME"text/plain", result::HelpResult)
+    # Command name with Unicode underline
+    println(io, result.command)
+    println(io, repeat('═', length(result.command)))
+    println(io)
+
+    # Description section
+    if isempty(result.description)
+        println(io, "Description:")
+        println(io, "  [No description available]")
+    else
+        println(io, "Description:")
+        println(io, "  ", result.description)
+    end
+
+    # Related section (omit if empty)
+    if !isempty(result.related)
+        println(io)
+        println(io, "Related:")
+        println(io, "  ", join(result.related, ", "))
+    end
+
+    # Examples section (omit if empty)
+    if !isempty(result.examples)
+        println(io)
+        println(io, "Examples:")
+        for ex in result.examples
+            println(io, "  • ", ex)
+        end
+    end
+end
+
+"""
+    Base.show(io::IO, result::HelpResult)
+
+Compact single-line representation.
+"""
+function Base.show(io::IO, result::HelpResult)
+    print(io, "HelpResult(:$(result.command), $(length(result.related)) related, $(length(result.examples)) examples)")
+end
+
+# ============================================================================
+# HelpResult Parsing (004-formatted-help-output)
+# ============================================================================
+
+"""
+    _parse_help(raw::String, cmd::String) -> HelpResult
+
+Parse raw GIAC help text into a structured HelpResult.
+
+# Arguments
+- `raw`: Raw help text from GIAC
+- `cmd`: Command name (for the result)
+
+# Returns
+- `HelpResult` with parsed fields
+
+# Parsing Algorithm
+1. Extract "Description: ..." line
+2. Extract "Related: ..." line and split by ", "
+3. Extract "Examples:" section and split by ";"
+"""
+function _parse_help(raw::String, cmd::String)::HelpResult
+    description = ""
+    related = String[]
+    examples = String[]
+
+    if isempty(raw)
+        return HelpResult(cmd, description, related, examples)
+    end
+
+    lines = split(raw, '\n')
+
+    for (i, line) in enumerate(lines)
+        line_str = String(line)
+
+        # Extract description
+        if startswith(line_str, "Description: ")
+            description = strip(line_str[14:end])
+        # Extract related commands
+        elseif startswith(line_str, "Related: ")
+            related_str = strip(line_str[10:end])
+            if !isempty(related_str)
+                related = [strip(r) for r in split(related_str, ",")]
+                # Filter out empty entries
+                related = filter(!isempty, related)
+            end
+        # Extract examples
+        elseif startswith(line_str, "Examples:")
+            # Examples may be on the same line or following lines
+            examples_text = strip(line_str[10:end])
+            # Also gather any following lines
+            for j in (i+1):length(lines)
+                next_line = strip(String(lines[j]))
+                if !isempty(next_line) && !startswith(next_line, "Description:") && !startswith(next_line, "Related:")
+                    examples_text *= next_line
+                end
+            end
+            # Split by semicolon
+            if !isempty(examples_text)
+                examples = [strip(e) for e in split(examples_text, ";")]
+                # Filter out empty entries
+                examples = filter(!isempty, examples)
+            end
+            break  # We've processed examples, which is typically last
+        end
+    end
+
+    return HelpResult(cmd, description, related, examples)
+end
+
+# ============================================================================
 # CommandInfo Type
 # ============================================================================
 
@@ -339,36 +494,64 @@ function _clean_help_string(s::String)::String
 end
 
 """
-    help(cmd::Union{Symbol, String})
+    help(cmd::Union{Symbol, String}) -> HelpResult
 
-Display formatted help for a GIAC command.
+Get formatted help for a GIAC command.
+
+Returns a `HelpResult` struct containing parsed help information. The result
+auto-displays formatted output in the REPL, and provides programmatic access
+to individual fields.
 
 # Arguments
 - `cmd`: Command name as Symbol or String
 
+# Returns
+- `HelpResult`: Structured help information with fields:
+  - `command`: Command name
+  - `description`: Description text
+  - `related`: Vector of related command names
+  - `examples`: Vector of example expressions
+
 # Example
 ```julia
 using Giac
+
+# View formatted help (auto-displays)
 help(:factor)
-# Description: Factorizes a polynomial.
-# Related: ifactor, partfrac, normal
+# factor
+# ══════
+#
+# Description:
+#   Factorizes a polynomial.
+#
+# Related:
+#   ifactor, partfrac, normal
+#
 # Examples:
-# factor(x^4-1);factor(x^4-4,sqrt(2))...
+#   • factor(x^4-1)
+#   • factor(x^4-4,sqrt(2))
+
+# Access help data programmatically
+result = help(:factor)
+result.description  # "Factorizes a polynomial."
+result.examples     # ["factor(x^4-1)", "factor(x^4-4,sqrt(2))", ...]
 ```
 
 # See also
-- `giac_help`: Returns help as a string instead of printing
+- [`giac_help`](@ref): Returns raw help string
+- [`HelpResult`](@ref): The return type
 """
-function help(cmd::Union{Symbol, String})
+function help(cmd::Union{Symbol, String})::HelpResult
+    cmd_str = string(cmd)
     help_text = giac_help(cmd)
+
     if isempty(help_text)
         if is_stub_mode()
-            println("Help not available in stub mode")
+            return HelpResult(cmd_str, "[Help not available in stub mode]", String[], String[])
         else
-            println("No help found for: $cmd")
+            return HelpResult(cmd_str, "[No help found for: $cmd_str]", String[], String[])
         end
-    else
-        println(help_text)
     end
-    nothing
+
+    return _parse_help(help_text, cmd_str)
 end

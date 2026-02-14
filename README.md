@@ -170,18 +170,28 @@ using Giac
 
 # Display formatted help for a command
 help(:factor)
-# Description: Factorizes a polynomial.
-# Related: ifactor, partfrac, normal
+# factor
+# ══════
+#
+# Description:
+#   Factorizes a polynomial.
+#
+# Related:
+#   ifactor, partfrac, normal
+#
 # Examples:
-# factor(x^4-1);factor(x^4-4,sqrt(2))...
+#   • factor(x^4-1)
+#   • factor(x^4-4,sqrt(2))
+#   • factor(x^4+12*x^3+54*x^2+108*x+81)
 
-help(:sin)
-# Description: Sine or Option of the convert or convertir command (id trigsin).
-# Related: asin, convert, trigsin
-# Examples:
-# sin(0); convert(cos(x)^4+sin(x)^2,sin)
+# Access help data programmatically
+result = help(:sin)
+result.command      # "sin"
+result.description  # "Sine or Option of the convert or convertir command (id trigsin)."
+result.related      # ["asin", "convert", "trigsin"]
+result.examples     # ["sin(0)", "convert(cos(x)^4+sin(x)^2,sin)"]
 
-# Get help as a string (for programmatic use)
+# Get raw help as a string (for backward compatibility)
 help_text = giac_help(:factor)
 
 # List all available commands
@@ -235,14 +245,24 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 
 | Function | Description |
 |----------|-------------|
-| `help(cmd)` | Display formatted help for a command |
-| `giac_help(cmd)` | Get help text as a string |
+| `help(cmd)` | Get formatted help for a command (returns `HelpResult`) |
+| `giac_help(cmd)` | Get raw help text as a string |
 | `list_commands()` | List all available GIAC commands |
 | `help_count()` | Number of commands in help database |
 | `search_commands(pattern)` | Search commands by prefix or regex |
 | `command_info(cmd)` | Get CommandInfo with name, category, aliases |
 | `list_categories()` | List all command categories |
 | `commands_in_category(cat)` | List commands in a category |
+
+### Types
+
+| Type | Description |
+|------|-------------|
+| `GiacExpr` | Symbolic expression type |
+| `GiacMatrix` | Symbolic matrix type |
+| `GiacContext` | Evaluation context |
+| `HelpResult` | Parsed help information with `.command`, `.description`, `.related`, `.examples` fields |
+| `CommandInfo` | Command metadata with `.name`, `.category`, `.aliases`, `.doc` fields |
 
 ### Calculus
 

@@ -1,5 +1,203 @@
 # Tests for command registry and discovery
-# Feature: 003-giac-commands
+# Features: 003-giac-commands, 004-formatted-help-output
+
+# ============================================================================
+# 004-formatted-help-output: HelpResult and _parse_help Tests
+# ============================================================================
+
+@testset "HelpResult Type" begin
+    @testset "HelpResult construction" begin
+        result = Giac.HelpResult("factor", "Factorizes a polynomial.", ["ifactor", "partfrac"], ["factor(x^2-1)"])
+        @test result isa Giac.HelpResult
+        @test result.command == "factor"
+        @test result.description == "Factorizes a polynomial."
+        @test result.related == ["ifactor", "partfrac"]
+        @test result.examples == ["factor(x^2-1)"]
+    end
+
+    @testset "HelpResult with empty fields" begin
+        result = Giac.HelpResult("unknown", "", String[], String[])
+        @test result.command == "unknown"
+        @test isempty(result.description)
+        @test isempty(result.related)
+        @test isempty(result.examples)
+    end
+end
+
+@testset "_parse_help" begin
+    @testset "valid help text" begin
+        # T004: Test _parse_help with valid help text
+        raw = """Description: Factorizes a polynomial.
+Related: ifactor, partfrac, normal
+Examples:
+factor(x^4-1);factor(x^4-4,sqrt(2));factor(x^4+12*x^3+54*x^2+108*x+81)"""
+        result = Giac._parse_help(raw, "factor")
+
+        @test result isa Giac.HelpResult
+        @test result.command == "factor"
+        @test result.description == "Factorizes a polynomial."
+        @test result.related == ["ifactor", "partfrac", "normal"]
+        @test length(result.examples) == 3
+        @test "factor(x^4-1)" in result.examples
+        @test "factor(x^4-4,sqrt(2))" in result.examples
+    end
+
+    @testset "missing sections" begin
+        # T005: Test _parse_help with missing sections
+        raw = "Description: Simple command."
+        result = Giac._parse_help(raw, "simple")
+
+        @test result.description == "Simple command."
+        @test isempty(result.related)
+        @test isempty(result.examples)
+    end
+
+    @testset "empty input" begin
+        # T006: Test _parse_help with empty/malformed input
+        result = Giac._parse_help("", "empty")
+
+        @test result.command == "empty"
+        @test isempty(result.description)
+        @test isempty(result.related)
+        @test isempty(result.examples)
+    end
+
+    @testset "only examples" begin
+        raw = """Examples:
+sin(0);sin(pi/2)"""
+        result = Giac._parse_help(raw, "sin")
+
+        @test isempty(result.description)
+        @test isempty(result.related)
+        @test length(result.examples) == 2
+        @test "sin(0)" in result.examples
+    end
+end
+
+@testset "HelpResult Display" begin
+    @testset "text/plain format" begin
+        # T008: Test Base.show(io, MIME"text/plain"(), result) formatted output
+        result = Giac.HelpResult("factor", "Factorizes a polynomial.", ["ifactor", "partfrac"], ["factor(x^2-1)", "factor(x^4-1)"])
+        io = IOBuffer()
+        show(io, MIME("text/plain"), result)
+        output = String(take!(io))
+
+        # T009: Test that description section appears with label
+        @test occursin("factor", output)
+        @test occursin("══════", output)  # Unicode underline
+        @test occursin("Description:", output)
+        @test occursin("Factorizes a polynomial.", output)
+
+        # T010: Test that related commands appear comma-separated
+        @test occursin("Related:", output)
+        @test occursin("ifactor, partfrac", output)
+
+        # T011: Test that each example appears on its own line with bullet
+        @test occursin("Examples:", output)
+        @test occursin("• factor(x^2-1)", output)
+        @test occursin("• factor(x^4-1)", output)
+    end
+
+    @testset "compact format" begin
+        # T028: Test compact Base.show(io, result)
+        result = Giac.HelpResult("sin", "Sine function", ["cos", "tan"], ["sin(0)", "sin(pi)"])
+        io = IOBuffer()
+        show(io, result)
+        output = String(take!(io))
+
+        @test occursin("HelpResult(:sin", output)
+        @test occursin("2 related", output)
+        @test occursin("2 examples", output)
+    end
+
+    @testset "empty sections omitted" begin
+        # T017: Test that empty sections are omitted
+        result = Giac.HelpResult("cmd", "Description only.", String[], String[])
+        io = IOBuffer()
+        show(io, MIME("text/plain"), result)
+        output = String(take!(io))
+
+        @test occursin("Description:", output)
+        @test !occursin("Related:", output)  # Empty, should be omitted
+        @test !occursin("Examples:", output)  # Empty, should be omitted
+    end
+
+    @testset "no description fallback" begin
+        # T035: Test "[No description available]" fallback
+        result = Giac.HelpResult("cmd", "", String[], String[])
+        io = IOBuffer()
+        show(io, MIME("text/plain"), result)
+        output = String(take!(io))
+
+        @test occursin("[No description available]", output)
+    end
+end
+
+@testset "help() Function" begin
+    @testset "returns HelpResult type" begin
+        # T019: Test help(:cmd) returning HelpResult type
+        if !Giac.is_stub_mode()
+            result = help(:factor)
+            @test result isa Giac.HelpResult
+        else
+            result = help(:factor)
+            @test result isa Giac.HelpResult
+            @test occursin("stub mode", result.description)
+        end
+    end
+
+    @testset "command field accessible" begin
+        # T020: Test accessing .command field
+        result = help(:factor)
+        @test result.command == "factor"
+    end
+
+    @testset "description field accessible" begin
+        # T021: Test accessing .description field
+        if !Giac.is_stub_mode()
+            result = help(:factor)
+            @test !isempty(result.description)
+            @test result.description isa String
+        end
+    end
+
+    @testset "related field is Vector{String}" begin
+        # T022: Test accessing .related as Vector{String}
+        if !Giac.is_stub_mode()
+            result = help(:factor)
+            @test result.related isa Vector{String}
+        end
+    end
+
+    @testset "examples field is Vector{String}" begin
+        # T023: Test accessing .examples as Vector{String}
+        if !Giac.is_stub_mode()
+            result = help(:factor)
+            @test result.examples isa Vector{String}
+        end
+    end
+
+    @testset "stub mode handling" begin
+        # T026: Handle stub mode - return HelpResult with placeholder
+        if Giac.is_stub_mode()
+            result = help(:factor)
+            @test result isa Giac.HelpResult
+            @test occursin("stub mode", result.description)
+        end
+    end
+end
+
+@testset "giac_help backward compatibility" begin
+    # T037/T042: Verify giac_help() still returns raw String
+    @testset "returns String type" begin
+        result = giac_help(:factor)
+        @test result isa String
+    end
+end
+
+# ============================================================================
+# 003-giac-commands: Command Discovery Tests
+# ============================================================================
 
 @testset "Command Discovery (US2)" begin
     if Giac.is_stub_mode()
