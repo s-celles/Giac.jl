@@ -34,6 +34,7 @@ include("utils.jl")
 include("wrapper.jl")
 include("command_registry.jl")
 include("commands.jl")
+include("namespace_commands.jl")
 include("api.jl")
 include("operators.jl")
 
@@ -51,6 +52,20 @@ export suggest_commands, set_suggestion_count, get_suggestion_count
 
 # Description search (006-search-command-description)
 export search_commands_by_description
+
+# Namespace commands (007-giac-namespace-commands)
+export GiacCommand, EXPORTED_COMMANDS
+# Export all commands from EXPORTED_COMMANDS for direct use
+export factor, expand, simplify, normal, collect
+export diff, integrate, limit, series, taylor, sum, product
+export solve, fsolve, dsolve, linsolve, nsolve
+export degree, coeff, lcoeff, quo, rem, gcd, lcm, roots, resultant
+export trigexpand, trigreduce, trigtan, trigcos, trigsin
+export re, im, conj, arg
+export det, rank, kernel, eigenvals, eigenvects, trace
+export subst, evalf, exact, assume, about
+export partfrac, apart, together, rationalize, numer, denom
+export proot, froot, cfactor, ifactor, iquo, irem
 
 # Conversion functions (extended by GiacSymbolicsExt)
 export to_giac, to_symbolics

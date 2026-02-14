@@ -138,6 +138,45 @@ sqrt(y)        # sqrt(y)
 sin(y) + cos(y)  # sin(y)+cos(y)
 ```
 
+## Direct Command Access
+
+For frequently used commands, Giac.jl exports them for direct use without the `giac_cmd` syntax:
+
+```julia
+using Giac
+
+x = giac_eval("x")
+expr = giac_eval("x^2 - 1")
+
+# Direct function syntax (no giac_cmd needed)
+factor(expr)              # (x-1)*(x+1)
+expand(giac_eval("(x+1)^2"))  # x^2+2*x+1
+diff(expr, x)             # 2*x
+integrate(expr, x)        # x^3/3-x
+simplify(giac_eval("(x^2-1)/(x-1)"))  # x+1
+solve(expr, x)            # list[-1,1]
+
+# Also available via Giac.cmd() syntax
+Giac.factor(expr)         # (x-1)*(x+1)
+Giac.diff(expr, x)        # 2*x
+```
+
+### Exported Commands (58 total)
+
+| Category | Commands |
+|----------|----------|
+| Algebra | `factor`, `expand`, `simplify`, `normal`, `collect` |
+| Calculus | `diff`, `integrate`, `limit`, `series`, `taylor`, `sum`, `product` |
+| Solving | `solve`, `fsolve`, `dsolve`, `linsolve`, `nsolve` |
+| Polynomial | `degree`, `coeff`, `lcoeff`, `quo`, `rem`, `gcd`, `lcm`, `roots`, `resultant` |
+| Trigonometry | `trigexpand`, `trigreduce`, `trigtan`, `trigcos`, `trigsin` |
+| Complex | `re`, `im`, `conj`, `arg` |
+| Matrix | `det`, `rank`, `kernel`, `eigenvals`, `eigenvects`, `trace` |
+| Utilities | `subst`, `evalf`, `exact`, `assume`, `about` |
+| Additional | `partfrac`, `apart`, `together`, `rationalize`, `numer`, `denom`, `proot`, `froot`, `cfactor`, `ifactor`, `iquo`, `irem` |
+
+For commands not in this list, use `giac_cmd(:commandname, args...)`.
+
 ## Command Discovery
 
 ```julia
