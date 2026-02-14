@@ -49,6 +49,9 @@ export giac_cmd, search_commands, commands_in_category, command_info, list_categ
 # Command suggestions (005-nearest-command-suggestions)
 export suggest_commands, set_suggestion_count, get_suggestion_count
 
+# Description search (006-search-command-description)
+export search_commands_by_description
+
 # Conversion functions (extended by GiacSymbolicsExt)
 export to_giac, to_symbolics
 

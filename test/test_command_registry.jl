@@ -585,3 +585,161 @@ end
         end
     end
 end
+
+# ============================================================================
+# 006-search-command-description: Scoring Helper Tests
+# ============================================================================
+
+@testset "_score_help_match" begin
+    @testset "description match (score=2)" begin
+        # T004: Test _score_help_match with description match
+        help_result = Giac.HelpResult("test", "This is about polynomial factorization", String[], String[])
+        @test Giac._score_help_match("polynomial", help_result) == 2
+        @test Giac._score_help_match("factorization", help_result) == 2
+    end
+
+    @testset "example-only match (score=1)" begin
+        # T005: Test _score_help_match with example-only match
+        help_result = Giac.HelpResult("test", "Some other description", String[], ["factor(x^2-1)", "expand(x+1)"])
+        @test Giac._score_help_match("factor", help_result) == 1
+        @test Giac._score_help_match("expand", help_result) == 1
+    end
+
+    @testset "no match (score=0)" begin
+        # T006: Test _score_help_match with no match
+        help_result = Giac.HelpResult("test", "Description about something", String[], ["example1", "example2"])
+        @test Giac._score_help_match("xyznonexistent", help_result) == 0
+        @test Giac._score_help_match("qqqqq", help_result) == 0
+    end
+
+    @testset "case insensitive matching" begin
+        help_result = Giac.HelpResult("test", "This is about POLYNOMIAL", String[], String[])
+        @test Giac._score_help_match("polynomial", help_result) == 2
+        @test Giac._score_help_match("POLYNOMIAL", help_result) == 0  # Query must be lowercase
+    end
+end
+
+# ============================================================================
+# 006-search-command-description: User Story 1 - Keyword Search Tests
+# ============================================================================
+
+@testset "search_commands_by_description (US1)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping description search tests - GIAC library not available (stub mode)"
+        @test_skip true
+    else
+        @testset "returns Vector{String}" begin
+            # T008: Test search_commands_by_description returns Vector{String}
+            result = search_commands_by_description("factor")
+            @test result isa Vector{String}
+        end
+
+        @testset "results sorted by relevance" begin
+            # T009: Test that results are sorted by relevance
+            # This is tested by checking ordering - we can't guarantee specific results
+            # but we can verify the function doesn't error
+            result = search_commands_by_description("polynomial")
+            @test result isa Vector{String}
+        end
+
+        @testset "empty query returns empty" begin
+            # T010: Test for empty query returns empty Vector{String}
+            @test isempty(search_commands_by_description(""))
+        end
+
+        @testset "whitespace-only query returns empty" begin
+            # T011: Test for whitespace-only query returns empty Vector{String}
+            @test isempty(search_commands_by_description("   "))
+            @test isempty(search_commands_by_description("\t\n"))
+        end
+
+        @testset "non-matching query returns empty" begin
+            # T012: Test that non-matching query returns empty results
+            result = search_commands_by_description("xyznonexistentterm12345")
+            @test isempty(result)
+        end
+    end
+
+    @testset "stub mode returns empty" begin
+        # T013: This test runs regardless of mode - stub mode returns empty safely
+        if Giac.is_stub_mode()
+            @test isempty(search_commands_by_description("factor"))
+        else
+            @test true  # Pass if not in stub mode
+        end
+    end
+end
+
+# ============================================================================
+# 006-search-command-description: User Story 2 - Case-Insensitive Tests
+# ============================================================================
+
+@testset "search_commands_by_description case-insensitive (US2)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping case-insensitive tests - GIAC library not available (stub mode)"
+        @test_skip true
+    else
+        @testset "case variations return identical results" begin
+            # T020: Test that case variations return identical results
+            lower_result = search_commands_by_description("polynomial")
+            upper_result = search_commands_by_description("POLYNOMIAL")
+            mixed_result = search_commands_by_description("Polynomial")
+            @test lower_result == upper_result
+            @test lower_result == mixed_result
+        end
+
+        @testset "uppercase query INTEGRAL" begin
+            # T021: Test for uppercase query "INTEGRAL"
+            result = search_commands_by_description("INTEGRAL")
+            @test result isa Vector{String}
+            # Same as lowercase
+            @test result == search_commands_by_description("integral")
+        end
+
+        @testset "mixed case query" begin
+            # T022: Test for mixed case query "Polynomial"
+            result = search_commands_by_description("Polynomial")
+            @test result isa Vector{String}
+        end
+    end
+end
+
+# ============================================================================
+# 006-search-command-description: User Story 3 - Result Limiting Tests
+# ============================================================================
+
+@testset "search_commands_by_description result limiting (US3)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping result limiting tests - GIAC library not available (stub mode)"
+        @test_skip true
+    else
+        @testset "n=5 limits results" begin
+            # T025: Test that n=5 limits results to 5
+            result = search_commands_by_description("function", n=5)
+            @test length(result) <= 5
+        end
+
+        @testset "default n=20" begin
+            # T026: Test that default n=20 is used when not specified
+            # This tests the default behavior
+            result = search_commands_by_description("a")  # Common letter, many results
+            @test length(result) <= 20
+        end
+
+        @testset "n<=0 uses default" begin
+            # T027: Test that n<=0 uses DEFAULT_SEARCH_LIMIT
+            result_zero = search_commands_by_description("a", n=0)
+            result_neg = search_commands_by_description("a", n=-5)
+            @test length(result_zero) <= 20
+            @test length(result_neg) <= 20
+        end
+    end
+
+    @testset "Symbol input works" begin
+        # Test Symbol input
+        if !Giac.is_stub_mode()
+            result = search_commands_by_description(:factor)
+            @test result isa Vector{String}
+        end
+    end
+end

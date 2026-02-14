@@ -149,6 +149,10 @@ search_commands("sin")        # ["sin", "sinc", "sinh", ...]
 # Search with regex
 search_commands(r"^a.*n$")    # Commands starting with 'a' and ending with 'n'
 
+# Search by description (find commands by what they do)
+search_commands_by_description("polynomial")  # Commands related to polynomials
+search_commands_by_description("matrix", n=5) # Limit to 5 results
+
 # Get command metadata
 info = command_info(:factor)
 info.name                     # "factor"
@@ -286,6 +290,7 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 | `suggest_commands(input)` | Suggest similar commands for mistyped input |
 | `set_suggestion_count(n)` | Set number of suggestions (default: 4) |
 | `get_suggestion_count()` | Get current suggestion count |
+| `search_commands_by_description(query; n=20)` | Search commands by help text keywords |
 
 ### Types
 

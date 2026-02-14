@@ -10,6 +10,15 @@ Default number of command suggestions to display.
 """
 const DEFAULT_SUGGESTION_COUNT = 4
 
+# ============================================================================
+# Search Configuration (006-search-command-description)
+# ============================================================================
+
+"""
+Default maximum number of search results to return.
+"""
+const DEFAULT_SEARCH_LIMIT = 20
+
 """
 Global configuration for the number of suggestions to return.
 Use `set_suggestion_count(n)` to modify and `get_suggestion_count()` to read.
@@ -813,4 +822,160 @@ function _format_suggestions(suggestions::Vector{String})::String
         return ""
     end
     return " Did you mean: " * join(suggestions, ", ") * "?"
+end
+
+# ============================================================================
+# Description Search (006-search-command-description)
+# ============================================================================
+
+"""
+    _score_help_match(query::String, help_result::HelpResult) -> Int
+
+Calculate relevance score for a search match.
+
+# Arguments
+- `query`: Lowercase search query
+- `help_result`: Parsed help result with description and examples
+
+# Returns
+- `2`: Query found in description
+- `1`: Query found only in examples
+- `0`: No match
+"""
+function _score_help_match(query::AbstractString, help_result::HelpResult)::Int
+    # Check description first (higher relevance)
+    if occursin(query, lowercase(help_result.description))
+        return 2
+    end
+
+    # Check examples (lower relevance)
+    for example in help_result.examples
+        if occursin(query, lowercase(example))
+            return 1
+        end
+    end
+
+    return 0
+end
+
+"""
+    search_commands_by_description(query; n=20) -> Vector{String}
+
+Search for GIAC commands whose help text contains the given keyword.
+
+Unlike `search_commands` which matches command names, this function searches
+the description and example text of each command's help documentation.
+
+# Arguments
+- `query::Union{String, Symbol}`: Search term to find in help text
+- `n::Int=20`: Maximum number of results to return
+
+# Returns
+- `Vector{String}`: Matching command names, sorted by relevance
+
+# Example
+```julia
+# Find commands related to factorization
+search_commands_by_description("factor")
+# Returns: ["factor", "ifactor", "cfactor", ...]
+
+# Search for matrix operations
+search_commands_by_description("matrix", n=10)
+```
+
+# See also
+- [`search_commands`](@ref): Search by command name pattern
+- [`help`](@ref): Get detailed help for a specific command
+"""
+function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEFAULT_SEARCH_LIMIT)::Vector{String}
+    # Convert to lowercase string and trim (String() ensures no SubString)
+    query_str = String(strip(lowercase(string(query))))
+
+    # Handle empty/whitespace query
+    if isempty(query_str)
+        return String[]
+    end
+
+    # Handle invalid n
+    if n <= 0
+        n = DEFAULT_SEARCH_LIMIT
+    end
+
+    # Return empty in stub mode
+    if is_stub_mode() || isempty(VALID_COMMANDS)
+        return String[]
+    end
+
+    # Commands to skip (operators, keywords that cause GIAC syntax errors)
+    # These are valid in GIAC's command list but don't have help entries
+    skip_commands = Set([
+        # Operators
+        "*", "+", "-", "/", "^", "%", "<", ">", "=", "|", "&", "!", "@",
+        "==", "!=", "<=", ">=", "&&", "||", ":=", "+=", "-=", "*=", "/=",
+        ".*", "./", ".^", "&*", "&^", "%/", "/%" , "=<", "->", "@@",
+        # Keywords (English)
+        "if", "then", "else", "elif", "fi", "end", "end_if",
+        "for", "from", "to", "by", "step", "do", "od", "end_for",
+        "while", "until", "end_while",
+        "in", "or", "and", "xor", "not", "mod", "div",
+        "begin", "var", "local", "option", "default", "otherwise",
+        "try", "catch", "union", "intersect", "minus",
+        # Keywords (French)
+        "de", "faire", "fpour", "fsi", "sinon", "alors", "jusque", "jusqua", "jusqu_a",
+        "ftantque", "ffaire", "ffonction", "ffunction", "pas", "ou", "et",
+        # Other problematic
+        "{", "EndDlog"
+    ])
+
+    # Search all commands and score matches
+    matches = Tuple{String, Int}[]
+
+    # Redirect stderr at file descriptor level to suppress C++ library errors
+    old_stderr = ccall(:dup, Cint, (Cint,), 2)
+    devnull_fd = ccall(:open, Cint, (Cstring, Cint), "/dev/null", 1)  # O_WRONLY = 1
+    ccall(:dup2, Cint, (Cint, Cint), devnull_fd, 2)
+    ccall(:close, Cint, (Cint,), devnull_fd)
+
+    try
+        for cmd in VALID_COMMANDS
+            # Skip operators and keywords
+            if cmd in skip_commands
+                continue
+            end
+
+            # Skip if doesn't start with a letter (likely an operator)
+            if !isempty(cmd) && !isletter(first(cmd))
+                continue
+            end
+
+            # Get help text
+            help_text = try
+                giac_help(cmd)
+            catch
+                ""
+            end
+
+            if isempty(help_text)
+                continue
+            end
+
+            # Parse help and score
+            help_result = _parse_help(help_text, cmd)
+            score = _score_help_match(query_str, help_result)
+
+            if score > 0
+                push!(matches, (cmd, score))
+            end
+        end
+    finally
+        # Restore stderr
+        ccall(:dup2, Cint, (Cint, Cint), old_stderr, 2)
+        ccall(:close, Cint, (Cint,), old_stderr)
+    end
+
+    # Sort by (score DESC, command ASC)
+    sort!(matches, by = x -> (-x[2], x[1]))
+
+    # Return top n command names
+    return [cmd for (cmd, _) in matches[1:min(n, length(matches))]]
 end
