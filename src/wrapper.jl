@@ -154,6 +154,52 @@ module GiacCxxBindings
 end
 
 """
+    _init_xcasroot(wrapper_lib_path)
+
+Initialize the xcasroot path for GIAC help file support.
+Searches for share/giac directory relative to the wrapper library location.
+"""
+function _init_xcasroot(wrapper_lib_path::String)
+    # Try to find share/giac directory
+    wrapper_dir = dirname(wrapper_lib_path)
+
+    # Search patterns for share/giac (relative to wrapper lib)
+    search_paths = [
+        # Development layout: wrapper is in libgiac-julia-wrapper/build/src/
+        # aide_cas is in giac-2.0.0/doc/
+        joinpath(dirname(dirname(dirname(wrapper_dir))), "giac-2.0.0", "doc"),
+        joinpath(dirname(dirname(dirname(wrapper_dir))), "giac-2.0.0", "install", "share", "giac"),
+        # Installed layout: share/giac is sibling to lib
+        joinpath(dirname(wrapper_dir), "share", "giac"),
+        joinpath(dirname(dirname(wrapper_dir)), "share", "giac"),
+        # JLL layout: artifact_dir/share/giac
+        joinpath(dirname(dirname(dirname(wrapper_dir))), "share", "giac"),
+    ]
+
+    # Also check GIAC_jll if available
+    try
+        @eval using GIAC_jll
+        jll_share = joinpath(GIAC_jll.artifact_dir, "share", "giac")
+        pushfirst!(search_paths, jll_share)
+    catch
+        # GIAC_jll not available, continue with other paths
+    end
+
+    for path in search_paths
+        aide_cas_path = joinpath(path, "aide_cas")
+        if isfile(aide_cas_path)
+            # Path must end with / for GIAC
+            xcasroot_path = path * "/"
+            GiacCxxBindings.set_xcasroot(xcasroot_path)
+            @debug "GIAC xcasroot set to $xcasroot_path"
+            return
+        end
+    end
+
+    @warn "Could not find GIAC aide_cas help file. Help commands may not work."
+end
+
+"""
     init_giac_library()
 
 Initialize the GIAC library. Called automatically during module __init__.
@@ -187,6 +233,9 @@ function init_giac_library()
         _stub_mode[] = false
         _initialized[] = true
         @info "GIAC wrapper library loaded from $lib_path"
+
+        # Initialize xcasroot for help file support
+        _init_xcasroot(lib_path)
     else
         # Library found at runtime but not at compile time
         # CxxWrap requires the library at compile time for @wrapmodule
