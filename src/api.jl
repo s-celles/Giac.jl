@@ -388,6 +388,130 @@ function GiacMatrix(elements::Vector{<:Vector})
     return GiacMatrix(matrix)
 end
 
+# =============================================================================
+# GiacMatrix Symbol Constructor (Feature 013)
+# =============================================================================
+
+"""
+    GiacMatrix(base::Symbol, dims::Integer...)
+
+Create a symbolic GiacMatrix with variable elements named using the base symbol and indices.
+
+This constructor creates a matrix populated with symbolic variables. For 1D input,
+creates a column vector (n×1). For 2D input, creates a matrix (rows×cols).
+
+# Arguments
+- `base::Symbol`: Base name for the symbolic variables (e.g., `:m`, `:α`)
+- `dims::Integer...`: One or two dimensions
+
+# Naming Convention
+- Dimensions ≤ 9: Indices concatenated directly (e.g., `m11`, `m23`)
+- Any dimension > 9: Underscore separators used (e.g., `m_1_10`, `m_10_1`)
+- 1D vectors use single index (e.g., `v1`, `v2`, `v3`)
+
+# Examples
+
+Create a 2×3 symbolic matrix:
+```julia
+M = GiacMatrix(:m, 2, 3)
+# Elements: m11, m12, m13, m21, m22, m23
+M[1, 2]  # m12
+size(M)  # (2, 3)
+```
+
+Create a column vector:
+```julia
+V = GiacMatrix(:v, 3)
+# Elements: v1, v2, v3
+size(V)  # (3, 1)
+```
+
+Large dimensions use underscores:
+```julia
+M = GiacMatrix(:m, 10, 10)
+M[1, 10]  # m_1_10
+```
+
+Unicode base names:
+```julia
+Γ = GiacMatrix(:Γ, 2, 2)
+# Elements: Γ11, Γ12, Γ21, Γ22
+```
+
+# Throws
+- `ArgumentError`: If no dimensions provided
+- `ArgumentError`: If more than 2 dimensions provided
+- `ArgumentError`: If any dimension is not positive (≤ 0)
+
+# See also
+- [`@giac_several_var`](@ref): Macro for creating indexed symbolic variables
+"""
+function GiacMatrix(base::Symbol, dims::Integer...)
+    # Validate dimension count
+    if length(dims) == 0
+        throw(ArgumentError("At least one dimension required"))
+    end
+    if length(dims) > 2
+        throw(ArgumentError("GiacMatrix supports at most 2 dimensions. Use GiacTensor for N-dimensional arrays."))
+    end
+
+    # Validate dimension values (must be positive, GiacMatrix requires positive dimensions)
+    for d in dims
+        if d <= 0
+            throw(ArgumentError("Dimensions must be positive, got $d"))
+        end
+    end
+
+    # Handle based on number of dimensions
+    if length(dims) == 1
+        return _create_symbolic_vector(base, dims[1])
+    else
+        return _create_symbolic_matrix(base, dims[1], dims[2])
+    end
+end
+
+"""
+    _create_symbolic_vector(base::Symbol, n::Int) -> GiacMatrix
+
+Internal helper to create an n×1 column vector with symbolic elements.
+Elements are named with single index: base1, base2, ..., baseN.
+"""
+function _create_symbolic_vector(base::Symbol, n::Int)
+    # Determine if we need underscore separators
+    needs_sep = _needs_separator((n,))
+
+    # Create elements as column vector
+    elements = Matrix{GiacExpr}(undef, n, 1)
+    for i in 1:n
+        varname = _format_indices(base, (i,), needs_sep)
+        elements[i, 1] = giac_eval(string(varname))
+    end
+
+    return GiacMatrix(elements)
+end
+
+"""
+    _create_symbolic_matrix(base::Symbol, rows::Int, cols::Int) -> GiacMatrix
+
+Internal helper to create a rows×cols matrix with symbolic elements.
+Elements are named with double indices in row-major order: base11, base12, ..., baseRC.
+"""
+function _create_symbolic_matrix(base::Symbol, rows::Int, cols::Int)
+    # Determine if we need underscore separators
+    needs_sep = _needs_separator((rows, cols))
+
+    # Create elements in row-major order
+    elements = Matrix{GiacExpr}(undef, rows, cols)
+    for i in 1:rows
+        for j in 1:cols
+            varname = _format_indices(base, (i, j), needs_sep)
+            elements[i, j] = giac_eval(string(varname))
+        end
+    end
+
+    return GiacMatrix(elements)
+end
+
 """
     det(m::GiacMatrix)
 
