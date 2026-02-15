@@ -86,8 +86,8 @@ export GiacExpr, GiacContext, GiacMatrix, GiacError, HelpResult
 # Core functions
 export giac_eval, to_julia, is_stub_mode, list_commands, help_count
 
-# Macros (011-giac-symbol-macro)
-export @giac_var
+# Macros (011-giac-symbol-macro, 012-giac-several-var)
+export @giac_var, @giac_several_var
 
 # Command invocation (009-commands-submodule)
 # invoke_cmd replaces giac_cmd - available from main module and Giac.Commands

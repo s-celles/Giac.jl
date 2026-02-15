@@ -109,6 +109,43 @@ to_julia(giac_eval("42"))    # 42::Int64
 to_julia(giac_eval("3/4"))   # 3//4::Rational{Int64}
 ```
 
+## Batch Variable Creation
+
+Create multiple indexed symbolic variables with `@giac_several_var`:
+
+```julia
+using Giac
+
+# 1D vector of variables
+@giac_several_var a 3
+# Creates: a1, a2, a3
+# Returns: (a1, a2, a3)
+a1 + a2 + a3  # Symbolic sum
+
+# 2D matrix of variables
+@giac_several_var m 2 3
+# Creates: m11, m12, m13, m21, m22, m23 (row-major order)
+# Returns: (m11, m12, m13, m21, m22, m23)
+
+# N-dimensional tensors
+@giac_several_var t 2 2 2
+# Creates: t111, t112, t121, t122, t211, t212, t221, t222
+
+# Large dimensions use underscore separators
+@giac_several_var b 2 10
+# Creates: b_1_1, b_1_2, ..., b_2_10
+
+# Unicode base names supported
+@giac_several_var α 2
+# Creates: α1, α2
+
+# Capture return tuple for iteration
+vars = @giac_several_var c 4
+for v in vars
+    println(v)
+end
+```
+
 ## Dynamic Command Invocation
 
 Call any of GIAC's 2200+ commands dynamically:
@@ -421,7 +458,6 @@ The suggestion system uses Levenshtein edit distance with an adaptive threshold 
 
 ```julia
 using Giac, LinearAlgebra
-@giac_var a b c d
 
 A = GiacMatrix([1 2; 3 4])
 det(A)        # -2
@@ -430,9 +466,16 @@ inv(A)        # inverse matrix
 transpose(A)  # transposed matrix
 
 # Symbolic matrix
+@giac_var a b c d
 B = GiacMatrix([[a, b],
                 [c, d]])
 det(B)  # a*d-b*c
+
+@giac_several_var m 2 2
+M = GiacMatrix([[m11, m12],
+                [m21, m22]])
+det(M)  # m11*m22-m12*m21
+
 ```
 
 ## Symbolics.jl Integration
