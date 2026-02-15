@@ -210,6 +210,7 @@ using Giac
 invoke_cmd(:eval, giac_eval("2+3"))      # 5
 invoke_cmd(:sin, giac_eval("pi/6"))      # 1/2
 invoke_cmd(:det, giac_eval("[[1,2],[3,4]]"))  # -2
+invoke_cmd(:det, giac_eval("[[a,b],[c,d]]"))  # a*d-b*c
 invoke_cmd(:sum, giac_eval("k"), giac_eval("k"), giac_eval("1"), giac_eval("10"))  # 55
 
 # invoke_cmd works for ANY command
@@ -218,7 +219,7 @@ invoke_cmd(:factor, giac_eval("x^2-1"))  # (x-1)*(x+1)
 
 ## TempApi Submodule
 
-The `Giac.TempApi` submodule provides convenience functions with simplified names for the most common symbolic computation operations. These are wrappers around the `giac_*` functions.
+The `Giac.TempApi` submodule provides convenience functions with simplified names for some common symbolic computation operations. These are wrappers around the `giac_*` functions.
 
 ```julia
 using Giac.TempApi: diff, expand, factor, integrate, limit, simplify, solve
