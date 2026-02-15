@@ -259,8 +259,8 @@ solve(x^2 - 1, x)  # list[-1,1]
 ```julia
 using Giac
 
-# 1. Full import (interactive use)
-using Giac.TempApi
+# 1. Selective import (recommended)
+using Giac.TempApi: diff, factor, integrate, limit
 
 @giac_var x
 expr = giac_eval("x^2 - 1")
@@ -270,13 +270,7 @@ factor(expr)            # (x-1)*(x+1)
 integrate(expr, x)      # x^3/3-x
 limit(giac_eval("sin(x)/x"), x, giac_eval("0"))  # 1
 
-# 2. Selective import (recommended)
-using Giac.TempApi: diff, factor
-
-diff(expr, x)    # Works
-factor(expr)     # Works
-
-# 3. Qualified access
+# 2. Qualified access
 Giac.TempApi.diff(expr, x)
 Giac.TempApi.factor(expr)
 ```
