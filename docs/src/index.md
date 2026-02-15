@@ -23,7 +23,7 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 
 ```julia
 using Pkg
-Pkg.add("Giac")
+Pkg.add("Giac")  # when registered to Julia General Registry
 ```
 
 For full GIAC integration with C++ library, see the [Installation Guide](install.md).

@@ -6,7 +6,7 @@ This command will install Giac.jl (when both GIAC_jll and libgiac-julia-wrapper 
 ```julia
 using Pkg
 Pkg.add("Giac")  # when registered in Julia General Registry
-Pkg.add(url="https://github.com/s-celles/Giac.jl")  # until unregister
+Pkg.add(url="https://github.com/s-celles/Giac.jl")  # until unregistered
 ```
 
 ## Developer mode installation
