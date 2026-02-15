@@ -1,4 +1,5 @@
 # Tests for namespace command access (007-giac-namespace-commands)
+# Updated for 009-commands-submodule
 
 using Test
 using Giac
@@ -45,34 +46,34 @@ using Giac
     end
 end
 
-@testset "Namespace Command Access (US1)" begin
+@testset "Namespace Command Access (US1) - Updated for 009" begin
     # =========================================================================
-    # Phase 3: User Story 1 - Direct Command Access Tests
+    # Phase 3: User Story 1 - Command Access via Commands Submodule
     # =========================================================================
 
     if !Giac.is_stub_mode()
-        @testset "Giac.factor returns correct GiacExpr" begin
-            # T010: Test for Giac.factor(expr) returns correct GiacExpr
+        @testset "Giac.Commands.factor returns correct GiacExpr" begin
+            # T010: Test for Giac.Commands.factor(expr) returns correct GiacExpr
             expr = giac_eval("x^2 - 1")
-            result = Giac.factor(expr)
+            result = Giac.Commands.factor(expr)
             @test result isa Giac.GiacExpr
             @test string(result) == "(x-1)*(x+1)"
         end
 
-        @testset "Giac.diff with multiple arguments" begin
-            # T011: Test for Giac.diff(expr, x) with multiple arguments
+        @testset "Giac.Commands.diff with multiple arguments" begin
+            # T011: Test for Giac.Commands.diff(expr, x) with multiple arguments
             expr = giac_eval("x^3")
             x = giac_eval("x")
-            deriv = Giac.diff(expr, x)
+            deriv = Giac.Commands.diff(expr, x)
             @test deriv isa Giac.GiacExpr
             @test string(deriv) == "3*x^2"
         end
 
-        @testset "Giac.integrate works" begin
-            # T012: Test for Giac.integrate(expr, x)
+        @testset "Giac.Commands.integrate works" begin
+            # T012: Test for Giac.Commands.integrate(expr, x)
             expr = giac_eval("x^2")
             x = giac_eval("x")
-            integral = Giac.integrate(expr, x)
+            integral = Giac.Commands.integrate(expr, x)
             @test integral isa Giac.GiacExpr
             @test string(integral) == "x^3/3"
         end
@@ -80,7 +81,7 @@ end
         @testset "Invalid command raises error with suggestions" begin
             # T013: Test for invalid command raises error with suggestions
             expr = giac_eval("x^2")
-            @test_throws Exception Giac.factr(expr)
+            @test_throws Exception invoke_cmd(:factr, expr)
             # The error should contain suggestion for 'factor'
         end
     else
@@ -88,88 +89,195 @@ end
 
         @testset "Stub mode returns stub results" begin
             # T014: Test for stub mode returns stub results
-            # In stub mode, getproperty should still work without error
+            # In stub mode, GiacCommand should still work without error
             cmd = Giac.GiacCommand(:factor)
             @test cmd isa Giac.GiacCommand
         end
     end
 end
 
-@testset "Exported Commands (US2)" begin
+@testset "Commands Submodule Exports (US2) - Updated for 009" begin
     # =========================================================================
-    # Phase 4: User Story 2 - Exported Commands Tests
+    # Phase 4: User Story 2 - Commands are in Giac.Commands, not main Giac
     # =========================================================================
 
-    @testset "factor is exported" begin
-        # T021: Test that factor is exported (available without prefix)
-        @test isdefined(Giac, :factor)
-    end
-
-    @testset "diff is exported" begin
-        # T022: Test that diff is exported
-        @test isdefined(Giac, :diff)
-    end
-
-    @testset "integrate is exported" begin
-        # T023: Test that integrate is exported
-        @test isdefined(Giac, :integrate)
-    end
-
-    @testset "simplify is exported" begin
-        # T024: Test that simplify is exported
-        @test isdefined(Giac, :simplify)
-    end
-
-    @testset "At least 50 commands exported" begin
-        # T025: Test that at least 50 commands are exported
-        if isdefined(Giac, :EXPORTED_COMMANDS)
-            @test length(Giac.EXPORTED_COMMANDS) >= 50
+    @testset "factor is in Giac.Commands" begin
+        # T021: Test that factor is defined in Giac.Commands
+        if !Giac.is_stub_mode()
+            @test isdefined(Giac.Commands, :factor)
         else
-            @test_broken false  # Not yet implemented
+            @test_skip true  # Commands not generated in stub mode
+        end
+    end
+
+    @testset "diff is in Giac.Commands" begin
+        # T022: Test that diff is in Giac.Commands
+        # Note: diff is always defined because it's not in JULIA_CONFLICTS
+        if !Giac.is_stub_mode()
+            @test isdefined(Giac.Commands, :diff)
+        else
+            @test_skip true  # Commands not generated in stub mode
+        end
+    end
+
+    @testset "integrate is in Giac.Commands" begin
+        # T023: Test that integrate is in Giac.Commands
+        if !Giac.is_stub_mode()
+            @test isdefined(Giac.Commands, :integrate)
+        else
+            @test_skip true  # Commands not generated in stub mode
+        end
+    end
+
+    @testset "invoke_cmd is exported from main Giac" begin
+        # T024: Test that invoke_cmd is exported from main Giac module
+        @test isdefined(Giac, :invoke_cmd)
+        giac_exports = names(Giac)
+        @test :invoke_cmd ∈ giac_exports
+    end
+
+    @testset "Commands are NOT exported from main Giac" begin
+        # T025: Test that commands like factor are NOT directly exported from Giac
+        giac_exports = names(Giac)
+        @test :factor ∉ giac_exports
+        @test :expand ∉ giac_exports
+        @test :diff ∉ giac_exports
+        @test :integrate ∉ giac_exports
+    end
+end
+
+@testset "Tab Completion Support (US3) - Updated for 009" begin
+    # =========================================================================
+    # Phase 5: User Story 3 - Tab Completion via Commands Submodule
+    # =========================================================================
+
+    @testset "Giac.Commands has many exported symbols" begin
+        if !Giac.is_stub_mode()
+            # Commands submodule should have many exported commands
+            commands_exports = names(Giac.Commands)
+            @test length(commands_exports) > 100  # Many commands
+        else
+            # In stub mode, only invoke_cmd is exported
+            commands_exports = names(Giac.Commands)
+            @test :invoke_cmd ∈ commands_exports
+            @warn "Skipping exported symbols count test - GIAC library not available (stub mode)"
+        end
+    end
+
+    @testset "Core API in main Giac module" begin
+        # Core types and functions should be in main Giac
+        giac_exports = names(Giac)
+        @test :GiacExpr ∈ giac_exports
+        @test :giac_eval ∈ giac_exports
+        @test :invoke_cmd ∈ giac_exports
+        @test :help ∈ giac_exports
+    end
+end
+
+# ============================================================================
+# 009-commands-submodule: invoke_cmd Tests
+# ============================================================================
+
+@testset "invoke_cmd Function (009)" begin
+    if !Giac.is_stub_mode()
+        @testset "invoke_cmd works for exportable commands" begin
+            expr = giac_eval("x^2 - 1")
+            result = invoke_cmd(:factor, expr)
+            @test result isa GiacExpr
+            @test string(result) == "(x-1)*(x+1)"
+        end
+
+        @testset "invoke_cmd works for conflicting commands" begin
+            # eval, sin, etc. must use invoke_cmd
+            # Reset warnings for clean test
+            Giac.reset_conflict_warnings!()
+
+            # eval is a conflicting command
+            result = invoke_cmd(:eval, giac_eval("2+3"))
+            @test result isa GiacExpr
+
+            # sin is a conflicting command
+            result2 = invoke_cmd(:sin, giac_eval("0"))
+            @test string(result2) == "0"
+
+            # Reset for other tests
+            Giac.reset_conflict_warnings!()
+        end
+
+        @testset "invoke_cmd with multiple arguments" begin
+            x = giac_eval("x")
+            expr = giac_eval("x^3")
+            deriv = invoke_cmd(:diff, expr, x)
+            @test string(deriv) == "3*x^2"
         end
     end
 end
 
-@testset "Tab Completion Support (US3)" begin
-    # =========================================================================
-    # Phase 5: User Story 3 - Tab Completion Tests
-    # =========================================================================
-
+@testset "Runtime Generated Functions (009)" begin
     if !Giac.is_stub_mode()
-        @testset "propertynames returns tuple of Symbols" begin
-            # T034: Test that propertynames(Giac) returns tuple of Symbols
-            props = propertynames(Giac)
-            @test props isa Tuple
-            @test all(p -> p isa Symbol, props)
+        @testset "Commands submodule has generated functions" begin
+            # Commands should be defined in Giac.Commands
+            @test isdefined(Giac.Commands, :factor)
+            @test isdefined(Giac.Commands, :expand)
+            @test isdefined(Giac.Commands, :simplify)
+            @test isdefined(Giac.Commands, :diff)
+            @test isdefined(Giac.Commands, :integrate)
         end
 
-        @testset "propertynames includes :factor" begin
-            # T035: Test that propertynames includes :factor
-            props = propertynames(Giac)
-            @test :factor in props
-        end
-
-        @testset "propertynames excludes operators" begin
-            # T036: Test that propertynames excludes operators (non-letter starting)
-            props = propertynames(Giac)
-            # Check that no property starts with a non-letter character
-            for p in props
-                s = string(p)
-                if !isempty(s)
-                    @test isletter(first(s)) || first(s) == '_'
-                end
+        @testset "Runtime-generated commands work correctly" begin
+            # Test a runtime-generated function via Commands submodule
+            if isdefined(Giac.Commands, :ifactor)
+                result = Giac.Commands.ifactor(giac_eval("120"))
+                @test result isa GiacExpr
+                # 120 = 2^3 * 3 * 5
+                str_result = string(result)
+                @test occursin("2", str_result)
+                @test occursin("3", str_result)
+                @test occursin("5", str_result)
             end
         end
-    else
-        @testset "Stub mode propertynames returns module names" begin
-            # T037: Test for stub mode - propertynames returns module exported names
-            # Note: We cannot override Base.propertynames for modules due to Julia precompilation restrictions
-            # So propertynames returns the standard module names (exported symbols)
-            props = propertynames(Giac)
-            # Julia's default propertynames for modules returns a Vector of Symbols
-            @test props isa AbstractVector
-            # Should include exported symbols like :factor
-            @test :factor in props
+
+        @testset "Conflicting commands are NOT exported from Commands" begin
+            # Commands in JULIA_CONFLICTS should NOT be exported from Commands
+            commands_exports = names(Giac.Commands)
+            @test :eval ∉ commands_exports
+            @test :sin ∉ commands_exports
+            @test :cos ∉ commands_exports
+            @test :det ∉ commands_exports
         end
+
+        @testset "Commands.invoke_cmd and Giac.invoke_cmd are the same" begin
+            # invoke_cmd should be accessible from both
+            expr = giac_eval("x^2 - 1")
+            result1 = Giac.invoke_cmd(:factor, expr)
+            result2 = Giac.Commands.invoke_cmd(:factor, expr)
+            @test string(result1) == string(result2)
+        end
+    else
+        @testset "Stub mode - invoke_cmd defined" begin
+            # Even in stub mode, invoke_cmd should be defined
+            @test isdefined(Giac, :invoke_cmd)
+            @test isdefined(Giac.Commands, :invoke_cmd)
+        end
+    end
+end
+
+@testset "Module-Qualified Access (009)" begin
+    if !Giac.is_stub_mode()
+        @testset "Access via Giac.Commands.commandname works" begin
+            expr = giac_eval("x^2 - 1")
+
+            # Access via Commands submodule
+            result = Giac.Commands.factor(expr)
+            @test string(result) == "(x-1)*(x+1)"
+
+            # Check expand works
+            expr2 = giac_eval("(x-1)*(x+1)")
+            result2 = Giac.Commands.expand(expr2)
+            @test string(result2) == "x^2-1"
+        end
+    else
+        @warn "Skipping Module-Qualified Access tests - GIAC library not available (stub mode)"
+        @test_skip true
     end
 end

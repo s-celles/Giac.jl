@@ -117,6 +117,10 @@ function giac_cmd(cmd::Symbol, args...)::GiacExpr
         throw(GiacError("Unknown command: $cmd_str.$suggestion_text", :eval))
     end
 
+    # Warn about Julia conflicts (008-all-giac-commands, FR-010)
+    # This helps users understand why certain commands can't be exported directly
+    _warn_conflict(cmd_str)
+
     # Convert arguments to GIAC strings
     arg_strings = String[]
     for arg in args
@@ -141,6 +145,9 @@ end
 # ============================================================================
 # Base Function Extensions
 # ============================================================================
+
+# Note: These use giac_cmd internally (kept for Base extensions).
+# The public API is invoke_cmd from Giac.Commands.
 
 """
     Base.sin(expr::GiacExpr) -> GiacExpr

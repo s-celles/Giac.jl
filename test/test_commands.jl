@@ -1,5 +1,5 @@
-# Tests for dynamic command invocation (giac_cmd)
-# Feature: 003-giac-commands
+# Tests for dynamic command invocation (invoke_cmd)
+# Feature: 003-giac-commands (updated for 009-commands-submodule)
 
 @testset "Dynamic Command Invocation (US1)" begin
     # Skip tests if in stub mode (no GIAC library)
@@ -10,32 +10,32 @@
     end
 
     @testset "Single-arg invocation" begin
-        # T012: Test giac_cmd(:factor, expr)
+        # T012: Test invoke_cmd(:factor, expr)
         expr = giac_eval("x^2 - 1")
-        result = giac_cmd(:factor, expr)
+        result = invoke_cmd(:factor, expr)
         @test result isa GiacExpr
         result_str = string(result)
         @test occursin("x-1", result_str) || occursin("x+1", result_str)
     end
 
     @testset "Trigonometric commands" begin
-        # T013: Test giac_cmd(:sin, expr)
+        # T013: Test invoke_cmd(:sin, expr)
         x = giac_eval("x")
-        result = giac_cmd(:sin, x)
+        result = invoke_cmd(:sin, x)
         @test result isa GiacExpr
         @test string(result) == "sin(x)"
 
         # Test with numeric value
         pi_6 = giac_eval("pi/6")
-        result = giac_cmd(:sin, pi_6)
+        result = invoke_cmd(:sin, pi_6)
         @test result isa GiacExpr
     end
 
     @testset "Multi-arg invocation" begin
-        # T014: Test giac_cmd(:diff, expr, var)
+        # T014: Test invoke_cmd(:diff, expr, var)
         expr = giac_eval("x^2")
         x = giac_eval("x")
-        result = giac_cmd(:diff, expr, x)
+        result = invoke_cmd(:diff, expr, x)
         @test result isa GiacExpr
         @test string(result) == "2*x"
     end
@@ -43,10 +43,10 @@
     @testset "Unknown command error" begin
         # T015: Test unknown command with suggestions
         expr = giac_eval("x")
-        @test_throws GiacError giac_cmd(:factoor, expr)  # typo
+        @test_throws GiacError invoke_cmd(:factoor, expr)  # typo
 
         try
-            giac_cmd(:factoor, expr)
+            invoke_cmd(:factoor, expr)
         catch e
             @test e isa GiacError
             @test e.category == :eval
@@ -59,7 +59,7 @@
     @testset "Invalid argument type error" begin
         # T016: Test invalid argument type
         # Raw Julia arrays without conversion should fail
-        @test_throws ArgumentError giac_cmd(:factor, Dict("a" => 1))
+        @test_throws ArgumentError invoke_cmd(:factor, Dict("a" => 1))
     end
 end
 
@@ -103,7 +103,7 @@ end
         expr = giac_eval("x^2 - 4")
 
         method_result = expr.factor()
-        func_result = giac_cmd(:factor, expr)
+        func_result = invoke_cmd(:factor, expr)
 
         @test string(method_result) == string(func_result)
     end
@@ -117,9 +117,9 @@ end
     end
 
     @testset "Substitution" begin
-        # T033: Test giac_cmd(:subst, expr, var, value)
+        # T033: Test invoke_cmd(:subst, expr, var, value)
         expr = giac_eval("x^2 + y")
-        result = giac_cmd(:subst, expr, giac_eval("x"), giac_eval("3"))
+        result = invoke_cmd(:subst, expr, giac_eval("x"), giac_eval("3"))
         @test result isa GiacExpr
         # x^2 + y with x=3 should give 9 + y
         result_str = string(result)
@@ -127,12 +127,12 @@ end
     end
 
     @testset "Definite integral" begin
-        # T034: Test giac_cmd(:integrate, expr, var, a, b)
+        # T034: Test invoke_cmd(:integrate, expr, var, a, b)
         expr = giac_eval("x^2")
         x = giac_eval("x")
         a = giac_eval("0")
         b = giac_eval("1")
-        result = giac_cmd(:integrate, expr, x, a, b)
+        result = invoke_cmd(:integrate, expr, x, a, b)
         @test result isa GiacExpr
         # Integral of x^2 from 0 to 1 is 1/3
         result_str = string(result)
@@ -144,12 +144,12 @@ end
         expr = giac_eval("x^2")
 
         # Symbol as variable name
-        result = giac_cmd(:diff, expr, :x)
+        result = invoke_cmd(:diff, expr, :x)
         @test result isa GiacExpr
         @test string(result) == "2*x"
 
         # Integer as argument
-        result = giac_cmd(:diff, expr, :x, 2)  # Second derivative
+        result = invoke_cmd(:diff, expr, :x, 2)  # Second derivative
         @test result isa GiacExpr
         @test string(result) == "2"
     end

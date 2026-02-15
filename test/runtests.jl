@@ -27,6 +27,9 @@ using LinearAlgebra
 
     # Namespace command access tests (007-giac-namespace-commands)
     include("test_namespace_commands.jl")
+
+    # Commands submodule tests (009-commands-submodule)
+    include("test_commands_submodule.jl")
 end
 
 # Aqua.jl package quality tests

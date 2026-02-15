@@ -6,7 +6,8 @@ A Julia wrapper for the [GIAC](https://www-fourier.univ-grenoble-alpes.fr/~paris
 
 ## Features
 
-- **Dynamic Command Invocation**: Access all 2200+ GIAC commands via `giac_cmd(:cmd, args...)`
+- **Dynamic Command Invocation**: Access all 2200+ GIAC commands via `invoke_cmd(:cmd, args...)`
+- **Commands Submodule**: All ~2000+ commands available via `Giac.Commands` for clean namespace
 - **Method Syntax**: Call commands as methods: `expr.factor()`, `expr.diff(x)`
 - **Expression Evaluation**: Parse and evaluate mathematical expressions
 - **Arithmetic Operations**: +, -, *, /, ^, unary negation, equality
@@ -116,12 +117,12 @@ using Giac
 x = giac_eval("x")
 expr = giac_eval("x^2 - 1")
 
-# Function syntax with giac_cmd
-result = giac_cmd(:factor, expr)           # (x-1)*(x+1)
-deriv = giac_cmd(:diff, expr, x)           # 2*x
-integral = giac_cmd(:integrate, expr, x)   # x^3/3-x
+# Function syntax with invoke_cmd (works for ALL commands)
+result = invoke_cmd(:factor, expr)           # (x-1)*(x+1)
+deriv = invoke_cmd(:diff, expr, x)           # 2*x
+integral = invoke_cmd(:integrate, expr, x)   # x^3/3-x
 
-# Method syntax on GiacExpr (equivalent to giac_cmd)
+# Method syntax on GiacExpr (equivalent to invoke_cmd)
 result = expr.factor()                     # (x-1)*(x+1)
 deriv = expr.diff(x)                       # 2*x
 
@@ -138,9 +139,13 @@ sqrt(y)        # sqrt(y)
 sin(y) + cos(y)  # sin(y)+cos(y)
 ```
 
-## Direct Command Access
+## Commands Submodule
 
-For frequently used commands, Giac.jl exports them for direct use without the `giac_cmd` syntax:
+Giac.jl provides **three ways** to access GIAC's 2200+ commands via the `Giac.Commands` submodule:
+
+### 1. Qualified Access (Cleanest Namespace)
+
+Access commands via `Giac.Commands.commandname`:
 
 ```julia
 using Giac
@@ -148,34 +153,86 @@ using Giac
 x = giac_eval("x")
 expr = giac_eval("x^2 - 1")
 
-# Direct function syntax (no giac_cmd needed)
+# Access commands via Giac.Commands
+Giac.Commands.factor(expr)          # (x-1)*(x+1)
+Giac.Commands.expand(giac_eval("(x+1)^2"))  # x^2+2*x+1
+Giac.Commands.diff(expr, x)         # 2*x
+Giac.Commands.integrate(expr, x)    # x^3/3-x
+Giac.Commands.ifactor(giac_eval("120"))  # 2^3*3*5
+```
+
+### 2. Selective Import (Recommended)
+
+Import specific commands you need:
+
+```julia
+using Giac
+using Giac.Commands: factor, expand, diff, integrate
+
+x = giac_eval("x")
+expr = giac_eval("x^2 - 1")
+
+# Direct function syntax (no prefix needed)
 factor(expr)              # (x-1)*(x+1)
 expand(giac_eval("(x+1)^2"))  # x^2+2*x+1
 diff(expr, x)             # 2*x
 integrate(expr, x)        # x^3/3-x
-simplify(giac_eval("(x^2-1)/(x-1)"))  # x+1
-solve(expr, x)            # list[-1,1]
-
-# Also available via Giac.cmd() syntax
-Giac.factor(expr)         # (x-1)*(x+1)
-Giac.diff(expr, x)        # 2*x
 ```
 
-### Exported Commands (58 total)
+### 3. Full Import (Interactive Use)
 
-| Category | Commands |
-|----------|----------|
-| Algebra | `factor`, `expand`, `simplify`, `normal`, `collect` |
-| Calculus | `diff`, `integrate`, `limit`, `series`, `taylor`, `sum`, `product` |
-| Solving | `solve`, `fsolve`, `dsolve`, `linsolve`, `nsolve` |
-| Polynomial | `degree`, `coeff`, `lcoeff`, `quo`, `rem`, `gcd`, `lcm`, `roots`, `resultant` |
-| Trigonometry | `trigexpand`, `trigreduce`, `trigtan`, `trigcos`, `trigsin` |
-| Complex | `re`, `im`, `conj`, `arg` |
-| Matrix | `det`, `rank`, `kernel`, `eigenvals`, `eigenvects`, `trace` |
-| Utilities | `subst`, `evalf`, `exact`, `assume`, `about` |
-| Additional | `partfrac`, `apart`, `together`, `rationalize`, `numer`, `denom`, `proot`, `froot`, `cfactor`, `ifactor`, `iquo`, `irem` |
+Import all ~2000+ commands for interactive exploration:
 
-For commands not in this list, use `giac_cmd(:commandname, args...)`.
+```julia
+using Giac
+using Giac.Commands  # Imports ALL exportable commands
+
+x = giac_eval("x")
+factor(giac_eval("x^2 - 1"))    # (x-1)*(x+1)
+ifactor(giac_eval("120"))       # 2^3*3*5
+nextprime(giac_eval("100"))     # 101
+airy_ai(giac_eval("0"))         # Airy function
+
+# Discover available commands
+exportable_commands()            # ~2000+ command names
+```
+
+### invoke_cmd for ALL Commands
+
+For commands that conflict with Julia (like `sin`, `cos`, `eval`, `det`), use `invoke_cmd`:
+
+```julia
+using Giac
+
+# Conflicting commands must use invoke_cmd
+invoke_cmd(:eval, giac_eval("2+3"))      # 5
+invoke_cmd(:sin, giac_eval("pi/6"))      # 1/2
+invoke_cmd(:det, giac_eval("[[1,2],[3,4]]"))  # -2
+invoke_cmd(:sum, giac_eval("k"), giac_eval("k"), giac_eval("1"), giac_eval("10"))  # 55
+
+# invoke_cmd works for ANY command
+invoke_cmd(:factor, giac_eval("x^2-1"))  # (x-1)*(x+1)
+```
+
+### Commands That Conflict with Julia
+
+Some GIAC commands have the same name as Julia built-ins. These are **not exported** from `Giac.Commands` to avoid shadowing Julia's functions:
+
+| Category | Conflicting Commands |
+|----------|---------------------|
+| Keywords | `if`, `for`, `while`, `end`, `in`, `or`, `and`, `not` |
+| Builtins | `eval`, `float`, `sum`, `prod`, `collect`, `abs`, `sign` |
+| Math | `sin`, `cos`, `tan`, `exp`, `log`, `sqrt`, `gcd`, `lcm` |
+| LinearAlgebra | `det`, `inv`, `trace`, `rank`, `transpose`, `norm` |
+| Statistics | `mean`, `median`, `var`, `std` |
+
+Use `invoke_cmd(:name, args...)` for these commands. A warning is shown on first use to remind you:
+
+```julia
+invoke_cmd(:eval, giac_eval("2+3"))
+# ┌ Warning: GIAC command 'eval' conflicts with Julia (builtin).
+# │ Use invoke_cmd(:eval, args...) to call it.
+```
 
 ## Command Discovery
 
@@ -211,7 +268,21 @@ commands_in_category(:algebra)       # ["factor", "expand", "simplify", ...]
 ```julia
 using Giac
 
-# Display formatted help for a command
+# Display Julia help for a function
+?help(factor)
+# search: factor ifactor cfactor factorial Vector giac_factor function taylor acot acos filter macro for floor acoth acotd
+# 
+#   factor(args...)::GiacExpr
+# 
+#   Call the GIAC factor command with the given arguments.
+# 
+#   This is a convenience function exported for direct use. Equivalent to:
+# 
+#     •  giac_cmd(:factor, args...)
+# 
+#   See GIAC documentation for detailed usage of this command. This is available using helper functions like help(:factor) or giac_help(:factor).
+
+# Display formatted help for a Giac command
 help(:factor)
 # factor
 # ══════
@@ -310,7 +381,7 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 | Function | Description |
 |----------|-------------|
 | `giac_eval(expr)` | Evaluate a GIAC expression string |
-| `giac_cmd(cmd, args...)` | Invoke any GIAC command dynamically |
+| `invoke_cmd(cmd, args...)` | Invoke any GIAC command dynamically |
 | `is_stub_mode()` | Check if running without GIAC library |
 | `to_julia(expr)` | Convert GiacExpr to Julia type |
 
@@ -330,6 +401,17 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 | `set_suggestion_count(n)` | Set number of suggestions (default: 4) |
 | `get_suggestion_count()` | Get current suggestion count |
 | `search_commands_by_description(query; n=20)` | Search commands by help text keywords |
+
+### Command Access (008)
+
+| Function | Description |
+|----------|-------------|
+| `available_commands()` | List all commands starting with ASCII letters |
+| `exportable_commands()` | List commands safe to export (no Julia conflicts) |
+| `is_valid_command(name)` | Check if a command name is valid |
+| `conflict_reason(cmd)` | Get why a command conflicts (`:keyword`, `:builtin`, etc.) |
+| `JULIA_CONFLICTS` | Set of commands that conflict with Julia |
+| `reset_conflict_warnings!()` | Reset conflict warning tracker (for testing) |
 
 ### Types
 

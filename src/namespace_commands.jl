@@ -1,6 +1,7 @@
 # Namespace command access for Giac.jl
 # Enables direct access to common GIAC commands via exported functions
 # Feature: 007-giac-namespace-commands
+# Enhanced: 008-all-giac-commands (runtime generation of all exportable commands)
 
 # ============================================================================
 # GiacCommand Type (Foundational)
@@ -41,8 +42,8 @@ end
 
 Execute a GiacCommand with the given arguments.
 
-Delegates to `giac_cmd` for actual execution, providing the same functionality
-with a callable object interface.
+Delegates to the internal `giac_cmd` for actual execution, providing the same
+functionality with a callable object interface.
 
 # Arguments
 - `args...`: Variable arguments passed to the underlying GIAC command
@@ -67,75 +68,28 @@ result = factor_cmd(expr)  # Returns (x-1)*(x+1)
 diff_cmd = GiacCommand(:diff)
 deriv = diff_cmd(expr, x)  # Returns 2*x
 ```
+
+# See also
+- [`invoke_cmd`](@ref): Direct command invocation (preferred)
 """
 function (cmd::GiacCommand)(args...)::GiacExpr
     giac_cmd(cmd.name, args...)
 end
 
 # ============================================================================
-# Exported Commands (US2)
+# Note: Command Exports Moved to Giac.Commands (009-commands-submodule)
 # ============================================================================
-
-"""
-Curated list of commonly used GIAC commands to export for direct access.
-
-These commands are exported so users can call them without the `Giac.` prefix
-after `using Giac`. The list is intentionally limited to avoid namespace pollution.
-
-Note: Some commands like `eval` and `float` are not included because they
-conflict with Julia built-in functions. Use `giac_cmd(:eval, ...)` for those.
-
-Categories:
-- Algebra: factor, expand, simplify, normal, collect
-- Calculus: diff, integrate, limit, series, taylor, sum, product
-- Solving: solve, fsolve, dsolve, linsolve, nsolve
-- Polynomial: degree, coeff, lcoeff, quo, rem, gcd, lcm, roots
-- Trigonometry: trigexpand, trigreduce, trigtan, trigcos, trigsin
-- Complex: re, im, conj, arg
-- Matrix: det, rank, kernel, eigenvals, eigenvects, trace
-- Utilities: subst, evalf, exact, assume, about
-"""
-const EXPORTED_COMMANDS = Symbol[
-    # Algebra (5)
-    :factor, :expand, :simplify, :normal, :collect,
-    # Calculus (7)
-    :diff, :integrate, :limit, :series, :taylor, :sum, :product,
-    # Solving (5)
-    :solve, :fsolve, :dsolve, :linsolve, :nsolve,
-    # Polynomial (9)
-    :degree, :coeff, :lcoeff, :quo, :rem, :gcd, :lcm, :roots, :resultant,
-    # Trigonometry (5)
-    :trigexpand, :trigreduce, :trigtan, :trigcos, :trigsin,
-    # Complex (4)
-    :re, :im, :conj, :arg,
-    # Matrix (6)
-    :det, :rank, :kernel, :eigenvals, :eigenvects, :trace,
-    # Utilities (5) - excluding :eval and :float which conflict with Julia builtins
-    :subst, :evalf, :exact, :assume, :about,
-    # Additional commonly used (12)
-    :partfrac, :apart, :together, :rationalize, :numer, :denom,
-    :proot, :froot, :cfactor, :ifactor, :iquo, :irem,
-]
-
-# Generate exported functions for all commands in EXPORTED_COMMANDS
-# Each function is a thin wrapper that calls giac_cmd
-for cmd in EXPORTED_COMMANDS
-    @eval begin
-        """
-            $($cmd)(args...)::GiacExpr
-
-        Call the GIAC `$($cmd)` command with the given arguments.
-
-        This is a convenience function exported for direct use. Equivalent to:
-        - `giac_cmd(:$($cmd), args...)`
-
-        See GIAC documentation for detailed usage of this command.
-        """
-        function $(cmd)(args...)::GiacExpr
-            giac_cmd($(QuoteNode(cmd)), args...)
-        end
-    end
-end
+#
+# The EXPORTED_COMMANDS constant and compile-time function generation have been
+# removed. All GIAC commands are now exported from the Giac.Commands submodule.
+#
+# To use commands:
+# 1. invoke_cmd(:name, args...) - always available from main Giac module
+# 2. using Giac.Commands: factor, expand - selective import
+# 3. using Giac.Commands - import all ~2000+ commands
+#
+# See Giac.Commands for the new implementation.
+# ============================================================================
 
 # ============================================================================
 # Tab Completion Support (US3) - Programmatic Discovery
@@ -144,31 +98,70 @@ end
 """
     available_commands()
 
-Return a sorted vector of all available GIAC command names that can be called.
+Return a sorted vector of all available GIAC command names that start with
+an ASCII letter (a-z, A-Z).
 
-This function provides programmatic discovery of available commands.
-For commands not in EXPORTED_COMMANDS, use `giac_cmd(:commandname, args...)`.
+This function provides programmatic discovery of available commands. It filters
+out operators, keywords, and commands starting with non-ASCII characters.
+
+# Returns
+- `Vector{String}`: Sorted list of command names starting with ASCII letters
 
 # Example
 ```julia
 # List all available commands
 cmds = available_commands()
-println("Found \$(length(cmds)) commands")
+println("Found \$(length(cmds)) commands")  # ~2100+
 
 # Check if a command exists
 "factor" in cmds  # true
+"+" in cmds       # false (operator)
 
-# Use non-exported commands via giac_cmd
-giac_cmd(:somecommand, args...)
+# Compare with exportable commands
+exportable = exportable_commands()
+length(exportable)  # ~2000+ (excludes Julia conflicts)
 ```
 
+# Accessing Commands
+
+1. **invoke_cmd** (all commands): Universal access, always available
+   ```julia
+   invoke_cmd(:eval, expr)  # Works for conflicting commands too
+   invoke_cmd(:factor, expr)
+   ```
+
+2. **Selective import**: Import specific commands from Giac.Commands
+   ```julia
+   using Giac.Commands: factor, expand
+   factor(expr)  # Works directly
+   ```
+
+3. **Full import**: Import all ~2000+ commands
+   ```julia
+   using Giac.Commands
+   factor(expr)   # Works directly
+   ifactor(expr)  # All commands available
+   ```
+
 # See also
-- [`EXPORTED_COMMANDS`](@ref): Curated list of exported commands
-- [`giac_cmd`](@ref): Direct command invocation for any command
+- [`exportable_commands`](@ref): Commands safe to export (no Julia conflicts)
+- [`invoke_cmd`](@ref): Universal command invocation
+- [`Giac.Commands`](@ref): Submodule with all exportable commands
 """
 function available_commands()::Vector{String}
     if !isempty(VALID_COMMANDS)
-        return sort(collect(cmd for cmd in VALID_COMMANDS if !isempty(cmd) && isletter(first(cmd))))
+        return sort(collect(cmd for cmd in VALID_COMMANDS if !isempty(cmd) && isletter(first(cmd)) && isascii(first(cmd))))
     end
     return String[]
 end
+
+# ============================================================================
+# Note: Runtime Function Generation Moved to Giac.Commands (009-commands-submodule)
+# ============================================================================
+#
+# The _generate_exported_functions() has been removed from this file.
+# Command generation is now handled by Commands._generate_command_functions()
+# which is called during Commands.__init__().
+#
+# See src/Commands.jl for the new implementation.
+# ============================================================================

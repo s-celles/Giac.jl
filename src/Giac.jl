@@ -6,15 +6,37 @@ A Julia wrapper for the GIAC computer algebra system.
 Provides symbolic expression evaluation, calculus operations, polynomial
 manipulation, and linear algebra with a Julia-native API.
 
-# Exports
+# Core Exports
 - `GiacExpr`: Symbolic expression type
 - `GiacContext`: Evaluation context
 - `GiacMatrix`: Symbolic matrix type
 - `GiacError`: Exception type for GIAC errors
 - `giac_eval`: Evaluate expression strings
 - `to_julia`: Convert GiacExpr to Julia types
+- `invoke_cmd`: Universal command invocation (works for ALL commands)
 - `giac_diff`, `giac_integrate`, `giac_limit`, `giac_series`: Calculus
 - `giac_factor`, `giac_expand`, `giac_simplify`, `giac_solve`, `giac_gcd`: Algebra
+
+# Command Access
+
+GIAC commands are available through the `Giac.Commands` submodule:
+
+```julia
+using Giac
+
+# Use invoke_cmd for any command (always available)
+invoke_cmd(:factor, giac_eval("x^2-1"))
+invoke_cmd(:sin, giac_eval("pi/6"))  # Works for conflicting commands too
+
+# Import commands selectively (recommended)
+using Giac.Commands: factor, expand, diff
+factor(giac_eval("x^2-1"))
+
+# Or import all ~2000+ commands
+using Giac.Commands
+factor(giac_eval("x^2-1"))
+ifactor(giac_eval("120"))
+```
 
 # Example
 ```julia
@@ -23,6 +45,10 @@ using Giac
 result = giac_eval("factor(x^2 - 1)")
 println(result)  # (x-1)*(x+1)
 ```
+
+# See also
+- [`Giac.Commands`](@ref): Submodule with all exportable commands
+- [`invoke_cmd`](@ref): Universal command invocation
 """
 module Giac
 
@@ -38,14 +64,19 @@ include("namespace_commands.jl")
 include("api.jl")
 include("operators.jl")
 
+# Include Commands submodule (009-commands-submodule)
+include("Commands.jl")
+
 # Types
 export GiacExpr, GiacContext, GiacMatrix, GiacError, HelpResult
 
 # Core functions
 export giac_eval, to_julia, is_stub_mode, list_commands, help_count
 
-# Command invocation (003-giac-commands)
-export giac_cmd, search_commands, commands_in_category, command_info, list_categories, giac_help, help
+# Command invocation (009-commands-submodule)
+# invoke_cmd replaces giac_cmd - available from main module and Giac.Commands
+export invoke_cmd
+export search_commands, commands_in_category, command_info, list_categories, giac_help, help
 
 # Command suggestions (005-nearest-command-suggestions)
 export suggest_commands, set_suggestion_count, get_suggestion_count
@@ -53,19 +84,16 @@ export suggest_commands, set_suggestion_count, get_suggestion_count
 # Description search (006-search-command-description)
 export search_commands_by_description
 
-# Namespace commands (007-giac-namespace-commands)
-export GiacCommand, EXPORTED_COMMANDS
-# Export all commands from EXPORTED_COMMANDS for direct use
-export factor, expand, simplify, normal, collect
-export diff, integrate, limit, series, taylor, sum, product
-export solve, fsolve, dsolve, linsolve, nsolve
-export degree, coeff, lcoeff, quo, rem, gcd, lcm, roots, resultant
-export trigexpand, trigreduce, trigtan, trigcos, trigsin
-export re, im, conj, arg
-export det, rank, kernel, eigenvals, eigenvects, trace
-export subst, evalf, exact, assume, about
-export partfrac, apart, together, rationalize, numer, denom
-export proot, froot, cfactor, ifactor, iquo, irem
+# All commands access (008-all-giac-commands)
+export JULIA_CONFLICTS, exportable_commands, is_valid_command, conflict_reason
+export available_commands, reset_conflict_warnings!
+
+# GiacCommand type (kept for compatibility, callable uses invoke_cmd internally)
+export GiacCommand
+
+# Re-export invoke_cmd from Commands submodule (009-commands-submodule)
+# This makes invoke_cmd available directly after `using Giac`
+using .Commands: invoke_cmd
 
 # Conversion functions (extended by GiacSymbolicsExt)
 export to_giac, to_symbolics
@@ -96,8 +124,20 @@ const DEFAULT_CONTEXT = Ref{GiacContext}()
 """
     __init__()
 
-Initialize the Giac module at runtime. Sets up the default context
-and loads the GIAC library.
+Initialize the Giac module at runtime. Sets up the default context,
+loads the GIAC library, and initializes the command registry.
+
+# Initialization Steps
+1. Initialize the GIAC library and default context
+2. Populate the command registry from GIAC's help database
+3. The Commands submodule then generates wrapper functions in Commands.__init__()
+
+# Performance
+- Total initialization typically completes in < 5 seconds
+- Runtime function generation adds ~1 second for ~2000 functions
+
+# Note
+Command function generation moved to Giac.Commands submodule (009-commands-submodule).
 """
 function __init__()
     try
@@ -105,6 +145,7 @@ function __init__()
         DEFAULT_CONTEXT[] = GiacContext()
         # Initialize command registry (003-giac-commands)
         _init_command_registry()
+        # Note: Command functions are generated in Commands.__init__() (009-commands-submodule)
     catch e
         @error "Failed to initialize GIAC library" exception=e
         rethrow()

@@ -287,6 +287,188 @@ Populated by `_init_command_registry()`.
 const CATEGORY_LOOKUP = Dict{String, Symbol}()
 
 # ============================================================================
+# Julia Conflicts Registry (008-all-giac-commands)
+# ============================================================================
+
+"""
+    JULIA_CONFLICTS
+
+Set of GIAC command names that conflict with Julia keywords, builtins, or
+standard library functions. These commands cannot be safely exported as
+top-level functions but remain accessible via `giac_cmd(:name, args...)`.
+
+# Conflict Categories
+- **Julia keywords**: `if`, `for`, `while`, `end`, `in`, `or`, `and`, etc.
+- **Base builtins**: `eval`, `float`, `sum`, `prod`, `div`, `mod`, `abs`, etc.
+- **Base math functions**: `sin`, `cos`, `tan`, `exp`, `log`, `sqrt`, etc.
+- **LinearAlgebra**: `det`, `inv`, `trace`, `rank`, `transpose`, etc.
+
+# Example
+```julia
+"eval" in JULIA_CONFLICTS  # true
+"factor" in JULIA_CONFLICTS  # false
+
+# Conflicting commands still work via giac_cmd
+giac_cmd(:eval, giac_eval("2+3"))  # Returns 5
+```
+
+# See also
+- [`exportable_commands`](@ref): Commands safe to export
+- [`conflict_reason`](@ref): Get the conflict category for a command
+"""
+const JULIA_CONFLICTS = Set{String}([
+    # Julia keywords (reserved words)
+    "if", "else", "elseif", "for", "while", "end", "begin",
+    "try", "catch", "finally", "return", "break", "continue",
+    "function", "macro", "module", "import", "export", "using",
+    "let", "local", "global", "const", "do", "in", "isa",
+    "where", "true", "false", "nothing", "missing",
+    "struct", "mutable", "abstract", "primitive", "quote",
+    "baremodule", "type", "immutable", "bitstype", "typealias",
+
+    # GIAC keywords that overlap
+    "or", "and", "not", "xor", "mod", "div",
+
+    # Base builtins that would shadow
+    "eval", "float", "sum", "prod", "rem",
+    "min", "max", "abs", "sign", "round", "floor", "ceil",
+    "real", "imag", "conj", "angle",
+    "length", "size", "zeros", "ones", "fill", "push", "pop",
+    "first", "last", "sort", "reverse", "map", "filter", "reduce",
+    "zip", "enumerate", "collect", "copy", "deepcopy",
+    "print", "println", "display", "show", "string", "parse",
+    "read", "write", "open", "close", "flush",
+    "error", "throw", "rethrow", "assert",
+    "typeof", "isa", "convert", "promote",
+    "get", "set", "delete", "keys", "values", "pairs",
+    "union", "intersect", "setdiff", "issubset",
+    "any", "all", "count", "findall", "findfirst", "findlast",
+    "range", "step", "start", "stop",
+    "time", "sleep", "wait", "notify",
+    "rand", "randn", "seed",
+
+    # Base math functions (defined in Base or often imported)
+    "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
+    "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
+    "sec", "csc", "cot", "asec", "acsc", "acot",
+    "sech", "csch", "coth", "asech", "acsch", "acoth",
+    "sinc", "sincos", "sinpi", "cospi",
+    "exp", "exp2", "exp10", "expm1",
+    "log", "log2", "log10", "log1p",
+    "sqrt", "cbrt", "hypot",
+    "gcd", "lcm", "gcdx",
+    "factorial", "binomial",
+    "isnan", "isinf", "isfinite", "isinteger", "isreal",
+    "iseven", "isodd", "ispow2",
+    "nextpow", "prevpow",
+    "sign", "signbit", "copysign", "flipsign",
+    "clamp", "clamp!",
+    "muladd", "fma",
+    "modf", "rem", "mod", "divrem", "fldmod",
+    "numerator", "denominator",
+
+    # LinearAlgebra conflicts
+    "det", "inv", "trace", "rank", "transpose", "adjoint",
+    "norm", "normalize", "dot", "cross",
+    "eigen", "eigvals", "eigvecs",
+    "svd", "svdvals",
+    "lu", "qr", "cholesky", "schur", "hessenberg",
+    "diag", "diagm", "diagind",
+    "tril", "triu", "tril!", "triu!",
+    "I", "eye", "identity",
+    "kron", "kronsum",
+    "nullspace", "pinv",
+    "cond", "opnorm", "factorize",
+    "ishermitian", "issymmetric", "isposdef", "istriu", "istril",
+    "lyap", "sylvester",
+
+    # Statistics conflicts
+    "mean", "median", "var", "std", "cov", "cor",
+    "quantile", "percentile",
+
+    # Other common conflicts
+    "pi", "e", "im", "Inf", "NaN",
+    "ans", "help",
+])
+
+"""
+    CONFLICT_CATEGORIES
+
+Mapping of conflict category symbols to the commands in that category.
+Used by `conflict_reason()` to determine why a command conflicts.
+"""
+const CONFLICT_CATEGORIES = Dict{Symbol, Set{String}}(
+    :keyword => Set([
+        "if", "else", "elseif", "for", "while", "end", "begin",
+        "try", "catch", "finally", "return", "break", "continue",
+        "function", "macro", "module", "import", "export", "using",
+        "let", "local", "global", "const", "do", "in", "isa",
+        "where", "true", "false", "nothing", "missing",
+        "struct", "mutable", "abstract", "primitive", "quote",
+        "baremodule", "type", "immutable", "bitstype", "typealias",
+        "or", "and", "not", "xor", "mod", "div",
+    ]),
+    :builtin => Set([
+        "eval", "float", "sum", "prod", "rem",
+        "min", "max", "abs", "sign", "round", "floor", "ceil",
+        "real", "imag", "conj", "angle",
+        "length", "size", "zeros", "ones", "fill", "push", "pop",
+        "first", "last", "sort", "reverse", "map", "filter", "reduce",
+        "zip", "enumerate", "collect", "copy", "deepcopy",
+        "print", "println", "display", "show", "string", "parse",
+        "read", "write", "open", "close", "flush",
+        "error", "throw", "rethrow", "assert",
+        "typeof", "isa", "convert", "promote",
+        "get", "set", "delete", "keys", "values", "pairs",
+        "union", "intersect", "setdiff", "issubset",
+        "any", "all", "count", "findall", "findfirst", "findlast",
+        "range", "step", "start", "stop",
+        "time", "sleep", "wait", "notify",
+        "rand", "randn", "seed",
+        "pi", "e", "im", "Inf", "NaN", "ans", "help",
+    ]),
+    :base_math => Set([
+        "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
+        "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
+        "sec", "csc", "cot", "asec", "acsc", "acot",
+        "sech", "csch", "coth", "asech", "acsch", "acoth",
+        "sinc", "sincos", "sinpi", "cospi",
+        "exp", "exp2", "exp10", "expm1",
+        "log", "log2", "log10", "log1p",
+        "sqrt", "cbrt", "hypot",
+        "gcd", "lcm", "gcdx",
+        "factorial", "binomial",
+        "isnan", "isinf", "isfinite", "isinteger", "isreal",
+        "iseven", "isodd", "ispow2",
+        "nextpow", "prevpow",
+        "sign", "signbit", "copysign", "flipsign",
+        "clamp", "clamp!",
+        "muladd", "fma",
+        "modf", "rem", "mod", "divrem", "fldmod",
+        "numerator", "denominator",
+    ]),
+    :linear_algebra => Set([
+        "det", "inv", "trace", "rank", "transpose", "adjoint",
+        "norm", "normalize", "dot", "cross",
+        "eigen", "eigvals", "eigvecs",
+        "svd", "svdvals",
+        "lu", "qr", "cholesky", "schur", "hessenberg",
+        "diag", "diagm", "diagind",
+        "tril", "triu", "tril!", "triu!",
+        "I", "eye", "identity",
+        "kron", "kronsum",
+        "nullspace", "pinv",
+        "cond", "opnorm", "factorize",
+        "ishermitian", "issymmetric", "isposdef", "istriu", "istril",
+        "lyap", "sylvester",
+    ]),
+    :statistics => Set([
+        "mean", "median", "var", "std", "cov", "cor",
+        "quantile", "percentile",
+    ]),
+)
+
+# ============================================================================
 # Valid Commands Registry
 # ============================================================================
 
@@ -297,6 +479,73 @@ Set of all valid GIAC command names. Populated at module initialization
 from `list_commands()`.
 """
 const VALID_COMMANDS = Set{String}()
+
+# ============================================================================
+# Conflict Warning System (008-all-giac-commands, FR-010)
+# ============================================================================
+
+"""
+    _warned_conflicts
+
+Set of conflict commands that have already been warned about in this session.
+Each conflict is warned only once to avoid spam.
+"""
+const _warned_conflicts = Set{String}()
+
+"""
+    _warn_conflict(cmd::String) -> Bool
+
+Warn the user when they use a GIAC command that conflicts with Julia.
+
+This function is called by `giac_cmd` when a conflicting command is used.
+Each conflict is warned only once per session to avoid spam.
+
+# Arguments
+- `cmd`: Command name to check
+
+# Returns
+- `true` if a warning was issued (first use of this conflict)
+- `false` if no warning needed (not a conflict, or already warned)
+
+# Example (internal use)
+```julia
+_warn_conflict("eval")  # First call: warns, returns true
+_warn_conflict("eval")  # Second call: no warning, returns false
+_warn_conflict("factor")  # Not a conflict: returns false
+```
+"""
+function _warn_conflict(cmd::String)::Bool
+    # Only warn for actual conflicts that haven't been warned yet
+    if cmd in JULIA_CONFLICTS && cmd ∉ _warned_conflicts
+        push!(_warned_conflicts, cmd)
+        reason = conflict_reason(cmd)
+        reason_text = isnothing(reason) ? "" : " ($reason)"
+        @warn "GIAC command '$cmd' conflicts with Julia$reason_text. " *
+              "Use invoke_cmd(:$cmd, args...) to call it."
+        return true
+    end
+    return false
+end
+
+"""
+    reset_conflict_warnings!()
+
+Reset the conflict warning tracker, allowing warnings to be shown again.
+
+This is primarily useful for testing.
+
+# Example
+```julia
+giac_cmd(:eval, expr)  # Shows warning
+giac_cmd(:eval, expr)  # No warning (already shown)
+reset_conflict_warnings!()
+giac_cmd(:eval, expr)  # Shows warning again
+```
+"""
+function reset_conflict_warnings!()
+    empty!(_warned_conflicts)
+    return nothing
+end
 
 """
     _init_command_registry()
@@ -978,4 +1227,130 @@ function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEF
 
     # Return top n command names
     return [cmd for (cmd, _) in matches[1:min(n, length(matches))]]
+end
+
+# ============================================================================
+# Command Validation and Export Helpers (008-all-giac-commands)
+# ============================================================================
+
+"""
+    is_valid_command(name::Union{Symbol, String}) -> Bool
+
+Check if a command name is a valid GIAC command.
+
+# Arguments
+- `name`: Command name as Symbol or String
+
+# Returns
+- `true` if the command exists in GIAC's command list
+- `false` otherwise
+
+# Example
+```julia
+is_valid_command(:factor)      # true
+is_valid_command("integrate")  # true
+is_valid_command(:notacommand) # false
+```
+
+# See also
+- [`list_commands`](@ref): Get all command names
+- [`suggest_commands`](@ref): Get suggestions for misspelled commands
+"""
+function is_valid_command(name::Union{Symbol, String})::Bool
+    cmd_str = string(name)
+    return cmd_str in VALID_COMMANDS
+end
+
+"""
+    exportable_commands() -> Vector{String}
+
+Get a list of GIAC commands that can be safely exported without conflicting
+with Julia keywords, builtins, or standard library functions.
+
+This function filters the complete command list to include only commands that:
+1. Start with an ASCII letter (a-z, A-Z)
+2. Do not conflict with Julia (not in `JULIA_CONFLICTS`)
+
+# Returns
+- `Vector{String}`: Sorted list of exportable command names
+
+# Example
+```julia
+cmds = exportable_commands()
+length(cmds)        # ~2000+
+"factor" in cmds    # true
+"eval" in cmds      # false (conflicts with Julia)
+"sin" in cmds       # false (conflicts with Base.sin)
+issorted(cmds)      # true
+```
+
+# See also
+- [`available_commands`](@ref): All commands starting with ASCII letters
+- [`JULIA_CONFLICTS`](@ref): Commands that conflict with Julia
+"""
+function exportable_commands()::Vector{String}
+    if isempty(VALID_COMMANDS)
+        return String[]
+    end
+
+    result = String[]
+    for cmd in VALID_COMMANDS
+        # Must start with ASCII letter
+        if isempty(cmd) || !isletter(first(cmd))
+            continue
+        end
+        # Must not be ASCII letter (filter non-ASCII starters like Greek)
+        if !isascii(first(cmd))
+            continue
+        end
+        # Must not conflict with Julia
+        if cmd in JULIA_CONFLICTS
+            continue
+        end
+        push!(result, cmd)
+    end
+
+    return sort(result)
+end
+
+"""
+    conflict_reason(cmd::Union{Symbol, String}) -> Union{Symbol, Nothing}
+
+Get the reason why a GIAC command conflicts with Julia.
+
+# Arguments
+- `cmd`: Command name as Symbol or String
+
+# Returns
+- `:keyword` - Conflicts with Julia keyword (if, for, while, etc.)
+- `:builtin` - Conflicts with Julia builtin function (eval, float, etc.)
+- `:base_math` - Conflicts with Base math function (sin, cos, exp, etc.)
+- `:linear_algebra` - Conflicts with LinearAlgebra (det, inv, trace, etc.)
+- `:statistics` - Conflicts with Statistics (mean, median, var, etc.)
+- `nothing` - No conflict
+
+# Example
+```julia
+conflict_reason(:eval)    # :builtin
+conflict_reason(:sin)     # :base_math
+conflict_reason(:det)     # :linear_algebra
+conflict_reason(:for)     # :keyword
+conflict_reason(:factor)  # nothing
+```
+
+# See also
+- [`JULIA_CONFLICTS`](@ref): Set of all conflicting commands
+- [`exportable_commands`](@ref): Commands safe to export
+"""
+function conflict_reason(cmd::Union{Symbol, String})::Union{Symbol, Nothing}
+    cmd_str = string(cmd)
+
+    # Check each category
+    for (category, commands) in CONFLICT_CATEGORIES
+        if cmd_str in commands
+            return category
+        end
+    end
+
+    return nothing
 end

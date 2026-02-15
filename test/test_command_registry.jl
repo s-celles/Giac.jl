@@ -743,3 +743,220 @@ end
         end
     end
 end
+
+# ============================================================================
+# 008-all-giac-commands: Julia Conflicts Tests
+# ============================================================================
+
+@testset "JULIA_CONFLICTS (008)" begin
+    @testset "JULIA_CONFLICTS is defined and non-empty" begin
+        @test isdefined(Giac, :JULIA_CONFLICTS)
+        @test Giac.JULIA_CONFLICTS isa Set{String}
+        @test length(Giac.JULIA_CONFLICTS) >= 100
+    end
+
+    @testset "known conflicts are included" begin
+        # Keywords
+        @test "if" in Giac.JULIA_CONFLICTS
+        @test "for" in Giac.JULIA_CONFLICTS
+        @test "while" in Giac.JULIA_CONFLICTS
+        @test "end" in Giac.JULIA_CONFLICTS
+
+        # Base builtins
+        @test "eval" in Giac.JULIA_CONFLICTS
+        @test "float" in Giac.JULIA_CONFLICTS
+        @test "sum" in Giac.JULIA_CONFLICTS
+
+        # Base math
+        @test "sin" in Giac.JULIA_CONFLICTS
+        @test "cos" in Giac.JULIA_CONFLICTS
+        @test "exp" in Giac.JULIA_CONFLICTS
+        @test "log" in Giac.JULIA_CONFLICTS
+        @test "sqrt" in Giac.JULIA_CONFLICTS
+
+        # LinearAlgebra
+        @test "det" in Giac.JULIA_CONFLICTS
+        @test "inv" in Giac.JULIA_CONFLICTS
+        @test "trace" in Giac.JULIA_CONFLICTS
+        @test "rank" in Giac.JULIA_CONFLICTS
+    end
+
+    @testset "safe commands are NOT in conflicts" begin
+        @test "factor" ∉ Giac.JULIA_CONFLICTS
+        @test "expand" ∉ Giac.JULIA_CONFLICTS
+        @test "simplify" ∉ Giac.JULIA_CONFLICTS
+        @test "trigexpand" ∉ Giac.JULIA_CONFLICTS
+        @test "ifactor" ∉ Giac.JULIA_CONFLICTS
+    end
+end
+
+@testset "is_valid_command (008)" begin
+    if !Giac.is_stub_mode()
+        @testset "valid commands return true" begin
+            @test is_valid_command(:factor) == true
+            @test is_valid_command("integrate") == true
+            @test is_valid_command(:sin) == true
+            @test is_valid_command(:diff) == true
+        end
+
+        @testset "invalid commands return false" begin
+            @test is_valid_command(:notacommand) == false
+            @test is_valid_command("xyz123fake") == false
+            @test is_valid_command(:thisdoesnotexist) == false
+        end
+    else
+        @testset "stub mode returns false" begin
+            @test is_valid_command(:factor) == false
+            @test is_valid_command(:notacommand) == false
+        end
+    end
+end
+
+@testset "exportable_commands (008)" begin
+    if !Giac.is_stub_mode()
+        @testset "returns Vector{String}" begin
+            cmds = exportable_commands()
+            @test cmds isa Vector{String}
+        end
+
+        @testset "returns many commands" begin
+            cmds = exportable_commands()
+            @test length(cmds) >= 1500  # Should be ~2000+
+        end
+
+        @testset "results are sorted" begin
+            cmds = exportable_commands()
+            @test issorted(cmds)
+        end
+
+        @testset "includes safe commands" begin
+            cmds = exportable_commands()
+            @test "factor" in cmds
+            @test "expand" in cmds
+            @test "simplify" in cmds
+            @test "trigexpand" in cmds
+        end
+
+        @testset "excludes conflicting commands" begin
+            cmds = exportable_commands()
+            @test "eval" ∉ cmds
+            @test "sin" ∉ cmds
+            @test "cos" ∉ cmds
+            @test "det" ∉ cmds
+            @test "for" ∉ cmds
+        end
+
+        @testset "excludes operators" begin
+            cmds = exportable_commands()
+            @test "+" ∉ cmds
+            @test "-" ∉ cmds
+            @test "*" ∉ cmds
+            @test "/" ∉ cmds
+        end
+    else
+        @testset "stub mode returns empty" begin
+            cmds = exportable_commands()
+            @test isempty(cmds)
+        end
+    end
+end
+
+@testset "conflict_reason (008)" begin
+    @testset "keywords return :keyword" begin
+        @test conflict_reason(:if) == :keyword
+        @test conflict_reason(:for) == :keyword
+        @test conflict_reason(:while) == :keyword
+        @test conflict_reason("end") == :keyword
+        @test conflict_reason(:or) == :keyword
+        @test conflict_reason(:and) == :keyword
+    end
+
+    @testset "builtins return :builtin" begin
+        @test conflict_reason(:eval) == :builtin
+        @test conflict_reason("float") == :builtin
+        @test conflict_reason(:sum) == :builtin
+    end
+
+    @testset "math functions return :base_math" begin
+        @test conflict_reason(:sin) == :base_math
+        @test conflict_reason(:cos) == :base_math
+        @test conflict_reason(:exp) == :base_math
+        @test conflict_reason("log") == :base_math
+        @test conflict_reason(:sqrt) == :base_math
+    end
+
+    @testset "linear algebra return :linear_algebra" begin
+        @test conflict_reason(:det) == :linear_algebra
+        @test conflict_reason(:inv) == :linear_algebra
+        @test conflict_reason(:trace) == :linear_algebra
+        @test conflict_reason("rank") == :linear_algebra
+    end
+
+    @testset "non-conflicts return nothing" begin
+        @test conflict_reason(:factor) === nothing
+        @test conflict_reason("expand") === nothing
+        @test conflict_reason(:simplify) === nothing
+        @test conflict_reason(:trigexpand) === nothing
+    end
+end
+
+@testset "Conflict Warnings (008)" begin
+    @testset "_warn_conflict mechanism" begin
+        # Reset warnings for testing
+        Giac.reset_conflict_warnings!()
+
+        # Non-conflicts don't warn
+        @test Giac._warn_conflict("factor") == false
+
+        # First warning returns true
+        @test Giac._warn_conflict("eval") == true
+
+        # Second warning returns false (already warned)
+        @test Giac._warn_conflict("eval") == false
+
+        # Different conflict warns
+        @test Giac._warn_conflict("sin") == true
+
+        # Reset allows re-warning
+        Giac.reset_conflict_warnings!()
+        @test Giac._warn_conflict("eval") == true
+
+        # Clean up
+        Giac.reset_conflict_warnings!()
+    end
+end
+
+@testset "available_commands (008)" begin
+    if !Giac.is_stub_mode()
+        @testset "returns Vector{String}" begin
+            cmds = available_commands()
+            @test cmds isa Vector{String}
+        end
+
+        @testset "returns many commands" begin
+            cmds = available_commands()
+            @test length(cmds) >= 2000
+        end
+
+        @testset "all start with ASCII letter" begin
+            cmds = available_commands()
+            for cmd in cmds
+                @test !isempty(cmd)
+                @test isletter(first(cmd))
+                @test isascii(first(cmd))
+            end
+        end
+
+        @testset "includes both exportable and conflicting commands" begin
+            cmds = available_commands()
+            @test "factor" in cmds
+            @test "sin" in cmds  # In available but not exportable
+            @test "eval" in cmds  # In available but not exportable
+        end
+    else
+        @testset "stub mode returns empty" begin
+            cmds = available_commands()
+            @test isempty(cmds)
+        end
+    end
+end
