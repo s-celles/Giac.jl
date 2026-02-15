@@ -12,6 +12,7 @@ manipulation, and linear algebra with a Julia-native API.
 - `GiacMatrix`: Symbolic matrix type
 - `GiacError`: Exception type for GIAC errors
 - `giac_eval`: Evaluate expression strings
+- `@giac`: Create symbolic variables from Julia symbols
 - `to_julia`: Convert GiacExpr to Julia types
 - `invoke_cmd`: Universal command invocation (works for ALL commands)
 - `giac_diff`, `giac_integrate`, `giac_limit`, `giac_series`: Calculus
@@ -38,10 +39,18 @@ factor(giac_eval("x^2-1"))
 ifactor(giac_eval("120"))
 ```
 
-# Example
+# Quick Start
 ```julia
 using Giac
 
+# Declare symbolic variables with @giac macro
+@giac x y
+
+# Build and manipulate expressions
+expr = giac_eval("x^2 + 2*x*y + y^2")
+result = giac_factor(expr)   # (x+y)^2
+
+# Or use string-based evaluation directly
 result = giac_eval("factor(x^2 - 1)")
 println(result)  # (x-1)*(x+1)
 ```
@@ -63,6 +72,7 @@ include("commands.jl")
 include("namespace_commands.jl")
 include("api.jl")
 include("operators.jl")
+include("macros.jl")
 
 # Include Commands submodule (009-commands-submodule)
 include("Commands.jl")
@@ -75,6 +85,9 @@ export GiacExpr, GiacContext, GiacMatrix, GiacError, HelpResult
 
 # Core functions
 export giac_eval, to_julia, is_stub_mode, list_commands, help_count
+
+# Macros (011-giac-symbol-macro)
+export @giac
 
 # Command invocation (009-commands-submodule)
 # invoke_cmd replaces giac_cmd - available from main module and Giac.Commands

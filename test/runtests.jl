@@ -33,6 +33,9 @@ using LinearAlgebra
 
     # TempApi submodule tests (010-tempapi-submodule)
     include("test_tempapi.jl")
+
+    # Macro tests (011-giac-symbol-macro)
+    include("test_macros.jl")
 end
 
 # Aqua.jl package quality tests
