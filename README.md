@@ -206,12 +206,15 @@ For commands that conflict with Julia (like `sin`, `cos`, `eval`, `det`), use `i
 ```julia
 using Giac
 
+@giac_var k n
+
 # Conflicting commands must use invoke_cmd
 invoke_cmd(:eval, giac_eval("2+3"))      # 5
 invoke_cmd(:sin, giac_eval("pi/6"))      # 1/2
 invoke_cmd(:det, giac_eval("[[1,2],[3,4]]"))  # -2
 invoke_cmd(:det, giac_eval("[[a,b],[c,d]]"))  # a*d-b*c
-invoke_cmd(:sum, giac_eval("k"), giac_eval("k"), giac_eval("1"), giac_eval("10"))  # 55
+invoke_cmd(:sum, k, k, giac_eval("1"), n)  # 1/2*n^2+1/2*n
+invoke_cmd(:product, k, k, giac_eval("1"), n)  # n!
 
 # invoke_cmd works for ANY command
 invoke_cmd(:factor, giac_eval("x^2-1"))  # (x-1)*(x+1)
