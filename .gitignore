@@ -2,7 +2,7 @@
 *
 
 # Allow specific files and directories
-!gitignore
+#!gitignore
 
 !README.md
 !LICENSE
