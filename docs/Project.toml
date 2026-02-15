@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Giac = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
+
+[compat]
+Documenter = "1"

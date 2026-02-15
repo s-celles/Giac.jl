@@ -31,7 +31,7 @@ result = giac_cmd(:factor, expr)
 ```
 
 # See also
-- [`giac_cmd`](@ref): Direct command invocation
+- [`invoke_cmd`](@ref): Direct command invocation
 """
 struct GiacCommand
     name::Symbol

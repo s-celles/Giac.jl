@@ -1046,7 +1046,7 @@ suggest_commands(:factor)  # Exact match
 ```
 
 # See also
-- [`suggest_commands_with_distances`](@ref): Also returns edit distances
+- `suggest_commands_with_distances`: Also returns edit distances (internal function)
 - [`set_suggestion_count`](@ref): Configure default suggestion count
 """
 function suggest_commands(input::Union{Symbol, String}; n::Int=get_suggestion_count())::Vector{String}
