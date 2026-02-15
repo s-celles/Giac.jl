@@ -32,4 +32,33 @@
         # T022 [US1]: Test to_julia numeric conversion
         # These tests will be expanded when giac_eval is working
     end
+
+    @testset "LaTeX display (014-pluto-latex-notebook)" begin
+        # Test that MIME"text/latex" show method is defined for GiacExpr
+        @test hasmethod(Base.show, Tuple{IO, MIME"text/latex", GiacExpr})
+
+        # Test that MIME"text/latex" show method is defined for GiacMatrix
+        @test hasmethod(Base.show, Tuple{IO, MIME"text/latex", GiacMatrix})
+
+        if !is_stub_mode()
+            # Test actual LaTeX output for GiacExpr
+            expr = giac_eval("2/(1-x)")
+            io = IOBuffer()
+            show(io, MIME"text/latex"(), expr)
+            latex_output = String(take!(io))
+            @test startswith(latex_output, "\$\$")
+            @test endswith(latex_output, "\$\$")
+            @test length(latex_output) > 4  # More than just "$$$$"
+
+            # Test actual LaTeX output for GiacMatrix
+            M = GiacMatrix([1 2; 3 4])
+            io = IOBuffer()
+            show(io, MIME"text/latex"(), M)
+            latex_output = String(take!(io))
+            @test startswith(latex_output, "\$\$")
+            @test endswith(latex_output, "\$\$")
+        else
+            @test_broken false  # Skipping LaTeX output tests in stub mode
+        end
+    end
 end

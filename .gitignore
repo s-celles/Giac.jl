@@ -18,6 +18,10 @@
 !test/
 !test/*.jl
 
+!examples/
+!examples/*.jl
+!examples/*.png
+
 # Ignore compiled files and temporary files
 # Created by https://gitignore.org
 # Julia.gitignore

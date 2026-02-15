@@ -200,4 +200,69 @@ function help_count()
     return 0
 end
 
+# ============================================================================
+# LaTeX Display Support (014-pluto-latex-notebook)
+# ============================================================================
+
+"""
+    Base.show(io::IO, ::MIME"text/latex", expr::GiacExpr)
+
+Display a GiacExpr as LaTeX. Enables automatic LaTeX rendering in Pluto notebooks
+and other environments that support the `text/latex` MIME type.
+
+# Example
+In Pluto, simply evaluating a GiacExpr will render it as formatted mathematics:
+```julia
+using Giac
+f = giac_eval("2/(1-x)")  # Renders as LaTeX fraction in Pluto
+```
+"""
+function Base.show(io::IO, ::MIME"text/latex", expr::GiacExpr)
+    latex_result = invoke_cmd(:latex, expr)
+    latex_str = string(latex_result)
+    if length(latex_str) > 2
+        print(io, "\$\$", latex_str[2:end-1], "\$\$")  # Remove surrounding quotes from GIAC's LaTeX output
+    else
+        # Fallback to default display if LaTeX conversion fails
+        print(io, string(expr))
+    end
+end
+
+"""
+    Base.show(io::IO, ::MIME"text/latex", m::GiacMatrix)
+
+Display a GiacMatrix as LaTeX. Enables automatic LaTeX rendering in Pluto notebooks
+and other environments that support the `text/latex` MIME type.
+
+# Example
+In Pluto, simply evaluating a GiacMatrix will render it as a formatted matrix:
+```julia
+using Giac
+M = GiacMatrix([1 2; 3 4])  # Renders as LaTeX matrix in Pluto
+```
+"""
+function Base.show(io::IO, ::MIME"text/latex", m::GiacMatrix)
+    # Build matrix string in GIAC format: [[a,b],[c,d]]
+    rows_str = String[]
+    for i in 1:m.rows
+        row_elements = String[]
+        for j in 1:m.cols
+            push!(row_elements, string(m[i, j]))
+        end
+        push!(rows_str, "[" * join(row_elements, ",") * "]")
+    end
+    matrix_str = "[" * join(rows_str, ",") * "]"
+
+    # Call latex command on the matrix string
+    matrix_expr = giac_eval(matrix_str)
+    latex_result = invoke_cmd(:latex, matrix_expr)
+    latex_str = string(latex_result)
+    if length(latex_str) > 2
+        print(io, "\$\$", latex_str[2:end-1], "\$\$")  # Remove surrounding quotes from GIAC's LaTeX output
+    else
+        # Fallback to default display if LaTeX conversion fails
+        print(io, string(m))
+    end
+end
+
 end # module Giac

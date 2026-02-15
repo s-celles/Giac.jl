@@ -109,6 +109,32 @@ to_julia(giac_eval("42"))    # 42::Int64
 to_julia(giac_eval("3/4"))   # 3//4::Rational{Int64}
 ```
 
+## LaTeX Rendering in Pluto
+
+GiacExpr and GiacMatrix automatically render as LaTeX in Pluto notebooks! No extra conversion needed:
+
+```julia
+using Giac
+
+f = giac_eval("2/(1-x)")  # Automatically displays as LaTeX fraction
+df = giac_diff(f, giac_eval("x"))  # Derivative also renders as LaTeX
+
+M = GiacMatrix([1 2; 3 4])  # Matrices render as LaTeX too
+```
+
+This works because Giac.jl implements `Base.show(io, ::MIME"text/latex", expr)` which calls GIAC's native `latex` command.
+
+A demo notebook is available at `examples/latex_demo.jl`:
+
+```julia
+using Pluto
+Pluto.run(notebook="examples/latex_demo.jl")
+```
+
+See screenshot:
+
+![screencapture-pluto-notebook](examples/screencapture-pluto-notebook-latex_demo.png)
+
 ## Batch Variable Creation
 
 Create multiple indexed symbolic variables with `@giac_several_var`:
