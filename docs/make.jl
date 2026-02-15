@@ -13,11 +13,20 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Installation" => "install.md",
+        "Quick Start" => "quickstart.md",
+        "Variable Declaration" => "variables.md",
+        "Using with Pluto reactive notebooks" => "pluto.md",
+        "Command discovery and help" => "command_discovery_help.md",
+        "Linear Algebra" => "linear_algebra.md",
         "API Reference" => [
             "Core API" => "api/core.md",
-            "Commands" => "api/commands.md",
+            "GIAC Commands" => "api/giac_commands.md",
+            "Commands submodule" => "api/commands_submodule.md",
             "TempApi" => "api/tempapi.md",
         ],
+        "Extensions" => [
+             "Symbolics.jl" => "extensions/symbolics.md",
+        ]
     ],
     checkdocs = :exports,
     warnonly = false,  # Strict mode - fail on any warning

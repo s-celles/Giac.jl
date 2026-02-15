@@ -4,12 +4,20 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 
 ## Features
 
-- **Symbolic Computation**: Full access to GIAC's powerful symbolic computation engine
+- **Dynamic Command Invocation**: Access all 2200+ GIAC commands via `invoke_cmd(:cmd, args...)`
+- **Expression Evaluation**: Parse and evaluate mathematical expressions
+- **Arithmetic Operations**: +, -, *, /, ^, unary negation, equality
 - **Calculus**: Differentiation, integration, limits, and series expansion
-- **Algebra**: Factorization, expansion, simplification, and equation solving
-- **Linear Algebra**: Symbolic matrices with determinant, inverse, trace operations
-- **2200+ Commands**: Access to all GIAC commands through a unified API
+- **Algebra**: Factorization, expansion, simplification, equation solving and GCD
+- **Linear Algebra**: Symbolic matrices with determinant, inverse, trace, transpose operations
+- **Command Discovery**: Search commands, browse by category, built-in `help(:cmd)`
+- **Commands Submodule**: All ~2000+ commands available via `Giac.Commands` for clean namespace
+- **TempApi Submodule**: Simplified function names (`diff`, `factor`, etc.) via `Giac.TempApi`
+- **Method Syntax**: Call commands as methods: `expr.factor()`, `expr.diff(x)`
+- **Base Extensions**: Use `sin(expr)`, `cos(expr)`, `exp(expr)` with GiacExpr
+- **Type Conversion**: Convert results to Julia native types (Int64, Float64, Rational)
 - **LaTeX Support**: Automatic LaTeX rendering in Pluto notebooks
+- **Symbolics.jl Integration**: Bidirectional conversion with Symbolics.jl
 
 ## Installation
 
@@ -85,3 +93,9 @@ ifactor(giac_eval("120"))  # All ~2000+ commands available
 ```@contents
 Pages = ["install.md", "api/core.md", "api/commands.md", "api/tempapi.md"]
 ```
+
+## Related Projects
+
+- [GIAC](https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac.html) - The underlying computer algebra system
+- [libgiac-julia-wrapper](https://github.com/s-celles/libgiac-julia-wrapper) - CxxWrap bindings for GIAC
+- [CxxWrap.jl](https://github.com/JuliaInterop/CxxWrap.jl) - C++ wrapper generator for Julia

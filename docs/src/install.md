@@ -1,6 +1,17 @@
 # Installation
+## User mode installation (not yet available)
 
-## Option 1: Stub Mode (No C++ Dependencies)
+This command will install Giac.jl (when both GIAC_jll and libgiac-julia-wrapper will be published)
+
+```julia
+using Pkg
+Pkg.add("Giac")  # when registered in Julia General Registry
+Pkg.add(url="https://github.com/s-celles/Giac.jl")  # until unregister
+```
+
+## Developer mode installation
+
+### Option 1: Stub Mode (No C++ Dependencies)
 
 For development or testing without the full GIAC library:
 
@@ -11,7 +22,7 @@ Pkg.add(url="https://github.com/s-celles/Giac.jl")
 
 In stub mode, basic operations work but return placeholder values.
 
-## Option 2: Full Integration (With GIAC 2.0.0)
+### Option 2: Full Integration (With GIAC 2.0.0)
 
 ### Prerequisites
 
@@ -20,7 +31,7 @@ In stub mode, basic operations work but return placeholder values.
 - CMake 3.15+
 - GIAC 2.0.0 source
 
-### Step 1: Build GIAC 2.0.0
+#### Step 1: Build GIAC 2.0.0
 
 ```bash
 # Download GIAC
@@ -33,7 +44,7 @@ cd giac-2.0.0
 make -j$(nproc)
 ```
 
-### Step 2: Build libgiac-julia-wrapper
+#### Step 2: Build libgiac-julia-wrapper
 
 ```bash
 git clone https://github.com/s-celles/libgiac-julia-wrapper
@@ -43,14 +54,14 @@ cmake .. -DGIAC_ROOT=/path/to/giac-2.0.0
 make -j$(nproc)
 ```
 
-### Step 3: Set Environment
+#### Step 3: Set Environment
 
 ```bash
 export GIAC_WRAPPER_LIB=/path/to/libgiac-julia-wrapper/build/src/libgiac_wrapper.so
 export LD_LIBRARY_PATH=/path/to/giac-2.0.0/src/.libs:$LD_LIBRARY_PATH
 ```
 
-## Verifying Installation
+### Verifying Installation
 
 ```julia
 using Giac
