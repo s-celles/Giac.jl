@@ -67,6 +67,9 @@ include("operators.jl")
 # Include Commands submodule (009-commands-submodule)
 include("Commands.jl")
 
+# Include TempApi submodule (010-tempapi-submodule)
+include("TempApi.jl")
+
 # Types
 export GiacExpr, GiacContext, GiacMatrix, GiacError, HelpResult
 

@@ -8,6 +8,7 @@ A Julia wrapper for the [GIAC](https://www-fourier.univ-grenoble-alpes.fr/~paris
 
 - **Dynamic Command Invocation**: Access all 2200+ GIAC commands via `invoke_cmd(:cmd, args...)`
 - **Commands Submodule**: All ~2000+ commands available via `Giac.Commands` for clean namespace
+- **TempApi Submodule**: Simplified function names (`diff`, `factor`, etc.) via `Giac.TempApi`
 - **Method Syntax**: Call commands as methods: `expr.factor()`, `expr.diff(x)`
 - **Expression Evaluation**: Parse and evaluate mathematical expressions
 - **Arithmetic Operations**: +, -, *, /, ^, unary negation, equality
@@ -213,6 +214,60 @@ invoke_cmd(:sum, giac_eval("k"), giac_eval("k"), giac_eval("1"), giac_eval("10")
 # invoke_cmd works for ANY command
 invoke_cmd(:factor, giac_eval("x^2-1"))  # (x-1)*(x+1)
 ```
+
+## TempApi Submodule
+
+The `Giac.TempApi` submodule provides convenience functions with simplified names for the most common symbolic computation operations. These are wrappers around the `giac_*` functions.
+
+### Available Functions
+
+| TempApi Function | Delegates To | Description |
+|-----------------|--------------|-------------|
+| `diff(expr, var, n=1)` | `giac_diff` | Differentiate expression |
+| `integrate(expr, var)` | `giac_integrate` | Indefinite integral |
+| `integrate(expr, var, a, b)` | `giac_integrate` | Definite integral |
+| `limit(expr, var, point)` | `giac_limit` | Compute limit |
+| `factor(expr)` | `giac_factor` | Factor polynomial |
+| `expand(expr)` | `giac_expand` | Expand expression |
+| `simplify(expr)` | `giac_simplify` | Simplify expression |
+| `solve(expr, var)` | `giac_solve` | Solve equation |
+
+### Usage Patterns
+
+```julia
+using Giac
+
+# 1. Full import (interactive use)
+using Giac.TempApi
+
+x = giac_eval("x")
+expr = giac_eval("x^2 - 1")
+
+diff(expr, x)           # 2*x
+factor(expr)            # (x-1)*(x+1)
+integrate(expr, x)      # x^3/3-x
+limit(giac_eval("sin(x)/x"), x, giac_eval("0"))  # 1
+
+# 2. Selective import (recommended)
+using Giac.TempApi: diff, factor
+
+diff(expr, x)    # Works
+factor(expr)     # Works
+
+# 3. Qualified access
+Giac.TempApi.diff(expr, x)
+Giac.TempApi.factor(expr)
+```
+
+### Comparison: TempApi vs giac_* vs Commands
+
+| Pattern | Import | Usage | Best For |
+|---------|--------|-------|----------|
+| TempApi | `using Giac.TempApi` | `diff(expr, x)` | Clean, simple names for common operations |
+| giac_* | `using Giac` | `giac_diff(expr, x)` | Main module, explicit prefixes |
+| Commands | `using Giac.Commands` | `diff(expr, x)` | Access to ALL 2200+ GIAC commands |
+
+**Note**: Both TempApi and Commands export `diff`, `factor`, etc. Use selective imports to avoid conflicts, or choose one submodule based on your needs.
 
 ### Commands That Conflict with Julia
 
