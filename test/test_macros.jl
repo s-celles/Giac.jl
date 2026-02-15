@@ -1,48 +1,48 @@
-# Tests for @giac macro (011-giac-symbol-macro)
+# Tests for @giac_var macro (011-giac-symbol-macro)
 
 @testset "Macros" begin
     @testset "Single Variable Declaration (US1)" begin
-        # T006: @giac x creates GiacExpr
+        # T006: @giac_var x creates GiacExpr
         @testset "creates GiacExpr" begin
-            @giac x
+            @giac_var x
             @test x isa GiacExpr
         end
 
-        # T007: string(x) == "x" after @giac x
+        # T007: string(x) == "x" after @giac_var x
         @testset "string representation matches symbol" begin
-            @giac y
+            @giac_var y
             @test string(y) == "y"
         end
 
-        # T008: x isa GiacExpr after @giac x
+        # T008: x isa GiacExpr after @giac_var x
         @testset "type is GiacExpr" begin
-            @giac z
+            @giac_var z
             @test z isa GiacExpr
             @test typeof(z) == GiacExpr
         end
     end
 
     @testset "Multiple Variable Declaration (US2)" begin
-        # T013: @giac x y z creates three GiacExpr
+        # T013: @giac_var x y z creates three GiacExpr
         @testset "creates multiple GiacExpr" begin
-            @giac x y z
+            @giac_var x y z
             @test x isa GiacExpr
             @test y isa GiacExpr
             @test z isa GiacExpr
         end
 
-        # T014: tuple return: x, y = @giac x y
+        # T014: tuple return: x, y = @giac_var x y
         @testset "tuple return for destructuring" begin
-            a, b = @giac a b
+            a, b = @giac_var a b
             @test a isa GiacExpr
             @test b isa GiacExpr
             @test string(a) == "a"
             @test string(b) == "b"
         end
 
-        # T015: string values after @giac a b c
+        # T015: string values after @giac_var a b c
         @testset "string representation for multiple" begin
-            @giac p q r
+            @giac_var p q r
             @test string(p) == "p"
             @test string(q) == "q"
             @test string(r) == "r"
@@ -50,9 +50,9 @@
     end
 
     @testset "Expression Interoperability (US3)" begin
-        # T021: @giac variable with giac_diff
+        # T021: @giac_var variable with giac_diff
         @testset "with giac_diff" begin
-            @giac x
+            @giac_var x
             expr = giac_eval("x^2")
             if !is_stub_mode()
                 result = giac_diff(expr, x)
@@ -64,9 +64,9 @@
             end
         end
 
-        # T022: @giac variable + giac_eval arithmetic
+        # T022: @giac_var variable + giac_eval arithmetic
         @testset "with giac_eval arithmetic" begin
-            @giac x
+            @giac_var x
             one = giac_eval("1")
             if !is_stub_mode()
                 result = x + one
@@ -79,9 +79,9 @@
             end
         end
 
-        # T023: @giac variable + manual giac_eval variable interop
+        # T023: @giac_var variable + manual giac_eval variable interop
         @testset "with manual giac_eval variable" begin
-            @giac x
+            @giac_var x
             y = giac_eval("y")
             if !is_stub_mode()
                 result = x + y
@@ -98,17 +98,17 @@
     @testset "Edge Cases" begin
         # T026: no-argument error
         @testset "no arguments throws ArgumentError" begin
-            @test_throws ArgumentError @macroexpand @giac
+            @test_throws ArgumentError @macroexpand @giac_var
         end
 
         # T027: string argument error
         @testset "string argument throws ArgumentError" begin
-            @test_throws ArgumentError @macroexpand @giac "x"
+            @test_throws ArgumentError @macroexpand @giac_var "x"
         end
 
         # T028: numeric argument error
         @testset "numeric argument throws ArgumentError" begin
-            @test_throws ArgumentError @macroexpand @giac 1
+            @test_throws ArgumentError @macroexpand @giac_var 1
         end
     end
 end

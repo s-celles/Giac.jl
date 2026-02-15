@@ -85,8 +85,8 @@ result = giac_eval("2 + 3")        # 5
 factored = giac_eval("factor(x^2 - 1)")  # (x-1)*(x+1)
 
 # Arithmetic
-@giac x
-@giac y
+@giac_var x
+@giac_var y
 println(x + y)   # x+y
 println(x * y)   # x*y
 println(x ^ 2)   # x^2
@@ -116,7 +116,7 @@ Call any of GIAC's 2200+ commands dynamically:
 ```julia
 using Giac
 
-@giac x
+@giac_var x
 expr = giac_eval("x^2 - 1")
 
 # Function syntax with invoke_cmd (works for ALL commands)
@@ -132,7 +132,7 @@ deriv = expr.diff(x)                       # 2*x
 result = giac_eval("(x+1)^3").expand().simplify()
 
 # Natural Julia syntax with Base extensions
-@giac y
+@giac_var y
 sin(y)         # sin(y)
 cos(y)         # cos(y)
 exp(y)         # exp(y)
@@ -152,7 +152,7 @@ Access commands via `Giac.Commands.commandname`:
 ```julia
 using Giac
 
-@giac x
+@giac_var x
 expr = giac_eval("x^2 - 1")
 
 # Access commands via Giac.Commands
@@ -171,7 +171,7 @@ Import specific commands you need:
 using Giac
 using Giac.Commands: factor, expand, diff, integrate
 
-@giac x
+@giac_var x
 expr = giac_eval("x^2 - 1")
 
 # Direct function syntax (no prefix needed)
@@ -189,7 +189,7 @@ Import all ~2000+ commands for interactive exploration:
 using Giac
 using Giac.Commands  # Imports ALL exportable commands
 
-@giac x
+@giac_var x
 factor(giac_eval("x^2 - 1"))    # (x-1)*(x+1)
 ifactor(giac_eval("120"))       # 2^3*3*5
 nextprime(giac_eval("100"))     # 101
@@ -223,7 +223,7 @@ The `Giac.TempApi` submodule provides convenience functions with simplified name
 ```julia
 using Giac.TempApi: diff, expand, factor, integrate, limit, simplify, solve
 #Overlapping with Julia: eval, include, 
-@giac x a b
+@giac_var x a b
 diff(x^2, x)  # 2*x
 expand((a+b)^2)  # a^2+b^2+2*a*b
 factor(x^2-1)  # (x-1)*(x+1)
@@ -258,7 +258,7 @@ using Giac
 # 1. Full import (interactive use)
 using Giac.TempApi
 
-@giac x
+@giac_var x
 expr = giac_eval("x^2 - 1")
 
 diff(expr, x)           # 2*x
