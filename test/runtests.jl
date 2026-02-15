@@ -36,6 +36,9 @@ using LinearAlgebra
 
     # Macro tests (011-giac-symbol-macro)
     include("test_macros.jl")
+
+    # Matrix display tests (011-giacmatrix-display)
+    include("test_matrix_display.jl")
 end
 
 # Aqua.jl package quality tests

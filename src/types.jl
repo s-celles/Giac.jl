@@ -263,3 +263,154 @@ end
 function Base.show(io::IO, m::GiacMatrix)
     print(io, "GiacMatrix($(m.rows)×$(m.cols))")
 end
+
+# ============================================================================
+# GiacMatrix Display Improvement (011-giacmatrix-display)
+# ============================================================================
+
+# Display constants
+const MAX_DISPLAY_ROWS = 10
+const MAX_DISPLAY_COLS = 10
+const MAX_ELEMENT_WIDTH = 20
+
+"""
+    _element_string(m::GiacMatrix, i::Int, j::Int)
+
+Get string representation of matrix element at position (i, j).
+Truncates long expressions with "…" if they exceed MAX_ELEMENT_WIDTH.
+"""
+function _element_string(m::GiacMatrix, i::Int, j::Int)
+    elem = m[i, j]
+    s = string(elem)
+    if length(s) > MAX_ELEMENT_WIDTH
+        return s[1:MAX_ELEMENT_WIDTH-1] * "…"
+    end
+    return s
+end
+
+"""
+    _should_truncate_rows(m::GiacMatrix)
+
+Check if matrix has more rows than can be displayed.
+"""
+function _should_truncate_rows(m::GiacMatrix)
+    return m.rows > MAX_DISPLAY_ROWS
+end
+
+"""
+    _should_truncate_cols(m::GiacMatrix)
+
+Check if matrix has more columns than can be displayed.
+"""
+function _should_truncate_cols(m::GiacMatrix)
+    return m.cols > MAX_DISPLAY_COLS
+end
+
+"""
+    _display_row_indices(m::GiacMatrix)
+
+Return the row indices to display. For large matrices, returns
+first 5 rows, a marker (-1) for ellipsis, and last 2 rows.
+"""
+function _display_row_indices(m::GiacMatrix)
+    if _should_truncate_rows(m)
+        return [1:5; -1; (m.rows-1):m.rows]
+    end
+    return collect(1:m.rows)
+end
+
+"""
+    _display_col_indices(m::GiacMatrix)
+
+Return the column indices to display. For large matrices, returns
+first 5 columns, a marker (-1) for ellipsis, and last 2 columns.
+"""
+function _display_col_indices(m::GiacMatrix)
+    if _should_truncate_cols(m)
+        return [1:5; -1; (m.cols-1):m.cols]
+    end
+    return collect(1:m.cols)
+end
+
+"""
+    _compute_column_widths(m::GiacMatrix, row_indices, col_indices)
+
+Compute the display width needed for each column.
+"""
+function _compute_column_widths(m::GiacMatrix, row_indices, col_indices)
+    widths = zeros(Int, length(col_indices))
+    for (cj, j) in enumerate(col_indices)
+        if j == -1
+            widths[cj] = 1  # Width for "⋯"
+            continue
+        end
+        for i in row_indices
+            if i == -1
+                continue
+            end
+            elem_str = _element_string(m, i, j)
+            widths[cj] = max(widths[cj], length(elem_str))
+        end
+    end
+    return widths
+end
+
+"""
+    Base.string(m::GiacMatrix)
+
+Return compact string representation of GiacMatrix.
+"""
+function Base.string(m::GiacMatrix)
+    return "GiacMatrix($(m.rows)×$(m.cols))"
+end
+
+"""
+    Base.show(io::IO, ::MIME"text/plain", m::GiacMatrix)
+
+Display GiacMatrix with dimensions header and grid of contents.
+Large matrices are truncated with ellipsis indicators.
+"""
+function Base.show(io::IO, ::MIME"text/plain", m::GiacMatrix)
+    # Print header
+    println(io, "$(m.rows)×$(m.cols) GiacMatrix:")
+
+    # Get indices to display
+    row_indices = _display_row_indices(m)
+    col_indices = _display_col_indices(m)
+
+    # Compute column widths for alignment
+    widths = _compute_column_widths(m, row_indices, col_indices)
+
+    # Print matrix contents
+    for (ri, i) in enumerate(row_indices)
+        if i == -1
+            # Print row ellipsis line
+            for (cj, j) in enumerate(col_indices)
+                if cj > 1
+                    print(io, "  ")
+                end
+                if j == -1
+                    print(io, lpad("⋱", widths[cj]))
+                else
+                    print(io, lpad("⋮", widths[cj]))
+                end
+            end
+        else
+            # Print actual row content
+            for (cj, j) in enumerate(col_indices)
+                if cj > 1
+                    print(io, "  ")
+                end
+                if j == -1
+                    print(io, lpad("⋯", widths[cj]))
+                else
+                    elem_str = _element_string(m, i, j)
+                    print(io, lpad(elem_str, widths[cj]))
+                end
+            end
+        end
+        if ri < length(row_indices)
+            println(io)
+        end
+    end
+end

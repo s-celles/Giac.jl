@@ -421,6 +421,7 @@ The suggestion system uses Levenshtein edit distance with an adaptive threshold 
 
 ```julia
 using Giac, LinearAlgebra
+@giac_var a b c d
 
 A = GiacMatrix([1 2; 3 4])
 det(A)        # -2
@@ -429,8 +430,8 @@ inv(A)        # inverse matrix
 transpose(A)  # transposed matrix
 
 # Symbolic matrix
-B = GiacMatrix([[giac_eval("a"), giac_eval("b")],
-                [giac_eval("c"), giac_eval("d")]])
+B = GiacMatrix([[a, b],
+                [c, d]])
 det(B)  # a*d-b*c
 ```
 
