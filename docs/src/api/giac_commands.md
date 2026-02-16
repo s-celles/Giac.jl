@@ -8,7 +8,7 @@ Call any of GIAC's 2200+ commands dynamically:
 using Giac
 
 @giac_var x
-expr = giac_eval("x^2 - 1")
+expr = x^2 - 1
 
 # Function syntax with invoke_cmd (works for ALL commands)
 result = invoke_cmd(:factor, expr)           # (x-1)*(x+1)
@@ -20,7 +20,12 @@ result = expr.factor()                     # (x-1)*(x+1)
 deriv = expr.diff(x)                       # 2*x
 
 # Chaining methods
-result = giac_eval("(x+1)^3").expand().simplify()
+@giac_var a b
+result = ((a+b)^2).expand()
+result = ((a+b)^2).expand().factor()
+# or using |> operator
+(a+b)^2 |> expand
+(a+b)^2 |> expand |> factor
 
 # Natural Julia syntax with Base extensions
 @giac_var y
@@ -36,7 +41,7 @@ sin(y) + cos(y)  # sin(y)+cos(y)
 
 Giac.jl provides **three ways** to access GIAC's 2200+ commands via the `Giac.Commands` submodule:
 
-### 1. Qualified Access (Cleanest Namespace - ToDo - not yet implemented)
+### 1. Qualified Access
 
 Access commands via `Giac.Commands.commandname`:
 
@@ -54,7 +59,7 @@ Giac.Commands.integrate(expr, x)    # x^3/3-x
 Giac.Commands.ifactor(giac_eval("120"))  # 2^3*3*5
 ```
 
-### 2. Selective Import (Recommended - ToDo - not yet implemented)
+### 2. Selective Import
 
 Import specific commands you need:
 
@@ -154,12 +159,14 @@ using Giac
 using Giac.TempApi: diff, factor, integrate, limit
 
 @giac_var x
-expr = giac_eval("x^2 - 1")
+expr = x^2 - 1
 
 diff(expr, x)           # 2*x
 factor(expr)            # (x-1)*(x+1)
 integrate(expr, x)      # x^3/3-x
-limit(giac_eval("sin(x)/x"), x, giac_eval("0"))  # 1
+limit(sin(x)/x, x, 0)  # 1
+limit(1/x, x, 0, 1)  # limit of 1/x at 0+ should be +infinity
+limit(1/x, x, 0, -1)  # limit of 1/x at 0- should be -infinity
 
 # 2. Qualified access
 Giac.TempApi.diff(expr, x)
