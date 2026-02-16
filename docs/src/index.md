@@ -28,28 +28,6 @@ Pkg.add("Giac")  # when registered to Julia General Registry
 
 For full GIAC integration with C++ library, see the [Installation Guide](install.md).
 
-## Quick Start
-
-```julia
-using Giac
-using Giac.Commands: factor, diff, integrate
-
-# Create symbolic variables
-@giac_var x y
-
-# Evaluate expressions
-expr = giac_eval("x^2 + 2*x*y + y^2")
-
-# Factor polynomials
-result = factor(expr)  # Returns (x+y)^2
-
-# Differentiate
-derivative = diff(result, x)  # Returns 2*(x+y)
-
-# Integrate
-integral = integrate(giac_eval("x^2"), x)  # Returns x^3/3
-```
-
 ## Command Access
 
 GIAC commands are available through multiple access patterns:
