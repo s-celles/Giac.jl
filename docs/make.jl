@@ -26,7 +26,15 @@ makedocs(
         ],
         "Extensions" => [
              "Symbolics.jl" => "extensions/symbolics.md",
-        ]
+        ],
+        "Developer Guide" => [
+            "Overview" => "developer/index.md",
+            "Package Architecture" => "developer/architecture.md",
+            "Performance Tiers" => "developer/tier-system.md",
+            "Adding Functions" => "developer/contributing.md",
+            "Memory Management" => "developer/memory.md",
+            "Troubleshooting" => "developer/troubleshooting.md",
+        ],
     ],
     checkdocs = :exports,
     warnonly = false,  # Strict mode - fail on any warning
