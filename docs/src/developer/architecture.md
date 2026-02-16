@@ -46,7 +46,7 @@ graph TB
 | `command_registry.jl` | Command discovery | `VALID_COMMANDS`, `suggest_commands` | None |
 | `namespace_commands.jl` | Namespace-specific commands | Namespace command helpers | command_registry.jl |
 | `operators.jl` | Arithmetic operators | `+`, `-`, `*`, `/`, `^` for GiacExpr | types.jl |
-| `macros.jl` | User convenience macros | `@giac_var`, `@giac_several_var` | api.jl |
+| `macros.jl` | User convenience macros | `@giac_var`, `@giac_several_vars` | api.jl |
 | `utils.jl` | Helper utilities | Internal utilities | None |
 | `TempApi.jl` | Temporary API submodule | TempApi functions | api.jl |
 

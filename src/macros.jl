@@ -2,7 +2,7 @@
 # Feature: 011-giac-symbol-macro
 # Feature: 012-giac-several-var
 
-# Helper functions for @giac_several_var
+# Helper functions for @giac_several_vars
 
 """
     _needs_separator(dims) -> Bool
@@ -91,7 +91,7 @@ macro giac_var(syms...)
 end
 
 """
-    @giac_several_var base dims...
+    @giac_several_vars base dims...
 
 Create multiple indexed symbolic variables for N-dimensional tensors.
 
@@ -114,18 +114,18 @@ of dimensions and returns a tuple of all created variables.
 
 1D vector:
 ```julia
-@giac_several_var a 3
+@giac_several_vars a 3
 # Creates: a1, a2, a3 and returns (a1, a2, a3)
 a1 + a2 + a3  # Symbolic sum
 
 # Capture return value
-vars = @giac_several_var c 4
+vars = @giac_several_vars c 4
 length(vars)  # 4
 ```
 
 2D matrix:
 ```julia
-result = @giac_several_var m 2 3
+result = @giac_several_vars m 2 3
 # Creates: m11, m12, m13, m21, m22, m23
 # Returns: (m11, m12, m13, m21, m22, m23)
 length(result)  # 6
@@ -133,35 +133,35 @@ length(result)  # 6
 
 3D tensor:
 ```julia
-@giac_several_var t 2 2 2
+@giac_several_vars t 2 2 2
 # Creates: t111, t112, t121, t122, t211, t212, t221, t222
 # Returns tuple of 8 variables
 ```
 
 Large dimensions (separator used):
 ```julia
-@giac_several_var b 2 10 3
+@giac_several_vars b 2 10 3
 # Creates: b_1_1_1, b_1_1_2, ..., b_2_10_3
 ```
 
 Unicode base names:
 ```julia
-@giac_several_var α 2
+@giac_several_vars α 2
 # Creates: α1, α2
 ```
 
 Edge cases:
 ```julia
-@giac_several_var x 0     # Returns empty tuple ()
-@giac_several_var y 1     # Creates y1, returns (y1,)
-@giac_several_var z 2 0   # Returns empty tuple (0 in any dim)
+@giac_several_vars x 0     # Returns empty tuple ()
+@giac_several_vars y 1     # Creates y1, returns (y1,)
+@giac_several_vars z 2 0   # Returns empty tuple (0 in any dim)
 ```
 
 # See also
 - [`@giac_var`](@ref): For creating single symbolic variables
 - [`giac_eval`](@ref): For evaluating string expressions
 """
-macro giac_several_var(base, dims...)
+macro giac_several_vars(base, dims...)
     # Validate base name is a symbol
     if !(base isa Symbol)
         throw(ArgumentError("First argument must be a symbol (base name), got $(typeof(base)): $base"))

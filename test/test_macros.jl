@@ -1,5 +1,5 @@
 # Tests for @giac_var macro (011-giac-symbol-macro)
-# Tests for @giac_several_var macro (012-giac-several-var)
+# Tests for @giac_several_vars macro (012-giac-several-var)
 
 @testset "Macros" begin
     @testset "Single Variable Declaration (US1)" begin
@@ -113,11 +113,11 @@
         end
     end
 
-    # Tests for @giac_several_var (012-giac-several-var)
-    @testset "@giac_several_var: US1 - 1D Variable Vector" begin
+    # Tests for @giac_several_vars (012-giac-several-var)
+    @testset "@giac_several_vars: US1 - 1D Variable Vector" begin
         # T004: Basic 1D variable creation
-        @testset "basic 1D creation @giac_several_var a 3" begin
-            result = @giac_several_var a 3
+        @testset "basic 1D creation @giac_several_vars a 3" begin
+            result = @giac_several_vars a 3
             @test a1 isa GiacExpr
             @test a2 isa GiacExpr
             @test a3 isa GiacExpr
@@ -135,7 +135,7 @@
 
         # T005: 1D variables usable in expressions
         @testset "1D variables usable in expressions" begin
-            @giac_several_var b 3
+            @giac_several_vars b 3
             @test b1 isa GiacExpr
             @test b2 isa GiacExpr
             @test b3 isa GiacExpr
@@ -147,16 +147,16 @@
         end
 
         # T006: Edge case - single variable
-        @testset "edge case @giac_several_var c 1" begin
-            @giac_several_var c 1
+        @testset "edge case @giac_several_vars c 1" begin
+            @giac_several_vars c 1
             @test c1 isa GiacExpr
             @test string(c1) == "c1"
         end
 
         # T007: Edge case - zero variables
-        @testset "edge case @giac_several_var d 0" begin
+        @testset "edge case @giac_several_vars d 0" begin
             # Should create no variables, return empty tuple
-            result = @giac_several_var d 0
+            result = @giac_several_vars d 0
             @test !@isdefined(d0)
             @test !@isdefined(d1)
             @test result == ()
@@ -165,10 +165,10 @@
         end
     end
 
-    @testset "@giac_several_var: US2 - 2D Variable Matrix" begin
+    @testset "@giac_several_vars: US2 - 2D Variable Matrix" begin
         # T010: Basic 2D variable creation
-        @testset "basic 2D creation @giac_several_var m 2 3" begin
-            result = @giac_several_var m 2 3
+        @testset "basic 2D creation @giac_several_vars m 2 3" begin
+            result = @giac_several_vars m 2 3
             @test m11 isa GiacExpr
             @test m12 isa GiacExpr
             @test m13 isa GiacExpr
@@ -187,7 +187,7 @@
 
         # T011: 2D variables usable in matrix expressions
         @testset "2D variables usable in expressions" begin
-            @giac_several_var n 2 2
+            @giac_several_vars n 2 2
             @test n11 isa GiacExpr
             @test n22 isa GiacExpr
             if !is_stub_mode()
@@ -198,8 +198,8 @@
         end
 
         # T012: Square matrix
-        @testset "square matrix @giac_several_var s 3 3" begin
-            @giac_several_var s 3 3
+        @testset "square matrix @giac_several_vars s 3 3" begin
+            @giac_several_vars s 3 3
             @test s11 isa GiacExpr
             @test s22 isa GiacExpr
             @test s33 isa GiacExpr
@@ -208,10 +208,10 @@
         end
     end
 
-    @testset "@giac_several_var: US3 - N-Dimensional Variables" begin
+    @testset "@giac_several_vars: US3 - N-Dimensional Variables" begin
         # T015: 3D variable creation
-        @testset "3D creation @giac_several_var t 2 2 2" begin
-            result = @giac_several_var t 2 2 2
+        @testset "3D creation @giac_several_vars t 2 2 2" begin
+            result = @giac_several_vars t 2 2 2
             @test t111 isa GiacExpr
             @test t112 isa GiacExpr
             @test t121 isa GiacExpr
@@ -231,8 +231,8 @@
         end
 
         # T016: 4D variable creation
-        @testset "4D creation @giac_several_var x 2 2 2 2" begin
-            @giac_several_var x 2 2 2 2
+        @testset "4D creation @giac_several_vars x 2 2 2 2" begin
+            @giac_several_vars x 2 2 2 2
             @test x1111 isa GiacExpr
             @test x2222 isa GiacExpr
             @test string(x1111) == "x1111"
@@ -241,7 +241,7 @@
 
         # T017: Underscore separator when dimension > 9
         @testset "underscore separator when dim > 9" begin
-            @giac_several_var w 2 10 3
+            @giac_several_vars w 2 10 3
             # Should use underscore separator since 10 > 9
             @test w_1_1_1 isa GiacExpr
             @test w_1_10_1 isa GiacExpr
@@ -254,8 +254,8 @@
         # T018: Lexicographic ordering
         @testset "lexicographic ordering" begin
             # Variables should be generated in row-major order
-            # For @giac_several_var v 2 3: v11, v12, v13, v21, v22, v23
-            @giac_several_var v 2 3
+            # For @giac_several_vars v 2 3: v11, v12, v13, v21, v22, v23
+            @giac_several_vars v 2 3
             @test string(v11) == "v11"
             @test string(v12) == "v12"
             @test string(v13) == "v13"
@@ -265,10 +265,10 @@
         end
     end
 
-    @testset "@giac_several_var: US4 - Variable Naming Flexibility" begin
+    @testset "@giac_several_vars: US4 - Variable Naming Flexibility" begin
         # T021: Longer base name
-        @testset "longer base name @giac_several_var coeff 3" begin
-            @giac_several_var coeff 3
+        @testset "longer base name @giac_several_vars coeff 3" begin
+            @giac_several_vars coeff 3
             @test coeff1 isa GiacExpr
             @test coeff2 isa GiacExpr
             @test coeff3 isa GiacExpr
@@ -276,8 +276,8 @@
         end
 
         # T022: Unicode base name
-        @testset "Unicode base name @giac_several_var α 2" begin
-            @giac_several_var α 2
+        @testset "Unicode base name @giac_several_vars α 2" begin
+            @giac_several_vars α 2
             @test α1 isa GiacExpr
             @test α2 isa GiacExpr
             @test string(α1) == "α1"
@@ -285,33 +285,33 @@
         end
 
         # T023: Underscore in base name
-        @testset "underscore in base name @giac_several_var x_vec 2" begin
-            @giac_several_var x_vec 2
+        @testset "underscore in base name @giac_several_vars x_vec 2" begin
+            @giac_several_vars x_vec 2
             @test x_vec1 isa GiacExpr
             @test x_vec2 isa GiacExpr
             @test string(x_vec1) == "x_vec1"
         end
     end
 
-    @testset "@giac_several_var: Edge Cases and Error Handling" begin
+    @testset "@giac_several_vars: Edge Cases and Error Handling" begin
         # T026: Negative dimension throws error
         @testset "negative dimension throws ArgumentError" begin
-            @test_throws ArgumentError @macroexpand @giac_several_var a -1
+            @test_throws ArgumentError @macroexpand @giac_several_vars a -1
         end
 
         # T027: Non-integer dimension throws error
         @testset "non-integer dimension throws error" begin
-            @test_throws ArgumentError @macroexpand @giac_several_var a 2.5
+            @test_throws ArgumentError @macroexpand @giac_several_vars a 2.5
         end
 
         # T028: Missing dimensions throws error
         @testset "missing dimensions throws ArgumentError" begin
-            @test_throws ArgumentError @macroexpand @giac_several_var a
+            @test_throws ArgumentError @macroexpand @giac_several_vars a
         end
 
         # T029: Invalid base name (string instead of symbol)
         @testset "invalid base name throws error" begin
-            @test_throws ArgumentError @macroexpand @giac_several_var "a" 3
+            @test_throws ArgumentError @macroexpand @giac_several_vars "a" 3
         end
     end
 end

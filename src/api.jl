@@ -444,7 +444,7 @@ Unicode base names:
 - `ArgumentError`: If any dimension is not positive (≤ 0)
 
 # See also
-- [`@giac_several_var`](@ref): Macro for creating indexed symbolic variables
+- [`@giac_several_vars`](@ref): Macro for creating indexed symbolic variables
 """
 function GiacMatrix(base::Symbol, dims::Integer...)
     # Validate dimension count

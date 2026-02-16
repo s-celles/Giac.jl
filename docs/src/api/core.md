@@ -28,7 +28,7 @@ to_julia
 
 ```@docs
 @giac_var
-@giac_several_var
+@giac_several_vars
 ```
 
 ## Calculus Operations

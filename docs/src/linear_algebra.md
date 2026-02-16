@@ -15,7 +15,7 @@ B = GiacMatrix([[a, b],
                 [c, d]])
 det(B)  # a*d-b*c
 
-@giac_several_var m 2 2
+@giac_several_vars m 2 2
 M = GiacMatrix([[m11, m12],
                 [m21, m22]])
 det(M)  # m11*m22-m12*m21
