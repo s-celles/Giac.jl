@@ -908,18 +908,24 @@ end
         # Non-conflicts don't warn
         @test Giac._warn_conflict(:factor) == false
 
-        # First warning returns true
-        @test Giac._warn_conflict(:eval) == true
+        # Non-keyword conflicts don't warn (023-conflicts-multidispatch)
+        # These work via multiple dispatch now
+        @test Giac._warn_conflict(:eval) == false
+        @test Giac._warn_conflict(:sin) == false
+        @test Giac._warn_conflict(:zeros) == false
+
+        # Keyword conflicts DO warn (only true conflicts that can't be functions)
+        @test Giac._warn_conflict(:if) == true
 
         # Second warning returns false (already warned)
-        @test Giac._warn_conflict(:eval) == false
+        @test Giac._warn_conflict(:if) == false
 
-        # Different conflict warns
-        @test Giac._warn_conflict(:sin) == true
+        # Different keyword conflict warns
+        @test Giac._warn_conflict(:for) == true
 
         # Reset allows re-warning
         Giac.reset_conflict_warnings!()
-        @test Giac._warn_conflict(:eval) == true
+        @test Giac._warn_conflict(:if) == true
 
         # Clean up
         Giac.reset_conflict_warnings!()

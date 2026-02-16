@@ -500,23 +500,36 @@ Warn the user when they use a GIAC command that conflicts with Julia.
 This function is called by `giac_cmd` when a conflicting command is used.
 Each conflict is warned only once per session to avoid spam.
 
+Since feature 023-conflicts-multidispatch, non-keyword conflicts (like `zeros`,
+`sin`, `det`) work with GiacExpr via multiple dispatch, so warnings are
+suppressed for those. Only true keyword conflicts (`:if`, `:for`, etc.)
+still trigger warnings since they cannot be used as function names.
+
 # Arguments
 - `cmd`: Command name (as Symbol) to check
 
 # Returns
-- `true` if a warning was issued (first use of this conflict)
-- `false` if no warning needed (not a conflict, or already warned)
+- `true` if a warning was issued (first use of a keyword conflict)
+- `false` if no warning needed (not a conflict, already warned, or non-keyword conflict)
 
 # Example (internal use)
 ```julia
-_warn_conflict(:eval)  # First call: warns, returns true
-_warn_conflict(:eval)  # Second call: no warning, returns false
+_warn_conflict(:if)      # First call: warns, returns true (keyword conflict)
+_warn_conflict(:if)      # Second call: no warning, returns false (already warned)
+_warn_conflict(:zeros)   # No warning, returns false (works via multiple dispatch)
 _warn_conflict(:factor)  # Not a conflict: returns false
 ```
 """
 function _warn_conflict(cmd::Symbol)::Bool
     # Only warn for actual conflicts that haven't been warned yet
     if cmd in JULIA_CONFLICTS && cmd ∉ _warned_conflicts
+        # Don't warn for non-keyword conflicts - they work with GiacExpr via multiple dispatch
+        # (023-conflicts-multidispatch feature)
+        # Only keywords (:if, :for, etc.) truly can't be used as function names
+        if cmd ∉ CONFLICT_CATEGORIES[:keyword]
+            return false
+        end
+
         push!(_warned_conflicts, cmd)
         reason = conflict_reason(cmd)
         reason_text = isnothing(reason) ? "" : " ($reason)"

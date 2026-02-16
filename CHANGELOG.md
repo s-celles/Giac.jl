@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helper functions `_extendable_conflicts()` and `_has_giac_method()` in `Giac.Commands`
   for conflict resolution logic
 
+### Changed
+
+- **Suppressed misleading conflict warnings**: The "GIAC command 'X' conflicts with Julia"
+  warning is now suppressed for non-keyword conflicts since they work correctly via
+  multiple dispatch. Only true keyword conflicts (`:if`, `:for`, etc.) trigger warnings.
+
 ## [0.3.0] - 2026-02-16
 
 ### Removed
