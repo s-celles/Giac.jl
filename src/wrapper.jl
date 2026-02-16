@@ -849,3 +849,149 @@ end
 function _giac_create_matrix(expr::String, rows::Int, cols::Int)::Ptr{Cvoid}
     return _giac_create_matrix(expr, rows, cols, DEFAULT_CONTEXT[].ptr)
 end
+
+# ============================================================================
+# Generic Dispatch via C++ apply_func (Tier 2)
+# These use the new C++ apply_func* functions for better performance than
+# string concatenation and evaluation.
+# ============================================================================
+
+"""
+    _apply_func_generic(name::String, args::Vector{String}) -> Ptr{Cvoid}
+
+Call a GIAC function by name using the C++ generic dispatch mechanism.
+Falls back to string evaluation if the Gen-based approach fails.
+"""
+function _apply_func_generic(name::String, args::Vector{String})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        try
+            # Convert string args to Gen objects
+            gen_args = [GiacCxxBindings.giac_eval(arg) for arg in args]
+
+            # Call appropriate apply_func based on arity
+            result_gen = if length(gen_args) == 1
+                GiacCxxBindings.apply_func(name, gen_args[1])
+            elseif length(gen_args) == 2
+                GiacCxxBindings.apply_func2(name, gen_args[1], gen_args[2])
+            elseif length(gen_args) == 3
+                GiacCxxBindings.apply_func3(name, gen_args[1], gen_args[2], gen_args[3])
+            else
+                # Fall back to string evaluation for 0 or >3 args
+                cmd_string = name * "(" * join(args, ",") * ")"
+                return _giac_eval_string(cmd_string, C_NULL)
+            end
+
+            # Convert result Gen to string and store
+            result_str = GiacCxxBindings.to_string(result_gen)
+            return _make_stub_ptr(result_str)
+        catch e
+            # Fall back to string evaluation on error
+            @debug "apply_func failed, falling back to string eval: $e"
+            cmd_string = name * "(" * join(args, ",") * ")"
+            return _giac_eval_string(cmd_string, C_NULL)
+        end
+    end
+
+    # Stub mode
+    cmd_string = name * "(" * join(args, ",") * ")"
+    return _make_stub_ptr(cmd_string)
+end
+
+# ============================================================================
+# Tier 1 High-Performance Wrappers
+# These use the direct C++ Tier 1 functions (no name lookup overhead)
+# ============================================================================
+
+# Helper: convert string expression to Gen, apply function, return result string
+function _tier1_unary(func::Function, expr_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        try
+            expr_str = _get_stub_expr(expr_ptr)
+            gen_arg = GiacCxxBindings.giac_eval(expr_str)
+            result_gen = func(gen_arg)
+            result_str = GiacCxxBindings.to_string(result_gen)
+            return _make_stub_ptr(result_str)
+        catch e
+            @debug "Tier 1 function failed: $e"
+        end
+    end
+    return C_NULL
+end
+
+function _tier1_binary(func::Function, a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        try
+            a_str = _get_stub_expr(a_ptr)
+            b_str = _get_stub_expr(b_ptr)
+            gen_a = GiacCxxBindings.giac_eval(a_str)
+            gen_b = GiacCxxBindings.giac_eval(b_str)
+            result_gen = func(gen_a, gen_b)
+            result_str = GiacCxxBindings.to_string(result_gen)
+            return _make_stub_ptr(result_str)
+        catch e
+            @debug "Tier 1 binary function failed: $e"
+        end
+    end
+    return C_NULL
+end
+
+function _tier1_ternary(func::Function, a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, c_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        try
+            a_str = _get_stub_expr(a_ptr)
+            b_str = _get_stub_expr(b_ptr)
+            c_str = _get_stub_expr(c_ptr)
+            gen_a = GiacCxxBindings.giac_eval(a_str)
+            gen_b = GiacCxxBindings.giac_eval(b_str)
+            gen_c = GiacCxxBindings.giac_eval(c_str)
+            result_gen = func(gen_a, gen_b, gen_c)
+            result_str = GiacCxxBindings.to_string(result_gen)
+            return _make_stub_ptr(result_str)
+        catch e
+            @debug "Tier 1 ternary function failed: $e"
+        end
+    end
+    return C_NULL
+end
+
+# Trigonometry (Tier 1)
+_giac_sin_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_sin, expr_ptr)
+_giac_cos_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_cos, expr_ptr)
+_giac_tan_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_tan, expr_ptr)
+_giac_asin_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_asin, expr_ptr)
+_giac_acos_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_acos, expr_ptr)
+_giac_atan_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_atan, expr_ptr)
+
+# Exponential/Logarithm (Tier 1)
+_giac_exp_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_exp, expr_ptr)
+_giac_ln_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_ln, expr_ptr)
+_giac_log10_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_log10, expr_ptr)
+_giac_sqrt_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_sqrt, expr_ptr)
+
+# Arithmetic (Tier 1)
+_giac_abs_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_abs, expr_ptr)
+_giac_sign_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_sign, expr_ptr)
+_giac_floor_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_floor, expr_ptr)
+_giac_ceil_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_ceil, expr_ptr)
+
+# Complex (Tier 1)
+_giac_re_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_re, expr_ptr)
+_giac_im_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_im, expr_ptr)
+_giac_conj_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_conj, expr_ptr)
+
+# Algebra (Tier 1)
+_giac_normal_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_normal, expr_ptr)
+_giac_evalf_tier1(expr_ptr::Ptr{Cvoid}) = _tier1_unary(GiacCxxBindings.giac_evalf, expr_ptr)
+
+# Calculus (Tier 1 - binary/ternary)
+_giac_diff_tier1(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}) = _tier1_binary(GiacCxxBindings.giac_diff, expr_ptr, var_ptr)
+_giac_integrate_tier1(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}) = _tier1_binary(GiacCxxBindings.giac_integrate, expr_ptr, var_ptr)
+_giac_subst_tier1(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, val_ptr::Ptr{Cvoid}) = _tier1_ternary(GiacCxxBindings.giac_subst, expr_ptr, var_ptr, val_ptr)
+_giac_solve_tier1(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}) = _tier1_binary(GiacCxxBindings.giac_solve, expr_ptr, var_ptr)
+_giac_limit_tier1(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, val_ptr::Ptr{Cvoid}) = _tier1_ternary(GiacCxxBindings.giac_limit, expr_ptr, var_ptr, val_ptr)
+_giac_series_tier1(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, order_ptr::Ptr{Cvoid}) = _tier1_ternary(GiacCxxBindings.giac_series, expr_ptr, var_ptr, order_ptr)
+
+# Arithmetic binary (Tier 1)
+_giac_gcd_tier1(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}) = _tier1_binary(GiacCxxBindings.giac_gcd, a_ptr, b_ptr)
+_giac_lcm_tier1(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}) = _tier1_binary(GiacCxxBindings.giac_lcm, a_ptr, b_ptr)
+_giac_pow_tier1(base_ptr::Ptr{Cvoid}, exp_ptr::Ptr{Cvoid}) = _tier1_binary(GiacCxxBindings.giac_pow, base_ptr, exp_ptr)
