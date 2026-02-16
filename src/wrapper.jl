@@ -399,24 +399,54 @@ function _giac_to_float64(ptr::Ptr{Cvoid})::Float64
 end
 
 function _giac_complex_real(ptr::Ptr{Cvoid})::Float64
-    # Complex parsing would require more sophisticated handling
-    # For now, return 0.0 as placeholder
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        try
+            expr_str = _get_stub_expr(ptr)
+            gen = GiacCxxBindings.giac_eval(expr_str)
+            # Use cplx_re accessor
+            re_gen = GiacCxxBindings.cplx_re(gen)
+            re_str = GiacCxxBindings.to_string(re_gen)
+            return parse(Float64, re_str)
+        catch e
+            @debug "Complex real extraction failed: $e"
+        end
+    end
     return 0.0
 end
 
 function _giac_complex_imag(ptr::Ptr{Cvoid})::Float64
-    # Complex parsing would require more sophisticated handling
-    # For now, return 0.0 as placeholder
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        try
+            expr_str = _get_stub_expr(ptr)
+            gen = GiacCxxBindings.giac_eval(expr_str)
+            # Use cplx_im accessor
+            im_gen = GiacCxxBindings.cplx_im(gen)
+            im_str = GiacCxxBindings.to_string(im_gen)
+            return parse(Float64, im_str)
+        catch e
+            @debug "Complex imag extraction failed: $e"
+        end
+    end
     return 0.0
 end
 
 function _giac_rational_num(ptr::Ptr{Cvoid})::Int64
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(ptr)
-        # Parse rational: num/den
-        parts = split(expr_str, "/")
-        if length(parts) == 2
-            return parse(Int64, parts[1])
+        try
+            expr_str = _get_stub_expr(ptr)
+            gen = GiacCxxBindings.giac_eval(expr_str)
+            # Use frac_num accessor
+            num_gen = GiacCxxBindings.frac_num(gen)
+            num_str = GiacCxxBindings.to_string(num_gen)
+            return parse(Int64, num_str)
+        catch e
+            @debug "Rational numerator extraction failed: $e"
+            # Fallback to string parsing
+            expr_str = _get_stub_expr(ptr)
+            parts = split(expr_str, "/")
+            if length(parts) == 2
+                return parse(Int64, parts[1])
+            end
         end
     end
     return 0
@@ -424,11 +454,21 @@ end
 
 function _giac_rational_den(ptr::Ptr{Cvoid})::Int64
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(ptr)
-        # Parse rational: num/den
-        parts = split(expr_str, "/")
-        if length(parts) == 2
-            return parse(Int64, parts[2])
+        try
+            expr_str = _get_stub_expr(ptr)
+            gen = GiacCxxBindings.giac_eval(expr_str)
+            # Use frac_den accessor
+            den_gen = GiacCxxBindings.frac_den(gen)
+            den_str = GiacCxxBindings.to_string(den_gen)
+            return parse(Int64, den_str)
+        catch e
+            @debug "Rational denominator extraction failed: $e"
+            # Fallback to string parsing
+            expr_str = _get_stub_expr(ptr)
+            parts = split(expr_str, "/")
+            if length(parts) == 2
+                return parse(Int64, parts[2])
+            end
         end
     end
     return 1
