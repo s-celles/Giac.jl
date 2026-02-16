@@ -209,19 +209,19 @@ end
     @testset "String prefix search" begin
         # T041: Test search_commands("sin")
         results = search_commands("sin")
-        @test results isa Vector{String}
-        @test "sin" in results
+        @test results isa Vector{Symbol}
+        @test :sin in results
         # Should also find sinh, sinc, etc. if they exist
-        @test all(cmd -> startswith(cmd, "sin"), results)
+        @test all(cmd -> startswith(string(cmd), "sin"), results)
     end
 
     @testset "Regex search" begin
         # T042: Test search_commands(r"^a.*n$")
         results = search_commands(r"^a.*n$")
-        @test results isa Vector{String}
+        @test results isa Vector{Symbol}
         # All results should match the pattern
         for cmd in results
-            @test occursin(r"^a.*n$", cmd)
+            @test occursin(r"^a.*n$", string(cmd))
         end
     end
 
@@ -257,19 +257,19 @@ end
     @testset "commands_in_category trigonometry" begin
         # T052: Test commands_in_category(:trigonometry)
         cmds = commands_in_category(:trigonometry)
-        @test cmds isa Vector{String}
-        @test "sin" in cmds
-        @test "cos" in cmds
-        @test "tan" in cmds
+        @test cmds isa Vector{Symbol}
+        @test :sin in cmds
+        @test :cos in cmds
+        @test :tan in cmds
     end
 
     @testset "commands_in_category algebra" begin
         # T053: Test commands_in_category(:algebra)
         cmds = commands_in_category(:algebra)
-        @test cmds isa Vector{String}
-        @test "factor" in cmds
-        @test "expand" in cmds
-        @test "simplify" in cmds
+        @test cmds isa Vector{Symbol}
+        @test :factor in cmds
+        @test :expand in cmds
+        @test :simplify in cmds
     end
 
     @testset "command_info category" begin
@@ -296,9 +296,9 @@ end
     end
 
     @testset "factor in VALID_COMMANDS" begin
-        # T078: Test that "factor" is in VALID_COMMANDS
+        # T078: Test that :factor is in VALID_COMMANDS (now Symbol)
         if !Giac.is_stub_mode()
-            @test "factor" in Giac.VALID_COMMANDS
+            @test :factor in Giac.VALID_COMMANDS
         end
     end
 
@@ -391,10 +391,10 @@ end
         @warn "Skipping suggestion tests - GIAC library not available (stub mode)"
         @test_skip true
     else
-        @testset "returns Vector{String}" begin
-            # T010: Test suggest_commands(:factr) returns Vector{String}
+        @testset "returns Vector{Symbol}" begin
+            # T010: Test suggest_commands(:factr) returns Vector{Symbol}
             result = suggest_commands(:factr)
-            @test result isa Vector{String}
+            @test result isa Vector{Symbol}
         end
 
         @testset "sorted by distance then alphabetically" begin
@@ -406,7 +406,7 @@ end
                     @test result[i][2] <= result[i+1][2]
                     # If same distance, check alphabetical
                     if result[i][2] == result[i+1][2]
-                        @test result[i][1] <= result[i+1][1]
+                        @test string(result[i][1]) <= string(result[i+1][1])
                     end
                 end
             end
@@ -426,8 +426,8 @@ end
             long_result = suggest_commands(:integrat)
             # Both should be non-empty if similar commands exist
             # The long input should potentially find more matches due to higher threshold
-            @test long_result isa Vector{String}
-            @test short_result isa Vector{String}
+            @test long_result isa Vector{Symbol}
+            @test short_result isa Vector{Symbol}
         end
 
         @testset "no results when distance exceeds threshold" begin
@@ -438,9 +438,9 @@ end
         end
 
         @testset "factor typo suggestions" begin
-            # Verify "factor" appears in suggestions for "factr"
+            # Verify :factor appears in suggestions for "factr"
             result = suggest_commands(:factr)
-            @test "factor" in result
+            @test :factor in result
         end
 
         @testset "case insensitive" begin
@@ -519,17 +519,17 @@ end
         @warn "Skipping distance tests - GIAC library not available (stub mode)"
         @test_skip true
     else
-        @testset "returns Vector{Tuple{String, Int}}" begin
-            # T029: Test returns Vector{Tuple{String, Int}}
+        @testset "returns Vector{Tuple{Symbol, Int}}" begin
+            # T029: Test returns Vector{Tuple{Symbol, Int}}
             result = Giac.suggest_commands_with_distances(:factr)
-            @test result isa Vector{Tuple{String, Int}}
+            @test result isa Vector{Tuple{Symbol, Int}}
         end
 
         @testset "distances are correct" begin
             # T030: Test that distances are correct in results
             result = Giac.suggest_commands_with_distances(:factr)
             for (cmd, dist) in result
-                @test dist == Giac._levenshtein("factr", lowercase(cmd))
+                @test dist == Giac._levenshtein("factr", lowercase(string(cmd)))
             end
         end
 
@@ -551,16 +551,16 @@ end
 
 @testset "_format_suggestions" begin
     @testset "empty suggestions" begin
-        @test Giac._format_suggestions(String[]) == ""
+        @test Giac._format_suggestions(Symbol[]) == ""
     end
 
     @testset "single suggestion" begin
-        result = Giac._format_suggestions(["factor"])
+        result = Giac._format_suggestions([:factor])
         @test result == " Did you mean: factor?"
     end
 
     @testset "multiple suggestions" begin
-        result = Giac._format_suggestions(["factor", "ifactor", "cfactor"])
+        result = Giac._format_suggestions([:factor, :ifactor, :cfactor])
         @test result == " Did you mean: factor, ifactor, cfactor?"
     end
 end
@@ -628,10 +628,10 @@ end
         @warn "Skipping description search tests - GIAC library not available (stub mode)"
         @test_skip true
     else
-        @testset "returns Vector{String}" begin
-            # T008: Test search_commands_by_description returns Vector{String}
+        @testset "returns Vector{Symbol}" begin
+            # T008: Test search_commands_by_description returns Vector{Symbol}
             result = search_commands_by_description("factor")
-            @test result isa Vector{String}
+            @test result isa Vector{Symbol}
         end
 
         @testset "results sorted by relevance" begin
@@ -639,7 +639,7 @@ end
             # This is tested by checking ordering - we can't guarantee specific results
             # but we can verify the function doesn't error
             result = search_commands_by_description("polynomial")
-            @test result isa Vector{String}
+            @test result isa Vector{Symbol}
         end
 
         @testset "empty query returns empty" begin
@@ -739,7 +739,7 @@ end
         # Test Symbol input
         if !Giac.is_stub_mode()
             result = search_commands_by_description(:factor)
-            @test result isa Vector{String}
+            @test result isa Vector{Symbol}
         end
     end
 end
@@ -751,42 +751,42 @@ end
 @testset "JULIA_CONFLICTS (008)" begin
     @testset "JULIA_CONFLICTS is defined and non-empty" begin
         @test isdefined(Giac, :JULIA_CONFLICTS)
-        @test Giac.JULIA_CONFLICTS isa Set{String}
+        @test Giac.JULIA_CONFLICTS isa Set{Symbol}
         @test length(Giac.JULIA_CONFLICTS) >= 100
     end
 
     @testset "known conflicts are included" begin
         # Keywords
-        @test "if" in Giac.JULIA_CONFLICTS
-        @test "for" in Giac.JULIA_CONFLICTS
-        @test "while" in Giac.JULIA_CONFLICTS
-        @test "end" in Giac.JULIA_CONFLICTS
+        @test :if in Giac.JULIA_CONFLICTS
+        @test :for in Giac.JULIA_CONFLICTS
+        @test :while in Giac.JULIA_CONFLICTS
+        @test :end in Giac.JULIA_CONFLICTS
 
         # Base builtins
-        @test "eval" in Giac.JULIA_CONFLICTS
-        @test "float" in Giac.JULIA_CONFLICTS
-        @test "sum" in Giac.JULIA_CONFLICTS
+        @test :eval in Giac.JULIA_CONFLICTS
+        @test :float in Giac.JULIA_CONFLICTS
+        @test :sum in Giac.JULIA_CONFLICTS
 
         # Base math
-        @test "sin" in Giac.JULIA_CONFLICTS
-        @test "cos" in Giac.JULIA_CONFLICTS
-        @test "exp" in Giac.JULIA_CONFLICTS
-        @test "log" in Giac.JULIA_CONFLICTS
-        @test "sqrt" in Giac.JULIA_CONFLICTS
+        @test :sin in Giac.JULIA_CONFLICTS
+        @test :cos in Giac.JULIA_CONFLICTS
+        @test :exp in Giac.JULIA_CONFLICTS
+        @test :log in Giac.JULIA_CONFLICTS
+        @test :sqrt in Giac.JULIA_CONFLICTS
 
         # LinearAlgebra
-        @test "det" in Giac.JULIA_CONFLICTS
-        @test "inv" in Giac.JULIA_CONFLICTS
-        @test "trace" in Giac.JULIA_CONFLICTS
-        @test "rank" in Giac.JULIA_CONFLICTS
+        @test :det in Giac.JULIA_CONFLICTS
+        @test :inv in Giac.JULIA_CONFLICTS
+        @test :trace in Giac.JULIA_CONFLICTS
+        @test :rank in Giac.JULIA_CONFLICTS
     end
 
     @testset "safe commands are NOT in conflicts" begin
-        @test "factor" ∉ Giac.JULIA_CONFLICTS
-        @test "expand" ∉ Giac.JULIA_CONFLICTS
-        @test "simplify" ∉ Giac.JULIA_CONFLICTS
-        @test "trigexpand" ∉ Giac.JULIA_CONFLICTS
-        @test "ifactor" ∉ Giac.JULIA_CONFLICTS
+        @test :factor ∉ Giac.JULIA_CONFLICTS
+        @test :expand ∉ Giac.JULIA_CONFLICTS
+        @test :simplify ∉ Giac.JULIA_CONFLICTS
+        @test :trigexpand ∉ Giac.JULIA_CONFLICTS
+        @test :ifactor ∉ Giac.JULIA_CONFLICTS
     end
 end
 
@@ -814,9 +814,9 @@ end
 
 @testset "exportable_commands (008)" begin
     if !Giac.is_stub_mode()
-        @testset "returns Vector{String}" begin
+        @testset "returns Vector{Symbol}" begin
             cmds = exportable_commands()
-            @test cmds isa Vector{String}
+            @test cmds isa Vector{Symbol}
         end
 
         @testset "returns many commands" begin
@@ -826,32 +826,32 @@ end
 
         @testset "results are sorted" begin
             cmds = exportable_commands()
-            @test issorted(cmds)
+            @test issorted(cmds, by=string)
         end
 
         @testset "includes safe commands" begin
             cmds = exportable_commands()
-            @test "factor" in cmds
-            @test "expand" in cmds
-            @test "simplify" in cmds
-            @test "trigexpand" in cmds
+            @test :factor in cmds
+            @test :expand in cmds
+            @test :simplify in cmds
+            @test :trigexpand in cmds
         end
 
         @testset "excludes conflicting commands" begin
             cmds = exportable_commands()
-            @test "eval" ∉ cmds
-            @test "sin" ∉ cmds
-            @test "cos" ∉ cmds
-            @test "det" ∉ cmds
-            @test "for" ∉ cmds
+            @test :eval ∉ cmds
+            @test :sin ∉ cmds
+            @test :cos ∉ cmds
+            @test :det ∉ cmds
+            @test :for ∉ cmds
         end
 
         @testset "excludes operators" begin
             cmds = exportable_commands()
-            @test "+" ∉ cmds
-            @test "-" ∉ cmds
-            @test "*" ∉ cmds
-            @test "/" ∉ cmds
+            @test Symbol("+") ∉ cmds
+            @test Symbol("-") ∉ cmds
+            @test Symbol("*") ∉ cmds
+            @test Symbol("/") ∉ cmds
         end
     else
         @testset "stub mode returns empty" begin
@@ -906,20 +906,20 @@ end
         Giac.reset_conflict_warnings!()
 
         # Non-conflicts don't warn
-        @test Giac._warn_conflict("factor") == false
+        @test Giac._warn_conflict(:factor) == false
 
         # First warning returns true
-        @test Giac._warn_conflict("eval") == true
+        @test Giac._warn_conflict(:eval) == true
 
         # Second warning returns false (already warned)
-        @test Giac._warn_conflict("eval") == false
+        @test Giac._warn_conflict(:eval) == false
 
         # Different conflict warns
-        @test Giac._warn_conflict("sin") == true
+        @test Giac._warn_conflict(:sin) == true
 
         # Reset allows re-warning
         Giac.reset_conflict_warnings!()
-        @test Giac._warn_conflict("eval") == true
+        @test Giac._warn_conflict(:eval) == true
 
         # Clean up
         Giac.reset_conflict_warnings!()
@@ -928,9 +928,9 @@ end
 
 @testset "available_commands (008)" begin
     if !Giac.is_stub_mode()
-        @testset "returns Vector{String}" begin
+        @testset "returns Vector{Symbol}" begin
             cmds = available_commands()
-            @test cmds isa Vector{String}
+            @test cmds isa Vector{Symbol}
         end
 
         @testset "returns many commands" begin
@@ -941,17 +941,18 @@ end
         @testset "all start with ASCII letter" begin
             cmds = available_commands()
             for cmd in cmds
-                @test !isempty(cmd)
-                @test isletter(first(cmd))
-                @test isascii(first(cmd))
+                cmd_str = string(cmd)
+                @test !isempty(cmd_str)
+                @test isletter(first(cmd_str))
+                @test isascii(first(cmd_str))
             end
         end
 
         @testset "includes both exportable and conflicting commands" begin
             cmds = available_commands()
-            @test "factor" in cmds
-            @test "sin" in cmds  # In available but not exportable
-            @test "eval" in cmds  # In available but not exportable
+            @test :factor in cmds
+            @test :sin in cmds  # In available but not exportable
+            @test :eval in cmds  # In available but not exportable
         end
     else
         @testset "stub mode returns empty" begin

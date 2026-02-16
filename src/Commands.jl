@@ -109,19 +109,17 @@ result = invoke_cmd(:eval, giac_eval("2+3"))  # Returns 5
 - [`Giac.help`](@ref): Get help for a command
 """
 function invoke_cmd(cmd::Symbol, args...)::GiacExpr
-    cmd_str = string(cmd)
-
-    # Validate command exists
-    if !isempty(VALID_COMMANDS) && cmd_str ∉ VALID_COMMANDS
+    # Validate command exists (using Symbol directly)
+    if !isempty(VALID_COMMANDS) && cmd ∉ VALID_COMMANDS
         # Use suggest_commands from command_registry.jl (005-nearest-command-suggestions)
-        suggestions = suggest_commands(cmd_str)
+        suggestions = suggest_commands(cmd)
         suggestion_text = _format_suggestions(suggestions)
-        throw(GiacError("Unknown command: $cmd_str.$suggestion_text", :eval))
+        throw(GiacError("Unknown command: $cmd.$suggestion_text", :eval))
     end
 
     # Warn about Julia conflicts (008-all-giac-commands, FR-010)
     # This helps users understand why certain commands can't be exported directly
-    _warn_conflict(cmd_str)
+    _warn_conflict(cmd)
 
     # Convert arguments to GIAC strings
     arg_strings = String[]
@@ -136,7 +134,8 @@ function invoke_cmd(cmd::Symbol, args...)::GiacExpr
         end
     end
 
-    # Build and execute command
+    # Build and execute command (convert Symbol to String only at C++ boundary)
+    cmd_str = string(cmd)
     cmd_string = _build_command_string(cmd_str, arg_strings)
 
     return with_giac_lock() do
@@ -177,9 +176,7 @@ for each command in `exportable_commands()`. The functions are exported from
 - No impact on command execution performance
 """
 function _generate_command_functions()
-    for cmd_str in exportable_commands()
-        cmd = Symbol(cmd_str)
-
+    for cmd in exportable_commands()  # exportable_commands() returns Vector{Symbol}
         # Skip if already defined (shouldn't happen, but safety check)
         if isdefined(@__MODULE__, cmd)
             continue

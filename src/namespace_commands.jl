@@ -148,11 +148,14 @@ length(exportable)  # ~2000+ (excludes Julia conflicts)
 - [`invoke_cmd`](@ref): Universal command invocation
 - [`Giac.Commands`](@ref): Submodule with all exportable commands
 """
-function available_commands()::Vector{String}
+function available_commands()::Vector{Symbol}
     if !isempty(VALID_COMMANDS)
-        return sort(collect(cmd for cmd in VALID_COMMANDS if !isempty(cmd) && isletter(first(cmd)) && isascii(first(cmd))))
+        return sort!(collect(cmd for cmd in VALID_COMMANDS if begin
+            cmd_str = string(cmd)
+            !isempty(cmd_str) && isletter(first(cmd_str)) && isascii(first(cmd_str))
+        end), by=string)
     end
-    return String[]
+    return Symbol[]
 end
 
 # ============================================================================

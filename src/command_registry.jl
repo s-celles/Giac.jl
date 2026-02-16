@@ -216,75 +216,75 @@ end
 """
     COMMAND_CATEGORIES
 
-Dictionary mapping category symbols to lists of command names.
+Dictionary mapping category symbols to lists of command names (as Symbols).
 Categories are based on mathematical domains.
 """
-const COMMAND_CATEGORIES = Dict{Symbol, Vector{String}}(
+const COMMAND_CATEGORIES = Dict{Symbol, Vector{Symbol}}(
     :trigonometry => [
-        "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
-        "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
-        "cot", "sec", "csc", "acot", "asec", "acsc",
-        "sinc", "sincos"
+        :sin, :cos, :tan, :asin, :acos, :atan, :atan2,
+        :sinh, :cosh, :tanh, :asinh, :acosh, :atanh,
+        :cot, :sec, :csc, :acot, :asec, :acsc,
+        :sinc, :sincos
     ],
     :calculus => [
-        "diff", "integrate", "int", "limit", "series", "taylor",
-        "derivative", "antiderivative", "gradient", "divergence", "curl",
-        "laplacian", "hessian", "jacobian"
+        :diff, :integrate, :int, :limit, :series, :taylor,
+        :derivative, :antiderivative, :gradient, :divergence, :curl,
+        :laplacian, :hessian, :jacobian
     ],
     :algebra => [
-        "factor", "expand", "simplify", "solve", "gcd", "lcm",
-        "collect", "normal", "ratnormal", "horner", "canonical_form",
-        "quo", "rem", "quorem", "proot", "cfactor"
+        :factor, :expand, :simplify, :solve, :gcd, :lcm,
+        :collect, :normal, :ratnormal, :horner, :canonical_form,
+        :quo, :rem, :quorem, :proot, :cfactor
     ],
     :number_theory => [
-        "ifactor", "isprime", "nextprime", "prevprime", "euler", "phi",
-        "gcd", "lcm", "mod", "irem", "iquo", "isqrt", "icrt",
-        "chinese", "jacobi", "legendre", "divisors", "sigma"
+        :ifactor, :isprime, :nextprime, :prevprime, :euler, :phi,
+        :gcd, :lcm, :mod, :irem, :iquo, :isqrt, :icrt,
+        :chinese, :jacobi, :legendre, :divisors, :sigma
     ],
     :linear_algebra => [
-        "det", "inv", "trace", "transpose", "tran", "eigenvalues", "eigenvectors",
-        "rank", "kernel", "image", "lu", "qr", "svd", "cholesky",
-        "rref", "identity", "diag", "jordanblock"
+        :det, :inv, :trace, :transpose, :tran, :eigenvalues, :eigenvectors,
+        :rank, :kernel, :image, :lu, :qr, :svd, :cholesky,
+        :rref, :identity, :diag, :jordanblock
     ],
     :special_functions => [
-        "gamma", "beta", "erf", "erfc", "zeta", "Ai", "Bi",
-        "Si", "Ci", "Ei", "li", "digamma", "polygamma",
-        "BesselJ", "BesselY", "BesselI", "BesselK"
+        :gamma, :beta, :erf, :erfc, :zeta, :Ai, :Bi,
+        :Si, :Ci, :Ei, :li, :digamma, :polygamma,
+        :BesselJ, :BesselY, :BesselI, :BesselK
     ],
     :polynomials => [
-        "degree", "coeff", "lcoeff", "tcoeff", "coeffs", "roots",
-        "pcoeff", "poly2symb", "symb2poly", "resultant", "discriminant",
-        "sturm", "sturmab", "realroot"
+        :degree, :coeff, :lcoeff, :tcoeff, :coeffs, :roots,
+        :pcoeff, :poly2symb, :symb2poly, :resultant, :discriminant,
+        :sturm, :sturmab, :realroot
     ],
     :combinatorics => [
-        "binomial", "factorial", "perm", "comb", "fib", "fibonacci",
-        "lucas", "stirling1", "stirling2", "bell", "catalan",
-        "partition", "compositions"
+        :binomial, :factorial, :perm, :comb, :fib, :fibonacci,
+        :lucas, :stirling1, :stirling2, :bell, :catalan,
+        :partition, :compositions
     ],
     :statistics => [
-        "mean", "variance", "stddev", "median", "quartiles",
-        "covariance", "correlation", "histogram", "boxwhisker",
-        "normald", "binomial_cdf", "poisson"
+        :mean, :variance, :stddev, :median, :quartiles,
+        :covariance, :correlation, :histogram, :boxwhisker,
+        :normald, :binomial_cdf, :poisson
     ],
     :logic => [
-        "and", "or", "not", "xor", "implies", "equiv",
-        "true", "false", "assume", "about"
+        :and, :or, :not, :xor, :implies, :equiv,
+        Symbol("true"), Symbol("false"), :assume, :about
     ],
     :geometry => [
-        "point", "line", "circle", "polygon", "distance",
-        "midpoint", "perpendicular", "parallel", "tangent",
-        "inter", "area", "perimeter"
+        :point, :line, :circle, :polygon, :distance,
+        :midpoint, :perpendicular, :parallel, :tangent,
+        :inter, :area, :perimeter
     ],
-    :other => String[]  # Populated dynamically for uncategorized commands
+    :other => Symbol[]  # Populated dynamically for uncategorized commands
 )
 
 """
     CATEGORY_LOOKUP
 
-Reverse lookup: command name → category symbol.
+Reverse lookup: command name (Symbol) → category symbol.
 Populated by `_init_command_registry()`.
 """
-const CATEGORY_LOOKUP = Dict{String, Symbol}()
+const CATEGORY_LOOKUP = Dict{Symbol, Symbol}()
 
 # ============================================================================
 # Julia Conflicts Registry (008-all-giac-commands)
@@ -293,9 +293,9 @@ const CATEGORY_LOOKUP = Dict{String, Symbol}()
 """
     JULIA_CONFLICTS
 
-Set of GIAC command names that conflict with Julia keywords, builtins, or
+Set of GIAC command names (as Symbols) that conflict with Julia keywords, builtins, or
 standard library functions. These commands cannot be safely exported as
-top-level functions but remain accessible via `giac_cmd(:name, args...)`.
+top-level functions but remain accessible via `invoke_cmd(:name, args...)`.
 
 # Conflict Categories
 - **Julia keywords**: `if`, `for`, `while`, `end`, `in`, `or`, `and`, etc.
@@ -305,166 +305,166 @@ top-level functions but remain accessible via `giac_cmd(:name, args...)`.
 
 # Example
 ```julia
-"eval" in JULIA_CONFLICTS  # true
-"factor" in JULIA_CONFLICTS  # false
+:eval in JULIA_CONFLICTS  # true
+:factor in JULIA_CONFLICTS  # false
 
-# Conflicting commands still work via giac_cmd
-giac_cmd(:eval, giac_eval("2+3"))  # Returns 5
+# Conflicting commands still work via invoke_cmd
+invoke_cmd(:eval, giac_eval("2+3"))  # Returns 5
 ```
 
 # See also
 - [`exportable_commands`](@ref): Commands safe to export
 - [`conflict_reason`](@ref): Get the conflict category for a command
 """
-const JULIA_CONFLICTS = Set{String}([
+const JULIA_CONFLICTS = Set{Symbol}([
     # Julia keywords (reserved words)
-    "if", "else", "elseif", "for", "while", "end", "begin",
-    "try", "catch", "finally", "return", "break", "continue",
-    "function", "macro", "module", "import", "export", "using",
-    "let", "local", "global", "const", "do", "in", "isa",
-    "where", "true", "false", "nothing", "missing",
-    "struct", "mutable", "abstract", "primitive", "quote",
-    "baremodule", "type", "immutable", "bitstype", "typealias",
+    :if, :else, :elseif, :for, :while, :end, :begin,
+    :try, :catch, :finally, :return, :break, :continue,
+    :function, :macro, :module, :import, :export, :using,
+    :let, :local, :global, :const, :do, :in, :isa,
+    :where, Symbol("true"), Symbol("false"), :nothing, :missing,
+    :struct, :mutable, :abstract, :primitive, :quote,
+    :baremodule, :type, :immutable, :bitstype, :typealias,
 
     # GIAC keywords that overlap
-    "or", "and", "not", "xor", "mod", "div",
+    :or, :and, :not, :xor, :mod, :div,
 
     # Base builtins that would shadow
-    "eval", "float", "sum", "prod", "rem",
-    "min", "max", "abs", "sign", "round", "floor", "ceil",
-    "real", "imag", "conj", "angle",
-    "length", "size", "zeros", "ones", "fill", "push", "pop",
-    "first", "last", "sort", "reverse", "map", "filter", "reduce",
-    "zip", "enumerate", "collect", "copy", "deepcopy",
-    "print", "println", "display", "show", "string", "parse",
-    "read", "write", "open", "close", "flush",
-    "error", "throw", "rethrow", "assert",
-    "typeof", "isa", "convert", "promote",
-    "get", "set", "delete", "keys", "values", "pairs",
-    "union", "intersect", "setdiff", "issubset",
-    "any", "all", "count", "findall", "findfirst", "findlast",
-    "range", "step", "start", "stop",
-    "time", "sleep", "wait", "notify",
-    "rand", "randn", "seed",
+    :eval, :float, :sum, :prod, :rem,
+    :min, :max, :abs, :sign, :round, :floor, :ceil,
+    :real, :imag, :conj, :angle,
+    :length, :size, :zeros, :ones, :fill, :push, :pop,
+    :first, :last, :sort, :reverse, :map, :filter, :reduce,
+    :zip, :enumerate, :collect, :copy, :deepcopy,
+    :print, :println, :display, :show, :string, :parse,
+    :read, :write, :open, :close, :flush,
+    :error, :throw, :rethrow, :assert,
+    :typeof, :isa, :convert, :promote,
+    :get, :set, :delete, :keys, :values, :pairs,
+    :union, :intersect, :setdiff, :issubset,
+    :any, :all, :count, :findall, :findfirst, :findlast,
+    :range, :step, :start, :stop,
+    :time, :sleep, :wait, :notify,
+    :rand, :randn, :seed,
 
     # Base math functions (defined in Base or often imported)
-    "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
-    "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
-    "sec", "csc", "cot", "asec", "acsc", "acot",
-    "sech", "csch", "coth", "asech", "acsch", "acoth",
-    "sinc", "sincos", "sinpi", "cospi",
-    "exp", "exp2", "exp10", "expm1",
-    "log", "log2", "log10", "log1p",
-    "sqrt", "cbrt", "hypot",
-    "gcd", "lcm", "gcdx",
-    "factorial", "binomial",
-    "isnan", "isinf", "isfinite", "isinteger", "isreal",
-    "iseven", "isodd", "ispow2",
-    "nextpow", "prevpow",
-    "sign", "signbit", "copysign", "flipsign",
-    "clamp", "clamp!",
-    "muladd", "fma",
-    "modf", "rem", "mod", "divrem", "fldmod",
-    "numerator", "denominator",
+    :sin, :cos, :tan, :asin, :acos, :atan, :atan2,
+    :sinh, :cosh, :tanh, :asinh, :acosh, :atanh,
+    :sec, :csc, :cot, :asec, :acsc, :acot,
+    :sech, :csch, :coth, :asech, :acsch, :acoth,
+    :sinc, :sincos, :sinpi, :cospi,
+    :exp, :exp2, :exp10, :expm1,
+    :log, :log2, :log10, :log1p,
+    :sqrt, :cbrt, :hypot,
+    :gcd, :lcm, :gcdx,
+    :factorial, :binomial,
+    :isnan, :isinf, :isfinite, :isinteger, :isreal,
+    :iseven, :isodd, :ispow2,
+    :nextpow, :prevpow,
+    :sign, :signbit, :copysign, :flipsign,
+    :clamp, Symbol("clamp!"),
+    :muladd, :fma,
+    :modf, :rem, :mod, :divrem, :fldmod,
+    :numerator, :denominator,
 
     # LinearAlgebra conflicts
-    "det", "inv", "trace", "rank", "transpose", "adjoint",
-    "norm", "normalize", "dot", "cross",
-    "eigen", "eigvals", "eigvecs",
-    "svd", "svdvals",
-    "lu", "qr", "cholesky", "schur", "hessenberg",
-    "diag", "diagm", "diagind",
-    "tril", "triu", "tril!", "triu!",
-    "I", "eye", "identity",
-    "kron", "kronsum",
-    "nullspace", "pinv",
-    "cond", "opnorm", "factorize",
-    "ishermitian", "issymmetric", "isposdef", "istriu", "istril",
-    "lyap", "sylvester",
+    :det, :inv, :trace, :rank, :transpose, :adjoint,
+    :norm, :normalize, :dot, :cross,
+    :eigen, :eigvals, :eigvecs,
+    :svd, :svdvals,
+    :lu, :qr, :cholesky, :schur, :hessenberg,
+    :diag, :diagm, :diagind,
+    :tril, :triu, Symbol("tril!"), Symbol("triu!"),
+    :I, :eye, :identity,
+    :kron, :kronsum,
+    :nullspace, :pinv,
+    :cond, :opnorm, :factorize,
+    :ishermitian, :issymmetric, :isposdef, :istriu, :istril,
+    :lyap, :sylvester,
 
     # Statistics conflicts
-    "mean", "median", "var", "std", "cov", "cor",
-    "quantile", "percentile",
+    :mean, :median, :var, :std, :cov, :cor,
+    :quantile, :percentile,
 
     # Other common conflicts
-    "pi", "e", "im", "Inf", "NaN",
-    "ans", "help",
+    :pi, :e, :im, :Inf, :NaN,
+    :ans, :help,
 ])
 
 """
     CONFLICT_CATEGORIES
 
-Mapping of conflict category symbols to the commands in that category.
+Mapping of conflict category symbols to the commands (as Symbols) in that category.
 Used by `conflict_reason()` to determine why a command conflicts.
 """
-const CONFLICT_CATEGORIES = Dict{Symbol, Set{String}}(
-    :keyword => Set([
-        "if", "else", "elseif", "for", "while", "end", "begin",
-        "try", "catch", "finally", "return", "break", "continue",
-        "function", "macro", "module", "import", "export", "using",
-        "let", "local", "global", "const", "do", "in", "isa",
-        "where", "true", "false", "nothing", "missing",
-        "struct", "mutable", "abstract", "primitive", "quote",
-        "baremodule", "type", "immutable", "bitstype", "typealias",
-        "or", "and", "not", "xor", "mod", "div",
+const CONFLICT_CATEGORIES = Dict{Symbol, Set{Symbol}}(
+    :keyword => Set{Symbol}([
+        :if, :else, :elseif, :for, :while, :end, :begin,
+        :try, :catch, :finally, :return, :break, :continue,
+        :function, :macro, :module, :import, :export, :using,
+        :let, :local, :global, :const, :do, :in, :isa,
+        :where, Symbol("true"), Symbol("false"), :nothing, :missing,
+        :struct, :mutable, :abstract, :primitive, :quote,
+        :baremodule, :type, :immutable, :bitstype, :typealias,
+        :or, :and, :not, :xor, :mod, :div,
     ]),
-    :builtin => Set([
-        "eval", "float", "sum", "prod", "rem",
-        "min", "max", "abs", "sign", "round", "floor", "ceil",
-        "real", "imag", "conj", "angle",
-        "length", "size", "zeros", "ones", "fill", "push", "pop",
-        "first", "last", "sort", "reverse", "map", "filter", "reduce",
-        "zip", "enumerate", "collect", "copy", "deepcopy",
-        "print", "println", "display", "show", "string", "parse",
-        "read", "write", "open", "close", "flush",
-        "error", "throw", "rethrow", "assert",
-        "typeof", "isa", "convert", "promote",
-        "get", "set", "delete", "keys", "values", "pairs",
-        "union", "intersect", "setdiff", "issubset",
-        "any", "all", "count", "findall", "findfirst", "findlast",
-        "range", "step", "start", "stop",
-        "time", "sleep", "wait", "notify",
-        "rand", "randn", "seed",
-        "pi", "e", "im", "Inf", "NaN", "ans", "help",
+    :builtin => Set{Symbol}([
+        :eval, :float, :sum, :prod, :rem,
+        :min, :max, :abs, :sign, :round, :floor, :ceil,
+        :real, :imag, :conj, :angle,
+        :length, :size, :zeros, :ones, :fill, :push, :pop,
+        :first, :last, :sort, :reverse, :map, :filter, :reduce,
+        :zip, :enumerate, :collect, :copy, :deepcopy,
+        :print, :println, :display, :show, :string, :parse,
+        :read, :write, :open, :close, :flush,
+        :error, :throw, :rethrow, :assert,
+        :typeof, :isa, :convert, :promote,
+        :get, :set, :delete, :keys, :values, :pairs,
+        :union, :intersect, :setdiff, :issubset,
+        :any, :all, :count, :findall, :findfirst, :findlast,
+        :range, :step, :start, :stop,
+        :time, :sleep, :wait, :notify,
+        :rand, :randn, :seed,
+        :pi, :e, :im, :Inf, :NaN, :ans, :help,
     ]),
-    :base_math => Set([
-        "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
-        "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
-        "sec", "csc", "cot", "asec", "acsc", "acot",
-        "sech", "csch", "coth", "asech", "acsch", "acoth",
-        "sinc", "sincos", "sinpi", "cospi",
-        "exp", "exp2", "exp10", "expm1",
-        "log", "log2", "log10", "log1p",
-        "sqrt", "cbrt", "hypot",
-        "gcd", "lcm", "gcdx",
-        "factorial", "binomial",
-        "isnan", "isinf", "isfinite", "isinteger", "isreal",
-        "iseven", "isodd", "ispow2",
-        "nextpow", "prevpow",
-        "sign", "signbit", "copysign", "flipsign",
-        "clamp", "clamp!",
-        "muladd", "fma",
-        "modf", "rem", "mod", "divrem", "fldmod",
-        "numerator", "denominator",
+    :base_math => Set{Symbol}([
+        :sin, :cos, :tan, :asin, :acos, :atan, :atan2,
+        :sinh, :cosh, :tanh, :asinh, :acosh, :atanh,
+        :sec, :csc, :cot, :asec, :acsc, :acot,
+        :sech, :csch, :coth, :asech, :acsch, :acoth,
+        :sinc, :sincos, :sinpi, :cospi,
+        :exp, :exp2, :exp10, :expm1,
+        :log, :log2, :log10, :log1p,
+        :sqrt, :cbrt, :hypot,
+        :gcd, :lcm, :gcdx,
+        :factorial, :binomial,
+        :isnan, :isinf, :isfinite, :isinteger, :isreal,
+        :iseven, :isodd, :ispow2,
+        :nextpow, :prevpow,
+        :sign, :signbit, :copysign, :flipsign,
+        :clamp, Symbol("clamp!"),
+        :muladd, :fma,
+        :modf, :rem, :mod, :divrem, :fldmod,
+        :numerator, :denominator,
     ]),
-    :linear_algebra => Set([
-        "det", "inv", "trace", "rank", "transpose", "adjoint",
-        "norm", "normalize", "dot", "cross",
-        "eigen", "eigvals", "eigvecs",
-        "svd", "svdvals",
-        "lu", "qr", "cholesky", "schur", "hessenberg",
-        "diag", "diagm", "diagind",
-        "tril", "triu", "tril!", "triu!",
-        "I", "eye", "identity",
-        "kron", "kronsum",
-        "nullspace", "pinv",
-        "cond", "opnorm", "factorize",
-        "ishermitian", "issymmetric", "isposdef", "istriu", "istril",
-        "lyap", "sylvester",
+    :linear_algebra => Set{Symbol}([
+        :det, :inv, :trace, :rank, :transpose, :adjoint,
+        :norm, :normalize, :dot, :cross,
+        :eigen, :eigvals, :eigvecs,
+        :svd, :svdvals,
+        :lu, :qr, :cholesky, :schur, :hessenberg,
+        :diag, :diagm, :diagind,
+        :tril, :triu, Symbol("tril!"), Symbol("triu!"),
+        :I, :eye, :identity,
+        :kron, :kronsum,
+        :nullspace, :pinv,
+        :cond, :opnorm, :factorize,
+        :ishermitian, :issymmetric, :isposdef, :istriu, :istril,
+        :lyap, :sylvester,
     ]),
-    :statistics => Set([
-        "mean", "median", "var", "std", "cov", "cor",
-        "quantile", "percentile",
+    :statistics => Set{Symbol}([
+        :mean, :median, :var, :std, :cov, :cor,
+        :quantile, :percentile,
     ]),
 )
 
@@ -475,10 +475,10 @@ const CONFLICT_CATEGORIES = Dict{Symbol, Set{String}}(
 """
     VALID_COMMANDS
 
-Set of all valid GIAC command names. Populated at module initialization
+Set of all valid GIAC command names (as Symbols). Populated at module initialization
 from `list_commands()`.
 """
-const VALID_COMMANDS = Set{String}()
+const VALID_COMMANDS = Set{Symbol}()
 
 # ============================================================================
 # Conflict Warning System (008-all-giac-commands, FR-010)
@@ -487,13 +487,13 @@ const VALID_COMMANDS = Set{String}()
 """
     _warned_conflicts
 
-Set of conflict commands that have already been warned about in this session.
+Set of conflict commands (as Symbols) that have already been warned about in this session.
 Each conflict is warned only once to avoid spam.
 """
-const _warned_conflicts = Set{String}()
+const _warned_conflicts = Set{Symbol}()
 
 """
-    _warn_conflict(cmd::String) -> Bool
+    _warn_conflict(cmd::Symbol) -> Bool
 
 Warn the user when they use a GIAC command that conflicts with Julia.
 
@@ -501,7 +501,7 @@ This function is called by `giac_cmd` when a conflicting command is used.
 Each conflict is warned only once per session to avoid spam.
 
 # Arguments
-- `cmd`: Command name to check
+- `cmd`: Command name (as Symbol) to check
 
 # Returns
 - `true` if a warning was issued (first use of this conflict)
@@ -509,12 +509,12 @@ Each conflict is warned only once per session to avoid spam.
 
 # Example (internal use)
 ```julia
-_warn_conflict("eval")  # First call: warns, returns true
-_warn_conflict("eval")  # Second call: no warning, returns false
-_warn_conflict("factor")  # Not a conflict: returns false
+_warn_conflict(:eval)  # First call: warns, returns true
+_warn_conflict(:eval)  # Second call: no warning, returns false
+_warn_conflict(:factor)  # Not a conflict: returns false
 ```
 """
-function _warn_conflict(cmd::String)::Bool
+function _warn_conflict(cmd::Symbol)::Bool
     # Only warn for actual conflicts that haven't been warned yet
     if cmd in JULIA_CONFLICTS && cmd ∉ _warned_conflicts
         push!(_warned_conflicts, cmd)
@@ -554,15 +554,15 @@ Initialize the command registry at module load time.
 Populates VALID_COMMANDS from list_commands() and builds CATEGORY_LOOKUP.
 """
 function _init_command_registry()
-    # Populate VALID_COMMANDS
+    # Populate VALID_COMMANDS (convert Strings from list_commands() to Symbols)
     empty!(VALID_COMMANDS)
     for cmd in list_commands()
         if !isempty(cmd)
-            push!(VALID_COMMANDS, cmd)
+            push!(VALID_COMMANDS, Symbol(cmd))
         end
     end
 
-    # Build reverse category lookup
+    # Build reverse category lookup (commands are now Symbols)
     empty!(CATEGORY_LOOKUP)
     for (category, commands) in COMMAND_CATEGORIES
         for cmd in commands
@@ -578,7 +578,7 @@ end
 # ============================================================================
 
 """
-    search_commands(pattern::String) -> Vector{String}
+    search_commands(pattern::String) -> Vector{Symbol}
 
 Search for commands matching a string prefix.
 
@@ -586,25 +586,25 @@ Search for commands matching a string prefix.
 - `pattern::String`: Prefix to match
 
 # Returns
-- `Vector{String}`: List of matching command names, sorted alphabetically
+- `Vector{Symbol}`: List of matching command names (as Symbols), sorted alphabetically
 
 # Example
 ```julia
-search_commands("sin")  # Returns ["sin", "sinc", "sincos", "sinh", ...]
+search_commands("sin")  # Returns [:sin, :sinc, :sincos, :sinh, ...]
 ```
 """
-function search_commands(pattern::String)::Vector{String}
-    results = String[]
+function search_commands(pattern::String)::Vector{Symbol}
+    results = Symbol[]
     for cmd in VALID_COMMANDS
-        if startswith(cmd, pattern)
+        if startswith(string(cmd), pattern)
             push!(results, cmd)
         end
     end
-    return sort(results)
+    return sort!(results, by=string)
 end
 
 """
-    search_commands(pattern::Regex) -> Vector{String}
+    search_commands(pattern::Regex) -> Vector{Symbol}
 
 Search for commands matching a regular expression.
 
@@ -612,21 +612,21 @@ Search for commands matching a regular expression.
 - `pattern::Regex`: Regular expression to match
 
 # Returns
-- `Vector{String}`: List of matching command names, sorted alphabetically
+- `Vector{Symbol}`: List of matching command names (as Symbols), sorted alphabetically
 
 # Example
 ```julia
 search_commands(r"^a.*n\$")  # Returns commands starting with 'a' and ending with 'n'
 ```
 """
-function search_commands(pattern::Regex)::Vector{String}
-    results = String[]
+function search_commands(pattern::Regex)::Vector{Symbol}
+    results = Symbol[]
     for cmd in VALID_COMMANDS
-        if occursin(pattern, cmd)
+        if occursin(pattern, string(cmd))
             push!(results, cmd)
         end
     end
-    return sort(results)
+    return sort!(results, by=string)
 end
 
 """
@@ -648,7 +648,7 @@ function list_categories()::Vector{Symbol}
 end
 
 """
-    commands_in_category(category::Symbol) -> Vector{String}
+    commands_in_category(category::Symbol) -> Vector{Symbol}
 
 Get all commands in a specific category.
 
@@ -656,7 +656,7 @@ Get all commands in a specific category.
 - `category::Symbol`: Category name (e.g., `:trigonometry`, `:algebra`)
 
 # Returns
-- `Vector{String}`: List of command names in the category, sorted alphabetically
+- `Vector{Symbol}`: List of command names (as Symbols) in the category, sorted alphabetically
 
 # Throws
 - `ArgumentError`: If the category does not exist
@@ -664,15 +664,15 @@ Get all commands in a specific category.
 # Example
 ```julia
 trig = commands_in_category(:trigonometry)
-# ["acos", "asin", "atan", "cos", "sin", "tan", ...]
+# [:acos, :asin, :atan, :cos, :sin, :tan, ...]
 ```
 """
-function commands_in_category(category::Symbol)::Vector{String}
+function commands_in_category(category::Symbol)::Vector{Symbol}
     if !haskey(COMMAND_CATEGORIES, category)
         valid_cats = join(sort(collect(keys(COMMAND_CATEGORIES))), ", ")
         throw(ArgumentError("Unknown category: $category. Valid categories: $valid_cats"))
     end
-    return sort(copy(COMMAND_CATEGORIES[category]))
+    return sort(copy(COMMAND_CATEGORIES[category]), by=string)
 end
 
 """
@@ -697,19 +697,17 @@ end
 ```
 """
 function command_info(cmd::Symbol)::Union{CommandInfo, Nothing}
-    cmd_str = string(cmd)
-
-    if cmd_str ∉ VALID_COMMANDS && !isempty(VALID_COMMANDS)
+    if cmd ∉ VALID_COMMANDS && !isempty(VALID_COMMANDS)
         return nothing
     end
 
-    # Lookup category
-    category = get(CATEGORY_LOOKUP, cmd_str, :other)
+    # Lookup category (using Symbol key)
+    category = get(CATEGORY_LOOKUP, cmd, :other)
 
     # Get documentation from GIAC help system
     doc = giac_help(cmd)
 
-    return CommandInfo(cmd_str, category, String[], doc)
+    return CommandInfo(string(cmd), category, String[], doc)
 end
 
 """
@@ -815,23 +813,24 @@ result.examples     # ["factor(x^4-1)", "factor(x^4-4,sqrt(2))", ...]
 - [`HelpResult`](@ref): The return type
 """
 function help(cmd::Union{Symbol, String})::HelpResult
-    cmd_str = string(cmd)
+    cmd_sym = cmd isa Symbol ? cmd : Symbol(cmd)
+    cmd_str = string(cmd_sym)
 
     # Check if command exists in VALID_COMMANDS (005-nearest-command-suggestions)
-    if !isempty(VALID_COMMANDS) && cmd_str ∉ VALID_COMMANDS
-        suggestions = suggest_commands(cmd_str)
+    if !isempty(VALID_COMMANDS) && cmd_sym ∉ VALID_COMMANDS
+        suggestions = suggest_commands(cmd_sym)
         suggestion_text = _format_suggestions(suggestions)
         return HelpResult(cmd_str, "[No help found for: $cmd_str.$suggestion_text]", String[], String[])
     end
 
-    help_text = giac_help(cmd)
+    help_text = giac_help(cmd_sym)
 
     if isempty(help_text)
         if is_stub_mode()
             return HelpResult(cmd_str, "[Help not available in stub mode]", String[], String[])
         else
             # Get suggestions for unknown commands (005-nearest-command-suggestions)
-            suggestions = suggest_commands(cmd_str)
+            suggestions = suggest_commands(cmd_sym)
             suggestion_text = _format_suggestions(suggestions)
             return HelpResult(cmd_str, "[No help found for: $cmd_str.$suggestion_text]", String[], String[])
         end
@@ -968,7 +967,7 @@ function set_suggestion_count(n::Int)::Nothing
 end
 
 """
-    suggest_commands_with_distances(input::Union{Symbol, String}; n::Int=get_suggestion_count()) -> Vector{Tuple{String, Int}}
+    suggest_commands_with_distances(input::Union{Symbol, String}; n::Int=get_suggestion_count()) -> Vector{Tuple{Symbol, Int}}
 
 Find commands similar to the given input, including edit distances.
 
@@ -977,48 +976,48 @@ Find commands similar to the given input, including edit distances.
 - `n`: Maximum number of suggestions to return (default: `get_suggestion_count()`)
 
 # Returns
-- `Vector{Tuple{String, Int}}`: Pairs of (command_name, edit_distance), sorted by
+- `Vector{Tuple{Symbol, Int}}`: Pairs of (command_name, edit_distance), sorted by
   distance (ascending), then alphabetically
 
 # Example
 ```julia
 suggest_commands_with_distances(:factr)
-# [("factor", 1), ("cfactor", 2), ("ifactor", 2), ...]
+# [(:factor, 1), (:cfactor, 2), (:ifactor, 2), ...]
 
 suggest_commands_with_distances("integrat", n=2)
-# [("integrate", 1), ...]
+# [(:integrate, 1), ...]
 ```
 
 # See also
 - [`suggest_commands`](@ref): Returns only command names (no distances)
 """
-function suggest_commands_with_distances(input::Union{Symbol, String}; n::Int=get_suggestion_count())::Vector{Tuple{String, Int}}
+function suggest_commands_with_distances(input::Union{Symbol, String}; n::Int=get_suggestion_count())::Vector{Tuple{Symbol, Int}}
     input_str = lowercase(string(input))
 
     if isempty(input_str)
-        return Tuple{String, Int}[]
+        return Tuple{Symbol, Int}[]
     end
 
     threshold = _max_threshold(input_str)
 
     # Compute distances for all commands within threshold
-    candidates = Tuple{String, Int}[]
+    candidates = Tuple{Symbol, Int}[]
     for cmd in VALID_COMMANDS
-        dist = _levenshtein(input_str, lowercase(cmd))
+        dist = _levenshtein(input_str, lowercase(string(cmd)))
         if dist > 0 && dist <= threshold  # Exclude exact matches (dist=0)
             push!(candidates, (cmd, dist))
         end
     end
 
     # Sort by (distance ASC, command ASC)
-    sort!(candidates, by = x -> (x[2], x[1]))
+    sort!(candidates, by = x -> (x[2], string(x[1])))
 
     # Return top N
     return candidates[1:min(n, length(candidates))]
 end
 
 """
-    suggest_commands(input::Union{Symbol, String}; n::Int=get_suggestion_count()) -> Vector{String}
+    suggest_commands(input::Union{Symbol, String}; n::Int=get_suggestion_count()) -> Vector{Symbol}
 
 Find commands similar to the given input using edit distance.
 
@@ -1030,16 +1029,16 @@ that are similar to the input.
 - `n`: Maximum number of suggestions to return (default: `get_suggestion_count()`)
 
 # Returns
-- `Vector{String}`: Similar command names, sorted by edit distance (ascending),
+- `Vector{Symbol}`: Similar command names, sorted by edit distance (ascending),
   then alphabetically. Returns empty vector if no similar commands found.
 
 # Example
 ```julia
 suggest_commands(:factr)
-# ["factor", "cfactor", "ifactor", ...]
+# [:factor, :cfactor, :ifactor, ...]
 
 suggest_commands("integrat", n=2)
-# ["integrate", ...]
+# [:integrate, ...]
 
 suggest_commands(:factor)  # Exact match
 # []  (empty, no suggestions needed)
@@ -1049,28 +1048,28 @@ suggest_commands(:factor)  # Exact match
 - `suggest_commands_with_distances`: Also returns edit distances (internal function)
 - [`set_suggestion_count`](@ref): Configure default suggestion count
 """
-function suggest_commands(input::Union{Symbol, String}; n::Int=get_suggestion_count())::Vector{String}
+function suggest_commands(input::Union{Symbol, String}; n::Int=get_suggestion_count())::Vector{Symbol}
     results = suggest_commands_with_distances(input; n=n)
     return [cmd for (cmd, _) in results]
 end
 
 """
-    _format_suggestions(suggestions::Vector{String}) -> String
+    _format_suggestions(suggestions::Vector{Symbol}) -> String
 
 Format a list of suggestions for display in error messages.
 
 # Arguments
-- `suggestions`: Vector of command names to suggest
+- `suggestions`: Vector of command names (as Symbols) to suggest
 
 # Returns
 - `String`: Formatted suggestion text, e.g., "Did you mean: factor, ifactor, cfactor?"
   Returns empty string if no suggestions.
 """
-function _format_suggestions(suggestions::Vector{String})::String
+function _format_suggestions(suggestions::Vector{Symbol})::String
     if isempty(suggestions)
         return ""
     end
-    return " Did you mean: " * join(suggestions, ", ") * "?"
+    return " Did you mean: " * join(string.(suggestions), ", ") * "?"
 end
 
 # ============================================================================
@@ -1108,7 +1107,7 @@ function _score_help_match(query::AbstractString, help_result::HelpResult)::Int
 end
 
 """
-    search_commands_by_description(query; n=20) -> Vector{String}
+    search_commands_by_description(query; n=20) -> Vector{Symbol}
 
 Search for GIAC commands whose help text contains the given keyword.
 
@@ -1120,13 +1119,13 @@ the description and example text of each command's help documentation.
 - `n::Int=20`: Maximum number of results to return
 
 # Returns
-- `Vector{String}`: Matching command names, sorted by relevance
+- `Vector{Symbol}`: Matching command names (as Symbols), sorted by relevance
 
 # Example
 ```julia
 # Find commands related to factorization
 search_commands_by_description("factor")
-# Returns: ["factor", "ifactor", "cfactor", ...]
+# Returns: [:factor, :ifactor, :cfactor, ...]
 
 # Search for matrix operations
 search_commands_by_description("matrix", n=10)
@@ -1136,13 +1135,13 @@ search_commands_by_description("matrix", n=10)
 - [`search_commands`](@ref): Search by command name pattern
 - [`help`](@ref): Get detailed help for a specific command
 """
-function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEFAULT_SEARCH_LIMIT)::Vector{String}
+function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEFAULT_SEARCH_LIMIT)::Vector{Symbol}
     # Convert to lowercase string and trim (String() ensures no SubString)
     query_str = String(strip(lowercase(string(query))))
 
     # Handle empty/whitespace query
     if isempty(query_str)
-        return String[]
+        return Symbol[]
     end
 
     # Handle invalid n
@@ -1152,32 +1151,36 @@ function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEF
 
     # Return empty in stub mode
     if is_stub_mode() || isempty(VALID_COMMANDS)
-        return String[]
+        return Symbol[]
     end
 
     # Commands to skip (operators, keywords that cause GIAC syntax errors)
     # These are valid in GIAC's command list but don't have help entries
-    skip_commands = Set([
-        # Operators
-        "*", "+", "-", "/", "^", "%", "<", ">", "=", "|", "&", "!", "@",
-        "==", "!=", "<=", ">=", "&&", "||", ":=", "+=", "-=", "*=", "/=",
-        ".*", "./", ".^", "&*", "&^", "%/", "/%" , "=<", "->", "@@",
+    skip_commands = Set{Symbol}([
+        # Operators (as Symbols)
+        Symbol("*"), Symbol("+"), Symbol("-"), Symbol("/"), Symbol("^"),
+        Symbol("%"), Symbol("<"), Symbol(">"), Symbol("="), Symbol("|"),
+        Symbol("&"), Symbol("!"), Symbol("@"), Symbol("=="), Symbol("!="),
+        Symbol("<="), Symbol(">="), Symbol("&&"), Symbol("||"), Symbol(":="),
+        Symbol("+="), Symbol("-="), Symbol("*="), Symbol("/="), Symbol(".*"),
+        Symbol("./"), Symbol(".^"), Symbol("&*"), Symbol("&^"), Symbol("%/"),
+        Symbol("/%"), Symbol("=<"), Symbol("->"), Symbol("@@"),
         # Keywords (English)
-        "if", "then", "else", "elif", "fi", "end", "end_if",
-        "for", "from", "to", "by", "step", "do", "od", "end_for",
-        "while", "until", "end_while",
-        "in", "or", "and", "xor", "not", "mod", "div",
-        "begin", "var", "local", "option", "default", "otherwise",
-        "try", "catch", "union", "intersect", "minus",
+        :if, :then, :else, :elif, :fi, :end, :end_if,
+        :for, :from, :to, :by, :step, :do, :od, :end_for,
+        :while, :until, :end_while,
+        :in, :or, :and, :xor, :not, :mod, :div,
+        :begin, :var, :local, :option, :default, :otherwise,
+        :try, :catch, :union, :intersect, :minus,
         # Keywords (French)
-        "de", "faire", "fpour", "fsi", "sinon", "alors", "jusque", "jusqua", "jusqu_a",
-        "ftantque", "ffaire", "ffonction", "ffunction", "pas", "ou", "et",
+        :de, :faire, :fpour, :fsi, :sinon, :alors, :jusque, :jusqua, :jusqu_a,
+        :ftantque, :ffaire, :ffonction, :ffunction, :pas, :ou, :et,
         # Other problematic
-        "{", "EndDlog"
+        Symbol("{"), :EndDlog
     ])
 
     # Search all commands and score matches
-    matches = Tuple{String, Int}[]
+    matches = Tuple{Symbol, Int}[]
 
     # Redirect stderr at file descriptor level to suppress C++ library errors
     old_stderr = ccall(:dup, Cint, (Cint,), 2)
@@ -1192,8 +1195,9 @@ function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEF
                 continue
             end
 
+            cmd_str = string(cmd)
             # Skip if doesn't start with a letter (likely an operator)
-            if !isempty(cmd) && !isletter(first(cmd))
+            if !isempty(cmd_str) && !isletter(first(cmd_str))
                 continue
             end
 
@@ -1209,7 +1213,7 @@ function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEF
             end
 
             # Parse help and score
-            help_result = _parse_help(help_text, cmd)
+            help_result = _parse_help(help_text, cmd_str)
             score = _score_help_match(query_str, help_result)
 
             if score > 0
@@ -1223,7 +1227,7 @@ function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEF
     end
 
     # Sort by (score DESC, command ASC)
-    sort!(matches, by = x -> (-x[2], x[1]))
+    sort!(matches, by = x -> (-x[2], string(x[1])))
 
     # Return top n command names
     return [cmd for (cmd, _) in matches[1:min(n, length(matches))]]
@@ -1257,12 +1261,12 @@ is_valid_command(:notacommand) # false
 - [`suggest_commands`](@ref): Get suggestions for misspelled commands
 """
 function is_valid_command(name::Union{Symbol, String})::Bool
-    cmd_str = string(name)
-    return cmd_str in VALID_COMMANDS
+    cmd = name isa Symbol ? name : Symbol(name)
+    return cmd in VALID_COMMANDS
 end
 
 """
-    exportable_commands() -> Vector{String}
+    exportable_commands() -> Vector{Symbol}
 
 Get a list of GIAC commands that can be safely exported without conflicting
 with Julia keywords, builtins, or standard library functions.
@@ -1272,35 +1276,36 @@ This function filters the complete command list to include only commands that:
 2. Do not conflict with Julia (not in `JULIA_CONFLICTS`)
 
 # Returns
-- `Vector{String}`: Sorted list of exportable command names
+- `Vector{Symbol}`: Sorted list of exportable command names (as Symbols)
 
 # Example
 ```julia
 cmds = exportable_commands()
 length(cmds)        # ~2000+
-"factor" in cmds    # true
-"eval" in cmds      # false (conflicts with Julia)
-"sin" in cmds       # false (conflicts with Base.sin)
-issorted(cmds)      # true
+:factor in cmds     # true
+:eval in cmds       # false (conflicts with Julia)
+:sin in cmds        # false (conflicts with Base.sin)
+issorted(cmds, by=string)  # true
 ```
 
 # See also
 - [`available_commands`](@ref): All commands starting with ASCII letters
 - [`JULIA_CONFLICTS`](@ref): Commands that conflict with Julia
 """
-function exportable_commands()::Vector{String}
+function exportable_commands()::Vector{Symbol}
     if isempty(VALID_COMMANDS)
-        return String[]
+        return Symbol[]
     end
 
-    result = String[]
+    result = Symbol[]
     for cmd in VALID_COMMANDS
+        cmd_str = string(cmd)
         # Must start with ASCII letter
-        if isempty(cmd) || !isletter(first(cmd))
+        if isempty(cmd_str) || !isletter(first(cmd_str))
             continue
         end
-        # Must not be ASCII letter (filter non-ASCII starters like Greek)
-        if !isascii(first(cmd))
+        # Must be ASCII letter (filter non-ASCII starters like Greek)
+        if !isascii(first(cmd_str))
             continue
         end
         # Must not conflict with Julia
@@ -1310,7 +1315,7 @@ function exportable_commands()::Vector{String}
         push!(result, cmd)
     end
 
-    return sort(result)
+    return sort!(result, by=string)
 end
 
 """
@@ -1343,11 +1348,11 @@ conflict_reason(:factor)  # nothing
 - [`exportable_commands`](@ref): Commands safe to export
 """
 function conflict_reason(cmd::Union{Symbol, String})::Union{Symbol, Nothing}
-    cmd_str = string(cmd)
+    cmd_sym = cmd isa Symbol ? cmd : Symbol(cmd)
 
     # Check each category
     for (category, commands) in CONFLICT_CATEGORIES
-        if cmd_str in commands
+        if cmd_sym in commands
             return category
         end
     end
