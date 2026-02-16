@@ -195,4 +195,16 @@ end
         @test occursin("sin", result_str)
         @test occursin("cos", result_str)
     end
+
+    @testset "Base.diff multiple dispatch" begin
+        # Test that Base.diff still works for arrays (021-remove-giac-prefix)
+        @test diff([1, 4, 9, 16]) == [3, 5, 7]  # Base.diff for arrays
+
+        # Test that diff works for GiacExpr (symbolic differentiation)
+        x = giac_eval("x")
+        f = giac_eval("x^2")
+        result = diff(f, x)
+        @test result isa GiacExpr
+        @test string(result) == "2*x"
+    end
 end

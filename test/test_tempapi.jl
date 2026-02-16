@@ -167,51 +167,40 @@
     end
 
     # ==========================================================================
-    # User Story 3: Backward Compatibility
+    # User Story 3: Equivalence with invoke_cmd
     # ==========================================================================
 
-    @testset "US3: giac_* Functions Still Exported" begin
-        # Verify original functions still available from main module
-        @test isdefined(Giac, :giac_diff)
-        @test isdefined(Giac, :giac_integrate)
-        @test isdefined(Giac, :giac_limit)
-        @test isdefined(Giac, :giac_factor)
-        @test isdefined(Giac, :giac_expand)
-        @test isdefined(Giac, :giac_simplify)
-        @test isdefined(Giac, :giac_solve)
-    end
-
-    @testset "US3: Equivalence with giac_* Functions" begin
+    @testset "US3: Equivalence with invoke_cmd" begin
         if !Giac.is_stub_mode()
             expr = giac_eval("x^2 - 1")
             x = giac_eval("x")
 
             # diff equivalence
-            @test string(Giac.TempApi.diff(expr, x)) == string(giac_diff(expr, x))
+            @test string(Giac.TempApi.diff(expr, x)) == string(invoke_cmd(:diff, expr, x))
 
             # factor equivalence
-            @test string(Giac.TempApi.factor(expr)) == string(giac_factor(expr))
+            @test string(Giac.TempApi.factor(expr)) == string(invoke_cmd(:factor, expr))
 
             # expand equivalence (use a different expr)
             expr2 = giac_eval("(x+1)^2")
-            @test string(Giac.TempApi.expand(expr2)) == string(giac_expand(expr2))
+            @test string(Giac.TempApi.expand(expr2)) == string(invoke_cmd(:expand, expr2))
 
             # simplify equivalence
             expr3 = giac_eval("(x^2-1)/(x-1)")
-            @test string(Giac.TempApi.simplify(expr3)) == string(giac_simplify(expr3))
+            @test string(Giac.TempApi.simplify(expr3)) == string(invoke_cmd(:simplify, expr3))
 
             # integrate equivalence
             f = giac_eval("x^2")
-            @test string(Giac.TempApi.integrate(f, x)) == string(giac_integrate(f, x))
+            @test string(Giac.TempApi.integrate(f, x)) == string(invoke_cmd(:integrate, f, x))
 
             # solve equivalence
             eq = giac_eval("x^2 - 4")
-            @test string(Giac.TempApi.solve(eq, x)) == string(giac_solve(eq, x))
+            @test string(Giac.TempApi.solve(eq, x)) == string(invoke_cmd(:solve, eq, x))
 
             # limit equivalence
             lim_expr = giac_eval("sin(x)/x")
             zero = giac_eval("0")
-            @test string(Giac.TempApi.limit(lim_expr, x, zero)) == string(giac_limit(lim_expr, x, zero))
+            @test string(Giac.TempApi.limit(lim_expr, x, zero)) == string(invoke_cmd(:limit, lim_expr, x, zero))
         else
             @test_skip "Skipped in stub mode"
         end

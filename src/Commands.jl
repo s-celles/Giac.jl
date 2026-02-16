@@ -177,17 +177,37 @@ for each command in `exportable_commands()`. The functions are exported from
 """
 function _generate_command_functions()
     for cmd in exportable_commands()  # exportable_commands() returns Vector{Symbol}
-        # Skip if already defined (shouldn't happen, but safety check)
+        # Skip if already defined IN THIS MODULE (not inherited from Base)
+        # We check parentmodule to distinguish our definitions from Base bindings
         if isdefined(@__MODULE__, cmd)
-            continue
+            binding = getfield(@__MODULE__, cmd)
+            # Only skip if it's a function we defined in this module
+            if binding isa Function && parentmodule(binding) === @__MODULE__
+                continue
+            end
+            # Otherwise, we want to shadow the Base binding with our GIAC command
         end
 
-        # Generate the wrapper function
-        @eval begin
-            function $(cmd)(args...)::GiacExpr
-                invoke_cmd($(QuoteNode(cmd)), args...)
+        # Generate the wrapper function with GiacExpr type constraint on first argument
+        # This enables multiple dispatch: Base.diff([1,2,3]) vs diff(GiacExpr, ...)
+        if isdefined(Base, cmd)
+            # Extend Base function - adds method to existing function
+            # This allows: diff([1,2,3]) -> Base method, diff(giac_expr, x) -> our method
+            @eval begin
+                function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
+                    invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                end
             end
-            export $(cmd)
+            # Re-export the extended Base function
+            @eval export $(cmd)
+        else
+            # Create new function and export it
+            @eval begin
+                function $(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
+                    invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                end
+                export $(cmd)
+            end
         end
     end
 

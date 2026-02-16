@@ -8,7 +8,7 @@ GiacExpr and GiacMatrix automatically render as LaTeX in Pluto notebooks! No ext
 using Giac
 
 f = giac_eval("2/(1-x)")  # Automatically displays as LaTeX fraction
-df = giac_diff(f, giac_eval("x"))  # Derivative also renders as LaTeX
+df = invoke_cmd(:diff, f, giac_eval("x"))  # Derivative also renders as LaTeX
 
 M = GiacMatrix([1 2; 3 4])  # Matrices render as LaTeX too
 ```

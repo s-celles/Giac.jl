@@ -365,11 +365,11 @@
             @testset "VALID_COMMANDS" begin
                 vc = length(Giac.VALID_COMMANDS)
                 @test vc >= 2000
-                @test "sin" in Giac.VALID_COMMANDS
-                @test "cos" in Giac.VALID_COMMANDS
-                @test "diff" in Giac.VALID_COMMANDS
-                @test "integrate" in Giac.VALID_COMMANDS
-                @test "factor" in Giac.VALID_COMMANDS
+                @test :sin in Giac.VALID_COMMANDS
+                @test :cos in Giac.VALID_COMMANDS
+                @test :diff in Giac.VALID_COMMANDS
+                @test :integrate in Giac.VALID_COMMANDS
+                @test :factor in Giac.VALID_COMMANDS
             end
         else
             @warn "Skipping function listing tests - GIAC library not available (stub mode)"

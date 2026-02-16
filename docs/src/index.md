@@ -32,6 +32,7 @@ For full GIAC integration with C++ library, see the [Installation Guide](install
 
 ```julia
 using Giac
+using Giac.Commands: factor, diff, integrate
 
 # Create symbolic variables
 @giac_var x y
@@ -40,13 +41,13 @@ using Giac
 expr = giac_eval("x^2 + 2*x*y + y^2")
 
 # Factor polynomials
-result = giac_factor(expr)  # Returns (x+y)^2
+result = factor(expr)  # Returns (x+y)^2
 
 # Differentiate
-derivative = giac_diff(result, x)  # Returns 2*(x+y)
+derivative = diff(result, x)  # Returns 2*(x+y)
 
 # Integrate
-integral = giac_integrate(giac_eval("x^2"), x)  # Returns x^3/3
+integral = integrate(giac_eval("x^2"), x)  # Returns x^3/3
 ```
 
 ## Command Access

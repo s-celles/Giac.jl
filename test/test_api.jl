@@ -19,21 +19,41 @@
         # These test the stub behavior for now
     end
 
-    @testset "Calculus Functions" begin
-        # T025-T028: Calculus API functions exist
-        @test isdefined(Giac, :giac_diff)
-        @test isdefined(Giac, :giac_integrate)
-        @test isdefined(Giac, :giac_limit)
-        @test isdefined(Giac, :giac_series)
+    @testset "Calculus Functions via Giac.Commands" begin
+        # T025-T028: Calculus API functions available via Commands submodule
+        # invoke_cmd is always available
+        @test :invoke_cmd in names(Giac.Commands)
+        # In stub mode, VALID_COMMANDS is empty so command-specific functions aren't generated
+        # We check names() because isdefined() would find Base.diff etc.
+        if is_stub_mode()
+            @test_broken :diff in names(Giac.Commands)
+            @test_broken :integrate in names(Giac.Commands)
+            @test_broken :limit in names(Giac.Commands)
+            @test_broken :series in names(Giac.Commands)
+        else
+            @test :diff in names(Giac.Commands)
+            @test :integrate in names(Giac.Commands)
+            @test :limit in names(Giac.Commands)
+            @test :series in names(Giac.Commands)
+        end
     end
 
-    @testset "Algebra Functions" begin
-        # T029-T033: Algebra API functions exist
-        @test isdefined(Giac, :giac_factor)
-        @test isdefined(Giac, :giac_expand)
-        @test isdefined(Giac, :giac_simplify)
-        @test isdefined(Giac, :giac_solve)
-        @test isdefined(Giac, :giac_gcd)
+    @testset "Algebra Functions via Giac.Commands" begin
+        # T029-T033: Algebra API functions available via Commands submodule
+        # In stub mode, VALID_COMMANDS is empty so command-specific functions aren't generated
+        if is_stub_mode()
+            @test_broken :factor in names(Giac.Commands)
+            @test_broken :expand in names(Giac.Commands)
+            @test_broken :simplify in names(Giac.Commands)
+            @test_broken :solve in names(Giac.Commands)
+            @test_broken :gcd in names(Giac.Commands)
+        else
+            @test :factor in names(Giac.Commands)
+            @test :expand in names(Giac.Commands)
+            @test :simplify in names(Giac.Commands)
+            @test :solve in names(Giac.Commands)
+            @test :gcd in names(Giac.Commands)
+        end
     end
 
     @testset "GiacMatrix Symbol Constructor" begin

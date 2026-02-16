@@ -51,12 +51,12 @@
     end
 
     @testset "Expression Interoperability (US3)" begin
-        # T021: @giac_var variable with giac_diff
-        @testset "with giac_diff" begin
+        # T021: @giac_var variable with invoke_cmd(:diff, ...)
+        @testset "with diff command" begin
             @giac_var x
             expr = giac_eval("x^2")
             if !is_stub_mode()
-                result = giac_diff(expr, x)
+                result = invoke_cmd(:diff, expr, x)
                 @test string(result) == "2*x"
             else
                 # In stub mode, verify types work together

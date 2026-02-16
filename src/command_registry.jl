@@ -330,7 +330,7 @@ const JULIA_CONFLICTS = Set{Symbol}([
     :or, :and, :not, :xor, :mod, :div,
 
     # Base builtins that would shadow
-    :eval, :float, :sum, :prod, :rem,
+    :eval, :float, :sum, :prod, :rem, :Int, :Text,
     :min, :max, :abs, :sign, :round, :floor, :ceil,
     :real, :imag, :conj, :angle,
     :length, :size, :zeros, :ones, :fill, :push, :pop,
@@ -409,7 +409,7 @@ const CONFLICT_CATEGORIES = Dict{Symbol, Set{Symbol}}(
         :or, :and, :not, :xor, :mod, :div,
     ]),
     :builtin => Set{Symbol}([
-        :eval, :float, :sum, :prod, :rem,
+        :eval, :float, :sum, :prod, :rem, :Int, :Text,
         :min, :max, :abs, :sign, :round, :floor, :ceil,
         :real, :imag, :conj, :angle,
         :length, :size, :zeros, :ones, :fill, :push, :pop,

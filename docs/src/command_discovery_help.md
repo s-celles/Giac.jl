@@ -151,20 +151,25 @@ The suggestion system uses Levenshtein edit distance with an adaptive threshold 
 
 ### Calculus
 
+Use `Giac.Commands` or `invoke_cmd`:
+
 | Function | Description |
 |----------|-------------|
-| `giac_diff(f, x, n=1)` | nth derivative of f with respect to x |
-| `giac_integrate(f, x)` | Indefinite integral |
-| `giac_integrate(f, x, a, b)` | Definite integral from a to b |
-| `giac_limit(f, x, point)` | Limit as x approaches point |
-| `giac_series(f, x, point, order)` | Taylor series expansion |
+| `Giac.Commands.diff(f, x)` | Derivative of f with respect to x |
+| `Giac.Commands.integrate(f, x)` | Indefinite integral |
+| `invoke_cmd(:diff, f, x, n)` | nth derivative of f with respect to x |
+| `invoke_cmd(:integrate, f, x, a, b)` | Definite integral from a to b |
+| `invoke_cmd(:limit, f, x, point)` | Limit as x approaches point |
+| `invoke_cmd(:series, f, x, point, order)` | Taylor series expansion |
 
 ### Algebra
 
+Use `Giac.Commands` or `invoke_cmd`:
+
 | Function | Description |
 |----------|-------------|
-| `giac_factor(expr)` | Factor polynomial |
-| `giac_expand(expr)` | Expand expression |
-| `giac_simplify(expr)` | Simplify expression |
-| `giac_solve(expr, x)` | Solve equation for x |
-| `giac_gcd(a, b)` | Greatest common divisor |
+| `Giac.Commands.factor(expr)` | Factor polynomial |
+| `Giac.Commands.expand(expr)` | Expand expression |
+| `Giac.Commands.simplify(expr)` | Simplify expression |
+| `Giac.Commands.solve(expr, x)` | Solve equation for x |
+| `Giac.Commands.gcd(a, b)` | Greatest common divisor |

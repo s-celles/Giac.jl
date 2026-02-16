@@ -33,21 +33,33 @@ to_julia
 
 ## Calculus Operations
 
-```@docs
-giac_diff
-giac_integrate
-giac_limit
-giac_series
+Calculus functions are available via `Giac.Commands` or `invoke_cmd`:
+
+```julia
+using Giac
+using Giac.Commands: diff, integrate, limit, series
+
+# Or use invoke_cmd
+invoke_cmd(:diff, expr, x)
+invoke_cmd(:integrate, expr, x)
+invoke_cmd(:limit, expr, x, point)
+invoke_cmd(:series, expr, x, point, order)
 ```
 
 ## Algebraic Operations
 
-```@docs
-giac_factor
-giac_expand
-giac_simplify
-giac_solve
-giac_gcd
+Algebra functions are available via `Giac.Commands` or `invoke_cmd`:
+
+```julia
+using Giac
+using Giac.Commands: factor, expand, simplify, solve, gcd
+
+# Or use invoke_cmd
+invoke_cmd(:factor, expr)
+invoke_cmd(:expand, expr)
+invoke_cmd(:simplify, expr)
+invoke_cmd(:solve, expr, x)
+invoke_cmd(:gcd, a, b)
 ```
 
 ## Command Discovery

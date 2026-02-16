@@ -15,8 +15,6 @@ manipulation, and linear algebra with a Julia-native API.
 - `@giac_var`: Create symbolic variables from Julia symbols
 - `to_julia`: Convert GiacExpr to Julia types
 - `invoke_cmd`: Universal command invocation (works for ALL commands)
-- `giac_diff`, `giac_integrate`, `giac_limit`, `giac_series`: Calculus
-- `giac_factor`, `giac_expand`, `giac_simplify`, `giac_solve`, `giac_gcd`: Algebra
 
 # Command Access
 
@@ -46,9 +44,10 @@ using Giac
 # Declare symbolic variables with @giac_var macro
 @giac_var x y
 
-# Build and manipulate expressions
+# Build and manipulate expressions using Giac.Commands
+using Giac.Commands: factor, expand, diff
 expr = giac_eval("x^2 + 2*x*y + y^2")
-result = giac_factor(expr)   # (x+y)^2
+result = factor(expr)   # (x+y)^2
 
 # Or use string-based evaluation directly
 result = giac_eval("factor(x^2 - 1)")
@@ -128,11 +127,10 @@ Convert a GiacExpr to a Symbolics.jl expression. Extended by GiacSymbolicsExt.
 """
 function to_symbolics end
 
-# Calculus functions
-export giac_diff, giac_integrate, giac_limit, giac_series
-
-# Algebra functions
-export giac_factor, giac_expand, giac_simplify, giac_solve, giac_gcd
+# Note: Calculus and algebra functions (giac_diff, giac_integrate, giac_factor, etc.)
+# have been removed in favor of Giac.Commands equivalents.
+# Use: Giac.Commands.diff, Giac.Commands.integrate, Giac.Commands.factor, etc.
+# Or: invoke_cmd(:diff, ...), invoke_cmd(:integrate, ...), invoke_cmd(:factor, ...)
 
 # Default context (initialized in __init__)
 const DEFAULT_CONTEXT = Ref{GiacContext}()

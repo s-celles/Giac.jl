@@ -134,16 +134,16 @@ solve(x^2 - 1, x)  # list[-1,1]
 
 ### Available Functions
 
-| TempApi Function | Delegates To | Description |
-|-----------------|--------------|-------------|
-| `diff(expr, var, n=1)` | `giac_diff` | Differentiate expression |
-| `integrate(expr, var)` | `giac_integrate` | Indefinite integral |
-| `integrate(expr, var, a, b)` | `giac_integrate` | Definite integral |
-| `limit(expr, var, point)` | `giac_limit` | Compute limit |
-| `factor(expr)` | `giac_factor` | Factor polynomial |
-| `expand(expr)` | `giac_expand` | Expand expression |
-| `simplify(expr)` | `giac_simplify` | Simplify expression |
-| `solve(expr, var)` | `giac_solve` | Solve equation |
+| TempApi Function | Uses | Description |
+|-----------------|------|-------------|
+| `diff(expr, var, n=1)` | `invoke_cmd(:diff, ...)` | Differentiate expression |
+| `integrate(expr, var)` | `invoke_cmd(:integrate, ...)` | Indefinite integral |
+| `integrate(expr, var, a, b)` | `invoke_cmd(:integrate, ...)` | Definite integral |
+| `limit(expr, var, point)` | `invoke_cmd(:limit, ...)` | Compute limit |
+| `factor(expr)` | `invoke_cmd(:factor, ...)` | Factor polynomial |
+| `expand(expr)` | `invoke_cmd(:expand, ...)` | Expand expression |
+| `simplify(expr)` | `invoke_cmd(:simplify, ...)` | Simplify expression |
+| `solve(expr, var)` | `invoke_cmd(:solve, ...)` | Solve equation |
 
 ### Usage Patterns
 
@@ -166,13 +166,13 @@ Giac.TempApi.diff(expr, x)
 Giac.TempApi.factor(expr)
 ```
 
-### Comparison: TempApi vs giac_* vs Commands
+### Comparison: TempApi vs Commands vs invoke_cmd
 
 | Pattern | Import | Usage | Best For |
 |---------|--------|-------|----------|
 | TempApi | `using Giac.TempApi` | `diff(expr, x)` | Clean, simple names for common operations |
-| giac_* | `using Giac` | `giac_diff(expr, x)` | Main module, explicit prefixes |
 | Commands | `using Giac.Commands` | `diff(expr, x)` | Access to ALL 2200+ GIAC commands |
+| invoke_cmd | `using Giac` | `invoke_cmd(:diff, expr, x)` | Universal, works for ALL commands |
 
 **Note**: Both TempApi and Commands export `diff`, `factor`, etc. Use selective imports to avoid conflicts, or choose one submodule based on your needs.
 
