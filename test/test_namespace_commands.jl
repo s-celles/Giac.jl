@@ -170,7 +170,9 @@ end
         @test :GiacExpr ∈ giac_exports
         @test :giac_eval ∈ giac_exports
         @test :invoke_cmd ∈ giac_exports
-        @test :help ∈ giac_exports
+        # Note: help is no longer exported (027-remove-help-function)
+        # Use ?cmd or Giac.giac_help(:cmd) instead
+        @test :giac_help ∈ giac_exports
     end
 end
 

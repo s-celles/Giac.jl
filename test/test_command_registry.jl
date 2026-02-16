@@ -137,10 +137,10 @@ end
     @testset "returns HelpResult type" begin
         # T019: Test help(:cmd) returning HelpResult type
         if !Giac.is_stub_mode()
-            result = help(:factor)
+            result = Giac.help(:factor)
             @test result isa Giac.HelpResult
         else
-            result = help(:factor)
+            result = Giac.help(:factor)
             @test result isa Giac.HelpResult
             @test occursin("stub mode", result.description)
         end
@@ -148,14 +148,14 @@ end
 
     @testset "command field accessible" begin
         # T020: Test accessing .command field
-        result = help(:factor)
+        result = Giac.help(:factor)
         @test result.command == "factor"
     end
 
     @testset "description field accessible" begin
         # T021: Test accessing .description field
         if !Giac.is_stub_mode()
-            result = help(:factor)
+            result = Giac.help(:factor)
             @test !isempty(result.description)
             @test result.description isa String
         end
@@ -164,7 +164,7 @@ end
     @testset "related field is Vector{String}" begin
         # T022: Test accessing .related as Vector{String}
         if !Giac.is_stub_mode()
-            result = help(:factor)
+            result = Giac.help(:factor)
             @test result.related isa Vector{String}
         end
     end
@@ -172,7 +172,7 @@ end
     @testset "examples field is Vector{String}" begin
         # T023: Test accessing .examples as Vector{String}
         if !Giac.is_stub_mode()
-            result = help(:factor)
+            result = Giac.help(:factor)
             @test result.examples isa Vector{String}
         end
     end
@@ -180,7 +180,7 @@ end
     @testset "stub mode handling" begin
         # T026: Handle stub mode - return HelpResult with placeholder
         if Giac.is_stub_mode()
-            result = help(:factor)
+            result = Giac.help(:factor)
             @test result isa Giac.HelpResult
             @test occursin("stub mode", result.description)
         end
@@ -576,7 +576,7 @@ end
     else
         @testset "help(:factr) includes suggestions" begin
             # T035: Test that help(:factr) includes suggestions in description
-            result = help(:factr)
+            result = Giac.help(:factr)
             @test result isa Giac.HelpResult
             # Should contain "Did you mean:" in the description
             @test occursin("Did you mean:", result.description)

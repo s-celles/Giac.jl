@@ -54,6 +54,9 @@ using LinearAlgebra
 
     # Tables.jl compatibility tests (025-tables-compatibility)
     include("test_tables.jl")
+
+    # Julia help system integration tests (026-julia-help-docstrings)
+    include("test_docstrings.jl")
 end
 
 # Aqua.jl package quality tests

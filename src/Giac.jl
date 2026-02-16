@@ -93,7 +93,7 @@ export @giac_var, @giac_several_vars
 # Command invocation (009-commands-submodule)
 # invoke_cmd replaces giac_cmd - available from main module and Giac.Commands
 export invoke_cmd
-export search_commands, commands_in_category, command_info, list_categories, giac_help, help
+export search_commands, commands_in_category, command_info, list_categories, giac_help
 
 # Command suggestions (005-nearest-command-suggestions)
 export suggest_commands, set_suggestion_count, get_suggestion_count

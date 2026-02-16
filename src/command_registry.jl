@@ -42,7 +42,11 @@ A structured representation of parsed GIAC command help information.
 
 # Example
 ```julia
-result = help(:factor)
+# Use Julia's help system for interactive help:
+# ?factor (after using Giac.Commands: factor)
+
+# For programmatic access, use Giac.help (internal) or giac_help:
+result = Giac.help(:factor)
 result.command      # "factor"
 result.description  # "Factorizes a polynomial."
 result.related      # ["ifactor", "partfrac", "normal"]
@@ -50,7 +54,6 @@ result.examples     # ["factor(x^4-1)", "factor(x^4-4,sqrt(2))", ...]
 ```
 
 # See also
-- [`help`](@ref): Get formatted help for a command
 - [`giac_help`](@ref): Get raw help string
 """
 struct HelpResult
@@ -780,7 +783,11 @@ end
 """
     help(cmd::Union{Symbol, String}) -> HelpResult
 
-Get formatted help for a GIAC command.
+Internal function to get formatted help for a GIAC command.
+
+**Note**: This function is not exported. For interactive help, use Julia's
+native help system: `?factor` after importing the command. For programmatic
+access to raw help, use the exported `giac_help` function.
 
 Returns a `HelpResult` struct containing parsed help information. The result
 auto-displays formatted output in the REPL, and provides programmatic access
@@ -799,30 +806,19 @@ to individual fields.
 # Example
 ```julia
 using Giac
+using Giac.Commands: factor
 
-# View formatted help (auto-displays)
-help(:factor)
-# factor
-# ══════
-#
-# Description:
-#   Factorizes a polynomial.
-#
-# Related:
-#   ifactor, partfrac, normal
-#
-# Examples:
-#   • factor(x^4-1)
-#   • factor(x^4-4,sqrt(2))
+# Recommended: Use Julia's native help system
+?factor
 
-# Access help data programmatically
-result = help(:factor)
+# For programmatic access (internal):
+result = Giac.help(:factor)
 result.description  # "Factorizes a polynomial."
 result.examples     # ["factor(x^4-1)", "factor(x^4-4,sqrt(2))", ...]
 ```
 
 # See also
-- [`giac_help`](@ref): Returns raw help string
+- [`giac_help`](@ref): Returns raw help string (exported)
 - [`HelpResult`](@ref): The return type
 """
 function help(cmd::Union{Symbol, String})::HelpResult

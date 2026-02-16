@@ -58,7 +58,7 @@ module Commands
 using ..Giac: GiacExpr, GiacInput, GiacError, giac_eval, with_giac_lock,
               VALID_COMMANDS, JULIA_CONFLICTS, CONFLICT_CATEGORIES, exportable_commands,
               suggest_commands, _format_suggestions, _warn_conflict,
-              _arg_to_giac_string, _build_command_string
+              _arg_to_giac_string, _build_command_string, help, HelpResult
 
 # ============================================================================
 # Core Command Invocation (invoke_cmd)
@@ -148,6 +148,118 @@ invoke_cmd(cmd::String, args...)::GiacExpr = invoke_cmd(Symbol(cmd), args...)
 
 # Export invoke_cmd
 export invoke_cmd
+
+# ============================================================================
+# Docstring Generation (026-julia-help-docstrings)
+# ============================================================================
+
+"""
+Standard warning text appended to docstrings with examples.
+Explains GIAC/Julia syntax differences.
+"""
+const GIAC_SYNTAX_WARNING = """
+
+**Note**: Examples use GIAC syntax which may differ from Julia.
+In Julia, use string expressions: `factor(giac_eval("x^4-1"))`
+Or with symbolic variables: `@giac_var x; factor(x^4-1)`
+"""
+
+"""
+    _build_docstring(cmd::Symbol; is_base_extension::Bool=false) -> String
+
+Build a formatted Julia docstring for a GIAC command.
+
+# Arguments
+- `cmd::Symbol`: The GIAC command name
+- `is_base_extension::Bool`: Whether this extends a Base function (adds note)
+
+# Returns
+- `String`: A properly formatted docstring for use with `@doc`
+
+# Contract
+- Includes command name in signature format
+- Includes "GIAC command:" label
+- Includes description from `help(cmd)`
+- Includes related commands section if non-empty
+- Includes examples section if non-empty
+- Includes syntax warning when examples are present
+- Includes Base extension note when `is_base_extension=true`
+- Returns fallback message for commands without help
+"""
+function _build_docstring(cmd::Symbol; is_base_extension::Bool=false)::String
+    cmd_str = string(cmd)
+
+    # Get help information, suppressing any GIAC error output
+    # Some commands (keywords like "alors", "then", "to") cause GIAC syntax errors
+    hr = try
+        redirect_stderr(devnull) do
+            help(cmd)
+        end
+    catch
+        # Fallback if help retrieval fails
+        return """
+    $cmd_str(args...)
+
+GIAC command: `$cmd_str`
+
+No detailed documentation available for this command.
+
+Use `help(:$cmd_str)` for GIAC's built-in help system.
+"""
+    end
+
+    # Build the docstring
+    parts = String[]
+
+    # Signature
+    if is_base_extension
+        push!(parts, "    Base.$cmd_str(expr::GiacExpr, args...)")
+    else
+        push!(parts, "    $cmd_str(expr::GiacInput, args...)")
+    end
+    push!(parts, "")
+
+    # GIAC command label
+    push!(parts, "GIAC command: `$cmd_str`")
+    push!(parts, "")
+
+    # Base extension note
+    if is_base_extension
+        push!(parts, "This method extends `Base.$cmd_str` for `GiacExpr` arguments.")
+        push!(parts, "")
+    end
+
+    # Description
+    if !isempty(hr.description) && !startswith(hr.description, "[No help found")
+        push!(parts, hr.description)
+        push!(parts, "")
+    else
+        push!(parts, "No detailed description available.")
+        push!(parts, "")
+    end
+
+    # Related commands
+    if !isempty(hr.related)
+        push!(parts, "# Related Commands")
+        for rel in hr.related
+            push!(parts, "- `$rel`")
+        end
+        push!(parts, "")
+    end
+
+    # Examples
+    if !isempty(hr.examples)
+        push!(parts, "# Examples (GIAC syntax)")
+        push!(parts, "```giac")
+        for ex in hr.examples
+            push!(parts, ex)
+        end
+        push!(parts, "```")
+        push!(parts, GIAC_SYNTAX_WARNING)
+    end
+
+    return join(parts, "\n")
+end
 
 # ============================================================================
 # Helper Functions for Conflict Resolution (023-conflicts-multidispatch)
@@ -273,15 +385,16 @@ function _generate_command_functions()
             # Otherwise, we want to shadow the Base binding with our GIAC command
         end
 
-        # Generate the wrapper function
+        # Generate the wrapper function with docstring (026-julia-help-docstrings)
         # For Base-extended functions: Keep GiacExpr constraint to avoid method ambiguity
         # For new functions: Use GiacInput to accept native Julia types (022-julia-type-conversion)
         if isdefined(Base, cmd)
             # Extend Base function - adds method to existing function
             # Keep GiacExpr constraint to avoid conflicts with Base methods
             # e.g., Base.sin(Float64) should not be overridden by our method
+            docstring = _build_docstring(cmd; is_base_extension=true)
             @eval begin
-                function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
+                @doc $docstring function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
                     invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
                 end
             end
@@ -290,8 +403,9 @@ function _generate_command_functions()
         else
             # Create new function with GiacInput type constraint
             # This enables native Julia type usage: ifactor(1000), isprime(17), etc.
+            docstring = _build_docstring(cmd; is_base_extension=false)
             @eval begin
-                function $(cmd)(first_arg::GiacInput, rest...)::GiacExpr
+                @doc $docstring function $(cmd)(first_arg::GiacInput, rest...)::GiacExpr
                     invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
                 end
                 export $(cmd)
@@ -319,8 +433,10 @@ function _generate_command_functions()
         if isdefined(Base, cmd)
             func = getfield(Base, cmd)
             if func isa Function
+                # Generate docstring for Base extension (026-julia-help-docstrings)
+                docstring = _build_docstring(cmd; is_base_extension=true)
                 @eval begin
-                    function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
+                    @doc $docstring function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
                         invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
                     end
                 end

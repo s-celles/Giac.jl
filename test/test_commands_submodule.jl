@@ -75,7 +75,9 @@
         @test :GiacExpr ∈ giac_exports
         @test :giac_eval ∈ giac_exports
         @test :to_julia ∈ giac_exports
-        @test :help ∈ giac_exports
+        # Note: help is no longer exported (027-remove-help-function)
+        # Use ?cmd or Giac.giac_help(:cmd) instead
+        @test :giac_help ∈ giac_exports
 
         # T012: Export count should be reasonable (not the ~2000+ commands)
         # Count only the non-private exports (those not starting with underscore)
