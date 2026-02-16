@@ -49,14 +49,14 @@ Access commands via `Giac.Commands.commandname`:
 using Giac
 
 @giac_var x
-expr = giac_eval("x^2 - 1")
+expr = x^2 - 1
 
 # Access commands via Giac.Commands
 Giac.Commands.factor(expr)          # (x-1)*(x+1)
-Giac.Commands.expand(giac_eval("(x+1)^2"))  # x^2+2*x+1
+Giac.Commands.expand((x+1)^2)  # x^2+2*x+1
 Giac.Commands.diff(expr, x)         # 2*x
 Giac.Commands.integrate(expr, x)    # x^3/3-x
-Giac.Commands.ifactor(giac_eval("120"))  # 2^3*3*5
+Giac.Commands.ifactor(120)  # 2^3*3*5
 ```
 
 ### 2. Selective Import
@@ -68,11 +68,11 @@ using Giac
 using Giac.Commands: factor, expand, diff, integrate
 
 @giac_var x
-expr = giac_eval("x^2 - 1")
+expr = x^2 - 1
 
 # Direct function syntax (no prefix needed)
 factor(expr)              # (x-1)*(x+1)
-expand(giac_eval("(x+1)^2"))  # x^2+2*x+1
+expand((x+1)^2)  # x^2+2*x+1
 diff(expr, x)             # 2*x
 integrate(expr, x)        # x^3/3-x
 ```
@@ -86,10 +86,10 @@ using Giac
 using Giac.Commands  # Imports ALL exportable commands
 
 @giac_var x
-factor(giac_eval("x^2 - 1"))    # (x-1)*(x+1)
-ifactor(giac_eval("120"))       # 2^3*3*5
-nextprime(giac_eval("100"))     # 101
-airy_ai(giac_eval("0"))         # Airy function
+factor(x^2 - 1)    # (x-1)*(x+1)
+ifactor(120)       # 2^3*3*5
+nextprime(100)     # 101
+airy_ai(0)         # Airy function
 
 # Discover available commands
 exportable_commands()            # ~2000+ command names
@@ -131,7 +131,7 @@ integrate(x^2, x)  # x^3/3
 integrate(x^2, x, 0, 1)  # returns
     // ∫ ~= 0.333333333333
     GiacExpr: 1/3
-limit(sin(x)/x, x, giac_eval("0"))  # 1
+limit(sin(x)/x, x, 0)  # 1
 simplify(a + b - a)  # b
 solve(x^2 - 1)
 solve(x^2 - 1, x)  # list[-1,1]
