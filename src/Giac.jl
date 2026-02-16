@@ -146,14 +146,15 @@ loads the GIAC library, and initializes the command registry.
 # Initialization Steps
 1. Initialize the GIAC library and default context
 2. Populate the command registry from GIAC's help database
-3. The Commands submodule then generates wrapper functions in Commands.__init__()
+3. Generate wrapper functions for all exportable commands in Giac.Commands
 
 # Performance
 - Total initialization typically completes in < 5 seconds
 - Runtime function generation adds ~1 second for ~2000 functions
 
 # Note
-Command function generation moved to Giac.Commands submodule (009-commands-submodule).
+Command generation is triggered here (not in Commands.__init__) because nested
+module __init__ functions run BEFORE parent module __init__ in Julia.
 """
 function __init__()
     try
@@ -161,7 +162,9 @@ function __init__()
         DEFAULT_CONTEXT[] = GiacContext()
         # Initialize command registry (003-giac-commands)
         _init_command_registry()
-        # Note: Command functions are generated in Commands.__init__() (009-commands-submodule)
+        # Generate command functions in Commands submodule (009-commands-submodule)
+        # Note: This must happen here because nested module __init__ runs BEFORE parent __init__
+        Commands._generate_command_functions()
     catch e
         @error "Failed to initialize GIAC library" exception=e
         rethrow()

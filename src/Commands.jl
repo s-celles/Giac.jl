@@ -198,10 +198,8 @@ end
 # Module Initialization
 # ============================================================================
 
-function __init__()
-    # Generate command functions at runtime
-    # This is called after Giac.__init__() has populated VALID_COMMANDS
-    _generate_command_functions()
-end
+# Note: __init__() removed because nested module __init__ runs BEFORE parent module __init__
+# Command generation is now triggered by Giac.__init__() after VALID_COMMANDS is populated.
+# See: https://docs.julialang.org/en/v1/manual/modules/#Module-initialization-and-precompilation
 
 end # module Commands
