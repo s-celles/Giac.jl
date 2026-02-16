@@ -8,33 +8,33 @@ a + b
 
 # or simply
 
-@giac_var a b</code></pre><h2 id="Batch-Variable-Creation"><a class="docs-heading-anchor" href="#Batch-Variable-Creation">Batch Variable Creation</a><a id="Batch-Variable-Creation-1"></a><a class="docs-heading-anchor-permalink" href="#Batch-Variable-Creation" title="Permalink"></a></h2><p>Create multiple indexed symbolic variables with <code>@giac_several_var</code>:</p><pre><code class="language-julia hljs">using Giac
+@giac_var a b</code></pre><h2 id="Batch-Variable-Creation"><a class="docs-heading-anchor" href="#Batch-Variable-Creation">Batch Variable Creation</a><a id="Batch-Variable-Creation-1"></a><a class="docs-heading-anchor-permalink" href="#Batch-Variable-Creation" title="Permalink"></a></h2><p>Create multiple indexed symbolic variables with <code>@giac_several_vars</code>:</p><pre><code class="language-julia hljs">using Giac
 
 # 1D vector of variables
-@giac_several_var a 3
+@giac_several_vars a 3
 # Creates: a1, a2, a3
 # Returns: (a1, a2, a3)
 a1 + a2 + a3  # Symbolic sum
 
 # 2D matrix of variables
-@giac_several_var m 2 3
+@giac_several_vars m 2 3
 # Creates: m11, m12, m13, m21, m22, m23 (row-major order)
 # Returns: (m11, m12, m13, m21, m22, m23)
 
 # N-dimensional tensors
-@giac_several_var t 2 2 2
+@giac_several_vars t 2 2 2
 # Creates: t111, t112, t121, t122, t211, t212, t221, t222
 
 # Large dimensions use underscore separators
-@giac_several_var b 2 10
+@giac_several_vars b 2 10
 # Creates: b_1_1, b_1_2, ..., b_2_10
 
 # Unicode base names supported
-@giac_several_var α 2
+@giac_several_vars α 2
 # Creates: α1, α2
 
 # Capture return tuple for iteration
-vars = @giac_several_var c 4
+vars = @giac_several_vars c 4
 for v in vars
     println(v)
 end</code></pre><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
@@ -42,4 +42,4 @@ mermaid.initialize({
     startOnLoad: true,
     theme: "neutral"
 });
-</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../quickstart/">« Quick Start</a><a class="docs-footer-nextpage" href="../pluto/">Using with Pluto reactive notebooks »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 16 February 2026 10:58">Monday 16 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../quickstart/">« Quick Start</a><a class="docs-footer-nextpage" href="../pluto/">Using with Pluto reactive notebooks »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 16 February 2026 11:24">Monday 16 February 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
