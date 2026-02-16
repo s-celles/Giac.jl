@@ -1,4 +1,5 @@
 using Documenter
+using DocumenterMermaid
 using Giac
 using Giac.Commands
 using Giac.TempApi
