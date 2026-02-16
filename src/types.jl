@@ -88,6 +88,41 @@ function Base.show(io::IO, ::MIME"text/plain", expr::GiacExpr)
 end
 
 # ============================================================================
+# GiacInput Type Alias (022-julia-type-conversion)
+# ============================================================================
+
+"""
+    GiacInput
+
+Union type representing all valid input types for GIAC command functions.
+
+This type alias enables generated GIAC command functions to accept native Julia
+types in addition to `GiacExpr`, providing a more ergonomic API.
+
+# Supported Types
+- `GiacExpr`: Native GIAC expressions
+- `Number`: All Julia numeric types (Integer, AbstractFloat, Rational, Complex, etc.)
+- `String`: String representations of GIAC expressions
+- `Symbol`: Variable names (e.g., `:x`, `:y`)
+
+# Examples
+```julia
+using Giac
+using Giac.Commands
+
+# All of these work:
+ifactor(1000)           # Integer
+ifactor(giac_eval("1000"))  # GiacExpr
+simplify("x^2 - 1")     # String
+```
+
+# See also
+- [`GiacExpr`](@ref): The primary GIAC expression type
+- [`invoke_cmd`](@ref): Universal command invocation
+"""
+const GiacInput = Union{GiacExpr, Number, String, Symbol}
+
+# ============================================================================
 # Method Syntax Support (003-giac-commands)
 # ============================================================================
 

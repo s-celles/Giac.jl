@@ -55,7 +55,7 @@ invoke_cmd(:sin, x)      # Including conflicting ones
 """
 module Commands
 
-using ..Giac: GiacExpr, GiacError, giac_eval, with_giac_lock,
+using ..Giac: GiacExpr, GiacInput, GiacError, giac_eval, with_giac_lock,
               VALID_COMMANDS, JULIA_CONFLICTS, exportable_commands,
               suggest_commands, _format_suggestions, _warn_conflict,
               _arg_to_giac_string, _build_command_string
@@ -196,11 +196,13 @@ function _generate_command_functions()
             # Otherwise, we want to shadow the Base binding with our GIAC command
         end
 
-        # Generate the wrapper function with GiacExpr type constraint on first argument
-        # This enables multiple dispatch: Base.diff([1,2,3]) vs diff(GiacExpr, ...)
+        # Generate the wrapper function
+        # For Base-extended functions: Keep GiacExpr constraint to avoid method ambiguity
+        # For new functions: Use GiacInput to accept native Julia types (022-julia-type-conversion)
         if isdefined(Base, cmd)
             # Extend Base function - adds method to existing function
-            # This allows: diff([1,2,3]) -> Base method, diff(giac_expr, x) -> our method
+            # Keep GiacExpr constraint to avoid conflicts with Base methods
+            # e.g., Base.sin(Float64) should not be overridden by our method
             @eval begin
                 function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
                     invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
@@ -209,9 +211,10 @@ function _generate_command_functions()
             # Note: Don't export Base-extended functions - they're already accessible
             # via Base and exporting undefined local symbols causes Aqua warnings
         else
-            # Create new function and export it
+            # Create new function with GiacInput type constraint
+            # This enables native Julia type usage: ifactor(1000), isprime(17), etc.
             @eval begin
-                function $(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
+                function $(cmd)(first_arg::GiacInput, rest...)::GiacExpr
                     invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
                 end
                 export $(cmd)

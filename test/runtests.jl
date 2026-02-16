@@ -42,6 +42,9 @@ using LinearAlgebra
 
     # Introspection tests (003-giac-introspection)
     include("test_introspection.jl")
+
+    # Type conversion tests (022-julia-type-conversion)
+    include("test_type_conversion.jl")
 end
 
 # Aqua.jl package quality tests

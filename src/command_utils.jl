@@ -12,10 +12,35 @@ Convert a Julia argument to a GIAC-compatible string representation.
 
 # Supported types
 - `GiacExpr`: Uses string representation
-- `String`: Used directly
-- `Number`: Converted via string()
-- `Symbol`: Converted to string (for variable names)
-- `Vector`: Converted to GIAC list syntax [a, b, c]
+- `String`: Used directly (passthrough)
+- `Rational`: Converted to GIAC fraction syntax `(num)/(den)` (e.g., `1//2` → `"(1)/(2)"`)
+- `Complex`: Converted to GIAC complex syntax `(re)+(im)*i` (e.g., `1+2im` → `"(1)+(2)*i"`)
+- `AbstractIrrational`: Mapped to GIAC constants (e.g., `π` → `"pi"`, `ℯ` → `"e"`)
+- `Number`: Other numeric types converted via `string()` (Integer, Float, BigInt, etc.)
+- `Symbol`: Converted to string (for variable names, e.g., `:x` → `"x"`)
+- `AbstractVector`: Converted to GIAC list syntax `[a,b,c]`
+
+# Type Dispatch Order
+More specific types (Rational, Complex, AbstractIrrational) are handled before
+the general Number fallback, ensuring correct GIAC syntax for each type.
+
+# Examples
+```julia
+_arg_to_giac_string(giac_eval("x^2"))  # "x^2"
+_arg_to_giac_string(1000)               # "1000"
+_arg_to_giac_string(1//2)               # "(1)/(2)"
+_arg_to_giac_string(1 + 2im)            # "(1)+(2)*i"
+_arg_to_giac_string(π)                  # "pi"
+_arg_to_giac_string(:x)                 # "x"
+_arg_to_giac_string([1, 2, 3])          # "[1,2,3]"
+```
+
+# Errors
+Throws `ArgumentError` for unsupported types like `Nothing`, `Missing`, or `Dict`.
+
+# See also
+- [`GiacInput`](@ref): Union type for valid GIAC input types
+- [`invoke_cmd`](@ref): Uses this function for argument conversion
 """
 function _arg_to_giac_string(arg::GiacExpr)::String
     return string(arg)
@@ -25,6 +50,38 @@ function _arg_to_giac_string(arg::String)::String
     return arg
 end
 
+# Rational numbers need explicit fraction syntax (022-julia-type-conversion)
+# Julia's string(1//2) returns "1//2" but GIAC uses "/" not "//"
+function _arg_to_giac_string(arg::Rational)::String
+    return "($(numerator(arg)))/($(denominator(arg)))"
+end
+
+# Complex numbers need GIAC's imaginary unit syntax (022-julia-type-conversion)
+# Julia uses "im" but GIAC uses "i"
+function _arg_to_giac_string(arg::Complex)::String
+    re, im_part = real(arg), imag(arg)
+    return "($(re))+($(im_part))*i"
+end
+
+# AbstractIrrational types (pi, e, etc.) need mapping to GIAC symbols (022-julia-type-conversion)
+function _arg_to_giac_string(arg::AbstractIrrational)::String
+    if arg === π
+        return "pi"
+    elseif arg === MathConstants.e
+        return "e"
+    elseif arg === MathConstants.γ  # Euler-Mascheroni constant
+        return "euler_gamma"
+    elseif arg === MathConstants.catalan
+        return "catalan"
+    elseif arg === MathConstants.φ  # Golden ratio
+        return "(1+sqrt(5))/2"
+    else
+        # Fallback to numeric approximation for unknown irrationals
+        return string(Float64(arg))
+    end
+end
+
+# General Number fallback (integers, floats, etc.)
 function _arg_to_giac_string(arg::Number)::String
     return string(arg)
 end
