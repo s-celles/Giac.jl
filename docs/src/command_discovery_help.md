@@ -128,7 +128,7 @@ The suggestion system uses Levenshtein edit distance with an adaptive threshold 
 | `get_suggestion_count()` | Get current suggestion count |
 | `search_commands_by_description(query; n=20)` | Search commands by help text keywords |
 
-### Command Access (008)
+### Command Access
 
 | Function | Description |
 |----------|-------------|
