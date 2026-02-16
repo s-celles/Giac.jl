@@ -128,7 +128,7 @@ flowchart LR
 
 ### The Command Flow
 
-Located in `commands.jl` (lines 109-143):
+Located in `command_utils.jl` (lines 109-143):
 
 ```julia
 function giac_cmd(cmd::Symbol, args...)::GiacExpr
@@ -170,7 +170,7 @@ This pattern elegantly bridges Tier 1 and Tier 3, trying the fast path first and
 
 ### Implementation
 
-Located in `commands.jl` (lines 152-180):
+Located in `command_utils.jl` (lines 152-180):
 
 ```julia
 function _tier1_or_fallback(tier1_func::Function, cmd::Symbol, expr::GiacExpr)::GiacExpr
@@ -201,7 +201,7 @@ end
 ### Usage in Base Extensions
 
 ```julia
-# In commands.jl - extending Julia's Base functions
+# In command_utils.jl - extending Julia's Base functions
 Base.sin(expr::GiacExpr)::GiacExpr =
     _tier1_or_fallback(_giac_sin_tier1, :sin, expr)
 

@@ -171,7 +171,7 @@ end
 ### Usage in Code
 
 ```julia
-# In commands.jl
+# In command_utils.jl
 function giac_cmd(cmd::Symbol, args...)::GiacExpr
     # ... argument processing ...
 

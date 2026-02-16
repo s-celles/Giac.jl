@@ -14,7 +14,7 @@ graph TB
 
     subgraph Giac_jl_Package["Giac.jl Package"]
         B["api.jl (High-level API)"]
-        C["commands.jl (giac_cmd)"]
+        C["command_utils.jl (giac_cmd)"]
         D["wrapper.jl (CxxWrap)"]
         E["types.jl (GiacExpr)"]
     end
@@ -41,8 +41,8 @@ graph TB
 | `types.jl` | Type definitions | `GiacExpr`, `GiacContext`, `GiacMatrix`, `GiacError` | None |
 | `wrapper.jl` | CxxWrap bindings, Tier 1/2 functions | `_giac_eval_string`, `_giac_*_tier1` | types.jl |
 | `api.jl` | High-level Julia API | `giac_eval`, `to_julia` | wrapper.jl, types.jl |
-| `commands.jl` | Command invocation, Base extensions | `giac_cmd`, `Base.sin(::GiacExpr)` | wrapper.jl, types.jl |
-| `Commands.jl` | Commands submodule | `invoke_cmd`, ~2000 command functions | commands.jl |
+| `command_utils.jl` | Command invocation, Base extensions | `giac_cmd`, `Base.sin(::GiacExpr)` | wrapper.jl, types.jl |
+| `Commands.jl` | Commands submodule | `invoke_cmd`, ~2000 command functions | command_utils.jl |
 | `command_registry.jl` | Command discovery | `VALID_COMMANDS`, `suggest_commands` | None |
 | `namespace_commands.jl` | Namespace-specific commands | Namespace command helpers | command_registry.jl |
 | `operators.jl` | Arithmetic operators | `+`, `-`, `*`, `/`, `^` for GiacExpr | types.jl |
@@ -180,7 +180,7 @@ A typical function call flows through the package like this:
 ```mermaid
 flowchart LR
     A["User: sin(x)"] --> B{GiacExpr?}
-    B -->|Yes| C[commands.jl]
+    B -->|Yes| C[command_utils.jl]
     B -->|No| D[Julia Base]
     C --> E{Tier 1?}
     E -->|Yes| F["wrapper.jl (_giac_sin_tier1)"]
@@ -201,7 +201,7 @@ graph TD
     A[types.jl] --> B[wrapper.jl]
     A --> C[operators.jl]
     B --> D[api.jl]
-    B --> E[commands.jl]
+    B --> E[command_utils.jl]
     D --> F[macros.jl]
     E --> G[Commands.jl]
     H[command_registry.jl] --> E
@@ -224,9 +224,9 @@ graph TD
 
 | Change Type | Files to Modify |
 |-------------|-----------------|
-| Add a new high-performance function | `wrapper.jl` (Tier 1), `commands.jl` (Base extension) |
+| Add a new high-performance function | `wrapper.jl` (Tier 1), `command_utils.jl` (Base extension) |
 | Add a new type | `types.jl` |
-| Extend an existing command | `commands.jl` or `Commands.jl` |
+| Extend an existing command | `command_utils.jl` or `Commands.jl` |
 | Add a new macro | `macros.jl` |
 | Modify operator behavior | `operators.jl` |
 | Change initialization | `Giac.jl` (`__init__`) or `wrapper.jl` |

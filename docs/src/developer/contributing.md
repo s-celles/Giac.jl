@@ -63,7 +63,7 @@ _giac_horner_tier1(a::Ptr{Cvoid}, b::Ptr{Cvoid}, c::Ptr{Cvoid}) =
 
 ### Step 2: Add the Base Extension
 
-In `src/commands.jl`, add the user-facing function (around line 330):
+In `src/command_utils.jl`, add the user-facing function (around line 330):
 
 ```julia
 # For unary functions
@@ -147,7 +147,7 @@ For functions you want accessible via `Giac.Commands`:
 In `src/Commands.jl`, the functions are auto-generated from `VALID_COMMANDS`. To add a custom function:
 
 ```julia
-# In src/Commands.jl or commands.jl
+# In src/Commands.jl or command_utils.jl
 """
     my_special_function(expr) -> GiacExpr
 
@@ -246,10 +246,10 @@ _giac_tanh_tier1(expr_ptr::Ptr{Cvoid}) =
     _tier1_unary(GiacCxxBindings.giac_tanh, expr_ptr)
 ```
 
-### 3. Add Base Extension (commands.jl)
+### 3. Add Base Extension (command_utils.jl)
 
 ```julia
-# Add after line ~330 in commands.jl
+# Add after line ~330 in command_utils.jl
 
 # Hyperbolic functions
 """
@@ -309,7 +309,7 @@ julia --project -e 'using Pkg; Pkg.test()'
 
 - [ ] Determine the appropriate tier (1, 2, or 3)
 - [ ] If Tier 1: Add wrapper in `wrapper.jl`
-- [ ] Add user-facing function in `commands.jl` or `api.jl`
+- [ ] Add user-facing function in `command_utils.jl` or `api.jl`
 - [ ] Add docstring with examples
 - [ ] Add tests in `test/`
 - [ ] Run test suite
