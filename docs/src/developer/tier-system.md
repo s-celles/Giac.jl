@@ -6,10 +6,10 @@ Giac.jl uses a three-tier performance system to balance execution speed with fle
 
 ```mermaid
 graph TB
-    subgraph "Performance Pyramid"
-        A["Tier 1<br/>Direct C++ Wrappers<br/>~1-10μs"]
-        B["Tier 2<br/>Generic C++ Dispatch<br/>~10-100μs"]
-        C["Tier 3<br/>String Evaluation<br/>~100μs-1ms"]
+    subgraph Performance_Pyramid["Performance Pyramid"]
+        A["Tier 1: Direct C++ (~1-10μs)"]
+        B["Tier 2: Generic Dispatch (~10-100μs)"]
+        C["Tier 3: String Eval (~100μs-1ms)"]
     end
 
     A --> B

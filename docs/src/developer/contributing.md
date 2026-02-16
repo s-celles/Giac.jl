@@ -9,22 +9,22 @@ Use this flowchart to determine which tier to use for your new function:
 ```mermaid
 flowchart TD
     A[New Function to Add] --> B{Is it frequently used?}
-    B -->|Yes| C{Does C++ wrapper exist<br/>in libgiac-julia-wrapper?}
+    B -->|Yes| C{C++ wrapper exists?}
     B -->|No| D[Use Tier 3: giac_cmd]
 
     C -->|Yes| E[Add Tier 1 Wrapper]
-    C -->|No| F{Can you add to<br/>C++ wrapper?}
+    C -->|No| F{Can add C++ wrapper?}
 
-    F -->|Yes| G[Add C++ wrapper first,<br/>then Tier 1]
+    F -->|Yes| G[Add C++ wrapper, then Tier 1]
     F -->|No| H{1-3 arguments?}
 
-    H -->|Yes| I[Tier 2 automatic via<br/>apply_func]
+    H -->|Yes| I[Tier 2 via apply_func]
     H -->|No| D
 
-    E --> J[Add Base extension<br/>with _tier1_or_fallback]
+    E --> J[Add Base extension]
     G --> J
     I --> K[Use giac_cmd directly]
-    D --> L[Add to Commands submodule<br/>or use giac_cmd]
+    D --> L[Add to Commands submodule]
 
     style E fill:#2ecc71
     style G fill:#2ecc71

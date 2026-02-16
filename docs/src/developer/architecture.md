@@ -8,20 +8,20 @@ Giac.jl wraps the GIAC computer algebra system (C++) for use in Julia. The packa
 
 ```mermaid
 graph TB
-    subgraph "Julia User Code"
+    subgraph Julia_User_Code["Julia User Code"]
         A[User Code]
     end
 
-    subgraph "Giac.jl Package"
-        B[api.jl<br/>High-level API]
-        C[commands.jl<br/>giac_cmd & Base extensions]
-        D[wrapper.jl<br/>CxxWrap bindings]
-        E[types.jl<br/>GiacExpr, GiacContext]
+    subgraph Giac_jl_Package["Giac.jl Package"]
+        B["api.jl (High-level API)"]
+        C["commands.jl (giac_cmd)"]
+        D["wrapper.jl (CxxWrap)"]
+        E["types.jl (GiacExpr)"]
     end
 
-    subgraph "External Libraries"
-        F[libgiac-julia-wrapper<br/>C++ Wrapper]
-        G[libgiac<br/>GIAC CAS]
+    subgraph External_Libraries["External Libraries"]
+        F["libgiac-julia-wrapper"]
+        G["libgiac (GIAC CAS)"]
     end
 
     A --> B
@@ -179,17 +179,17 @@ A typical function call flows through the package like this:
 
 ```mermaid
 flowchart LR
-    A[User: sin(x)] --> B{GiacExpr?}
+    A["User: sin(x)"] --> B{GiacExpr?}
     B -->|Yes| C[commands.jl]
     B -->|No| D[Julia Base]
     C --> E{Tier 1?}
-    E -->|Yes| F[wrapper.jl<br/>_giac_sin_tier1]
+    E -->|Yes| F["wrapper.jl (_giac_sin_tier1)"]
     E -->|No| G[giac_cmd]
     F --> H[C++ wrapper]
     G --> I[String evaluation]
     H --> J[libgiac]
     I --> J
-    J --> K[Result: GiacExpr]
+    J --> K["Result: GiacExpr"]
 ```
 
 ## File Dependencies
