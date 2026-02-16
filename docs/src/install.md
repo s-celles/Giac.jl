@@ -59,6 +59,8 @@ make -j$(nproc)
 ```bash
 export GIAC_WRAPPER_LIB=/path/to/libgiac-julia-wrapper/build/src/libgiac_wrapper.so
 export LD_LIBRARY_PATH=/path/to/giac-2.0.0/src/.libs:$LD_LIBRARY_PATH
+# or
+export LD_LIBRARY_PATH=$(julia -e 'using GIAC_jll; print(GIAC_jll.artifact_dir)')/lib:$LD_LIBRARY_PATH
 ```
 
 ### Verifying Installation

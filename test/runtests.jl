@@ -51,6 +51,9 @@ using LinearAlgebra
 
     # Equation syntax tests (024-equation-syntax)
     include("test_equation_syntax.jl")
+
+    # Tables.jl compatibility tests (025-tables-compatibility)
+    include("test_tables.jl")
 end
 
 # Aqua.jl package quality tests

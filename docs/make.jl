@@ -19,6 +19,7 @@ makedocs(
         "Using with Pluto reactive notebooks" => "pluto.md",
         "Command discovery and help" => "command_discovery_help.md",
         "Linear Algebra" => "linear_algebra.md",
+        "Tables.jl Compatibility" => "tables.md",
         "API Reference" => [
             "Core API" => "api/core.md",
             "GIAC Commands" => "api/giac_commands.md",

@@ -18,6 +18,7 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 - **Type Conversion**: Convert results to Julia native types (Int64, Float64, Rational)
 - **LaTeX Support**: Automatic LaTeX rendering in Pluto notebooks
 - **Symbolics.jl Integration**: Bidirectional conversion with Symbolics.jl
+- **Tables.jl Compatibility**: Convert GiacMatrix and command help to DataFrames, CSV export
 
 ## Installation
 

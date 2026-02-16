@@ -61,6 +61,7 @@ println(result)  # (x-1)*(x+1)
 module Giac
 
 using LinearAlgebra
+using Tables
 
 # Include source files
 include("types.jl")
@@ -72,6 +73,7 @@ include("namespace_commands.jl")
 include("api.jl")
 include("operators.jl")
 include("macros.jl")
+include("tables.jl")
 
 # Include Commands submodule (009-commands-submodule)
 include("Commands.jl")
@@ -98,6 +100,9 @@ export suggest_commands, set_suggestion_count, get_suggestion_count
 
 # Description search (006-search-command-description)
 export search_commands_by_description
+
+# Tables.jl compatibility (025-tables-compatibility)
+export commands_table, clear_commands_cache!, CommandsTable
 
 # All commands access (008-all-giac-commands)
 export JULIA_CONFLICTS, exportable_commands, is_valid_command, conflict_reason
