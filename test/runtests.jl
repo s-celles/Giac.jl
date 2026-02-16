@@ -39,6 +39,9 @@ using LinearAlgebra
 
     # Matrix display tests (011-giacmatrix-display)
     include("test_matrix_display.jl")
+
+    # Introspection tests (003-giac-introspection)
+    include("test_introspection.jl")
 end
 
 # Aqua.jl package quality tests
