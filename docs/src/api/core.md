@@ -72,9 +72,15 @@ search_commands
 commands_in_category
 command_info
 list_categories
-help
 giac_help
 ```
+
+!!! note "Getting Help for Commands"
+    Use Julia's native help system after importing commands:
+    ```julia
+    using Giac.Commands: factor
+    ?factor  # Shows GIAC documentation
+    ```
 
 ## Command Suggestions
 

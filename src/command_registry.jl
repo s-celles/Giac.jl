@@ -1148,7 +1148,7 @@ search_commands_by_description("matrix", n=10)
 
 # See also
 - [`search_commands`](@ref): Search by command name pattern
-- [`help`](@ref): Get detailed help for a specific command
+- [`giac_help`](@ref): Get raw help for a specific command
 """
 function search_commands_by_description(query::Union{Symbol, String}; n::Int=DEFAULT_SEARCH_LIMIT)::Vector{Symbol}
     # Convert to lowercase string and trim (String() ensures no SubString)

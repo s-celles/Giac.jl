@@ -30,47 +30,33 @@ commands_in_category(:algebra)       # ["factor", "expand", "simplify", ...]
 
 ## Help System
 
+Use Julia's native help system to get documentation for GIAC commands:
+
 ```julia
 using Giac
+using Giac.Commands: factor, sin
 
-# Display Julia help for a function
-?help(factor)
-# search: factor ifactor cfactor factorial Vector giac_factor function taylor acot acos filter macro for floor acoth acotd
-# 
-#   factor(args...)::GiacExpr
-# 
-#   Call the GIAC factor command with the given arguments.
-# 
-#   This is a convenience function exported for direct use. Equivalent to:
-# 
-#     •  giac_cmd(:factor, args...)
-# 
-#   See GIAC documentation for detailed usage of this command. This is available using helper functions like help(:factor) or giac_help(:factor).
-
-# Display formatted help for a Giac command
-help(:factor)
-# factor
-# ══════
+# Use Julia's native help system (recommended)
+?factor
+#   factor(expr::GiacInput, args...)
 #
-# Description:
+#   GIAC command: `factor`
+#
 #   Factorizes a polynomial.
 #
-# Related:
-#   ifactor, partfrac, normal
+#   # Related Commands
+#   - `ifactor`
+#   - `partfrac`
+#   - `normal`
 #
-# Examples:
-#   • factor(x^4-1)
-#   • factor(x^4-4,sqrt(2))
-#   • factor(x^4+12*x^3+54*x^2+108*x+81)
+#   # Examples (GIAC syntax)
+#   factor(x^4-1)
+#   factor(x^4-4,sqrt(2))
 
-# Access help data programmatically
-result = help(:sin)
-result.command      # "sin"
-result.description  # "Sine or Option of the convert or convertir command (id trigsin)."
-result.related      # ["asin", "convert", "trigsin"]
-result.examples     # ["sin(0)", "convert(cos(x)^4+sin(x)^2,sin)"]
+# Or use @doc macro
+@doc factor
 
-# Get raw help as a string (for backward compatibility)
+# For programmatic access to raw help text
 help_text = giac_help(:factor)
 
 # List all available commands
@@ -81,20 +67,16 @@ println("Number of commands: ", length(cmds))  # 2215
 println("Help entries: ", help_count())  # 2215
 ```
 
+!!! note "Internal help() Function"
+    The `help(:cmd)` function is no longer exported. Use `?cmd` for interactive help
+    or `giac_help(:cmd)` for programmatic access to raw help text.
+
 ## Command Suggestions
 
 When you mistype a command, Giac.jl automatically suggests similar commands:
 
 ```julia
 using Giac
-
-# Typo in "factor" shows suggestions
-help(:factr)
-# factr
-# ═════
-#
-# Description:
-#   [No help found for: factr. Did you mean: factor, ifactor, cfactor, fractr?]
 
 # Get suggestions programmatically
 suggest_commands(:factr)        # ["factor", "cfactor", "ifactor", ...]
@@ -115,7 +97,7 @@ The suggestion system uses Levenshtein edit distance with an adaptive threshold 
 
 | Function | Description |
 |----------|-------------|
-| `help(cmd)` | Get formatted help for a command (returns `HelpResult`) |
+| `?cmd` | View help in REPL (after importing cmd from Giac.Commands) |
 | `giac_help(cmd)` | Get raw help text as a string |
 | `list_commands()` | List all available GIAC commands |
 | `help_count()` | Number of commands in help database |

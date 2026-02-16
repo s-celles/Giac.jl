@@ -106,7 +106,7 @@ result = invoke_cmd(:eval, giac_eval("2+3"))  # Returns 5
 # See also
 - [`giac_eval`](@ref): Direct string evaluation
 - [`Giac.search_commands`](@ref): Find available commands
-- [`Giac.help`](@ref): Get help for a command
+- `giac_help`: Get raw help for a command
 """
 function invoke_cmd(cmd::Symbol, args...)::GiacExpr
     # Validate command exists (using Symbol directly)

@@ -73,9 +73,10 @@ CSV.write("matrix.csv", m)
 Convert help information for a single command to a table:
 
 ```julia
+using Giac
 using DataFrames
 
-hr = help(:factor)
+hr = Giac.help(:factor)  # Internal function for programmatic access
 df = DataFrame(hr)
 # 1×5 DataFrame
 #  Row │ command  category  description  related           examples
@@ -83,6 +84,13 @@ df = DataFrame(hr)
 # ─────┼──────────────────────────────────────────────────────────────
 #    1 │ factor   algebra   ...          ifactor, partfrac ...
 ```
+
+!!! tip "Interactive Help"
+    For interactive help, use Julia's native help system:
+    ```julia
+    using Giac.Commands: factor
+    ?factor  # Shows GIAC documentation in REPL
+    ```
 
 ### All Commands Table
 

@@ -450,7 +450,7 @@ CSV.write("giac_commands.csv", commands_table())
 
 # See also
 - [`clear_commands_cache!`](@ref): Invalidate the cache
-- [`help`](@ref): Get help for a single command
+- [`giac_help`](@ref): Get raw help for a single command
 """
 function commands_table()::CommandsTable
     if _commands_table_cache[] === nothing

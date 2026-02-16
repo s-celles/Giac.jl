@@ -10,7 +10,7 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 - **Calculus**: Differentiation, integration, limits, and series expansion
 - **Algebra**: Factorization, expansion, simplification, equation solving and GCD
 - **Linear Algebra**: Symbolic matrices with determinant, inverse, trace, transpose operations
-- **Command Discovery**: Search commands, browse by category, built-in `help(:cmd)`
+- **Command Discovery**: Search commands, browse by category, built-in help via `?cmd`
 - **Commands Submodule**: All ~2000+ commands available via `Giac.Commands` for clean namespace
 - **TempApi Submodule**: Simplified function names (`diff`, `factor`, etc.) via `Giac.TempApi`
 - **Method Syntax**: Call commands as methods: `expr.factor()`, `expr.diff(x)`
@@ -33,7 +33,28 @@ For full GIAC integration with C++ library, see the [Installation Guide](install
 
 GIAC commands are available through multiple access patterns:
 
-### 1. Universal Command Invocation (Recommended)
+### 1. Selective Import from Commands Submodule (Recommanded)
+
+```julia
+using Giac
+using Giac.Commands: factor, expand, ifactor
+
+@giac_var
+factor(x^2 - 1)
+```
+
+### 2. Full Import (Interactive Use)
+
+```julia
+using Giac
+using Giac.Commands
+
+@giac_var x
+factor(x^2 - 1)
+ifactor(120)  # All ~2000+ commands available
+```
+
+### 3. Universal Command Invocation
 
 ```julia
 using Giac
@@ -41,25 +62,6 @@ using Giac
 # Works for ALL commands, including those conflicting with Julia
 invoke_cmd(:factor, giac_eval("x^2-1"))
 invoke_cmd(:sin, giac_eval("pi/6"))
-```
-
-### 2. Selective Import from Commands Submodule
-
-```julia
-using Giac
-using Giac.Commands: factor, expand, ifactor
-
-factor(giac_eval("x^2-1"))  # Works directly
-```
-
-### 3. Full Import (Interactive Use)
-
-```julia
-using Giac
-using Giac.Commands
-
-factor(giac_eval("x^2-1"))
-ifactor(giac_eval("120"))  # All ~2000+ commands available
 ```
 
 ## Modules
