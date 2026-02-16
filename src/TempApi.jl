@@ -5,6 +5,9 @@ A submodule providing convenience functions with simplified names for common
 symbolic computation operations. These functions delegate to `invoke_cmd`
 from the main Giac module.
 
+This is intended as a temporary API for interactive use and quick access to 
+common commands without needing to import the entire `Giac.Commands` submodule.
+
 # Access Patterns
 
 1. **Full import** (for interactive use):
