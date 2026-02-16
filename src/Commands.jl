@@ -56,7 +56,7 @@ invoke_cmd(:sin, x)      # Including conflicting ones
 module Commands
 
 using ..Giac: GiacExpr, GiacInput, GiacError, giac_eval, with_giac_lock,
-              VALID_COMMANDS, JULIA_CONFLICTS, exportable_commands,
+              VALID_COMMANDS, JULIA_CONFLICTS, CONFLICT_CATEGORIES, exportable_commands,
               suggest_commands, _format_suggestions, _warn_conflict,
               _arg_to_giac_string, _build_command_string
 
@@ -150,6 +150,83 @@ invoke_cmd(cmd::String, args...)::GiacExpr = invoke_cmd(Symbol(cmd), args...)
 export invoke_cmd
 
 # ============================================================================
+# Helper Functions for Conflict Resolution (023-conflicts-multidispatch)
+# ============================================================================
+
+"""
+    _extendable_conflicts() -> Set{Symbol}
+
+Return the set of JULIA_CONFLICTS commands that CAN be extended via multiple dispatch.
+
+This excludes Julia keywords (`:if`, `:for`, `:while`, etc.) which cannot be used
+as function names. The remaining conflicts (builtins, math functions, linear algebra)
+can have new methods added for GiacExpr types.
+
+# Returns
+- `Set{Symbol}`: Commands from JULIA_CONFLICTS that are valid GIAC commands and
+  are not Julia keywords.
+
+# Example
+```julia
+extendable = Giac.Commands._extendable_conflicts()
+:zeros in extendable  # true (builtin, can be extended)
+:if in extendable     # false (keyword, cannot be extended)
+```
+
+# See also
+- [`JULIA_CONFLICTS`](@ref): All conflicting commands
+- [`CONFLICT_CATEGORIES`](@ref): Categorization by conflict type
+"""
+function _extendable_conflicts()::Set{Symbol}
+    # Get all non-keyword conflicts
+    keywords = CONFLICT_CATEGORIES[:keyword]
+    extendable = setdiff(JULIA_CONFLICTS, keywords)
+
+    # Filter to only valid GIAC commands
+    if !isempty(VALID_COMMANDS)
+        extendable = intersect(extendable, VALID_COMMANDS)
+    end
+
+    return extendable
+end
+
+"""
+    _has_giac_method(cmd::Symbol) -> Bool
+
+Check if a GiacExpr method already exists for the given command.
+
+This is used to detect Tier 1 wrappers (defined in command_utils.jl) which should
+not be overridden by the slower invoke_cmd-based methods.
+
+# Arguments
+- `cmd::Symbol`: Command name to check
+
+# Returns
+- `true` if a method `Base.\$cmd(::GiacExpr, ...)` already exists
+- `false` otherwise
+
+# Example
+```julia
+_has_giac_method(:sin)   # true (Tier 1 wrapper exists)
+_has_giac_method(:zeros) # false (no existing method)
+```
+"""
+function _has_giac_method(cmd::Symbol)::Bool
+    # Check if the command exists in Base
+    if !isdefined(Base, cmd)
+        return false
+    end
+
+    func = getfield(Base, cmd)
+    if !(func isa Function)
+        return false
+    end
+
+    # Check if there's a method for GiacExpr
+    return hasmethod(func, Tuple{GiacExpr})
+end
+
+# ============================================================================
 # Runtime Function Generation
 # ============================================================================
 
@@ -223,6 +300,36 @@ function _generate_command_functions()
     end
 
     @debug "Generated and exported command functions in Giac.Commands"
+
+    # ========================================================================
+    # Generate Base extensions for extendable JULIA_CONFLICTS (023-conflicts-multidispatch)
+    # ========================================================================
+    # These are commands that conflict with Julia but CAN be extended via multiple dispatch
+    # (excludes keywords like :if, :for which cannot be function names)
+
+    conflict_count = 0
+    for cmd in _extendable_conflicts()
+        # Skip if method already exists (Tier 1 wrappers in command_utils.jl)
+        if _has_giac_method(cmd)
+            @debug "Skipping $cmd - Tier 1 wrapper exists"
+            continue
+        end
+
+        # Check if this is a Base function or LinearAlgebra function
+        if isdefined(Base, cmd)
+            func = getfield(Base, cmd)
+            if func isa Function
+                @eval begin
+                    function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
+                        invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                    end
+                end
+                conflict_count += 1
+            end
+        end
+    end
+
+    @debug "Generated $conflict_count Base extensions for JULIA_CONFLICTS commands"
 end
 
 # ============================================================================

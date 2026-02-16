@@ -45,6 +45,9 @@ using LinearAlgebra
 
     # Type conversion tests (022-julia-type-conversion)
     include("test_type_conversion.jl")
+
+    # Multiple dispatch for conflicts tests (023-conflicts-multidispatch)
+    include("test_conflicts_multidispatch.jl")
 end
 
 # Aqua.jl package quality tests

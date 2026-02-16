@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - Unreleased
+
+### Added
+
+- **Multiple dispatch for JULIA_CONFLICTS commands**: GIAC commands that conflict with Julia
+  (like `zeros`, `min`, `max`, `det`, `inv`) now work with `GiacExpr` arguments via multiple dispatch.
+  Julia's type-based dispatch routes calls correctly:
+  - `zeros(giac_expr)` → finds polynomial roots via GIAC
+  - `zeros(3, 3)` → creates Julia Matrix of zeros (unchanged)
+
+  This enables natural Julia syntax for ~150+ additional GIAC commands without breaking
+  existing Base/LinearAlgebra functionality.
+
+- Helper functions `_extendable_conflicts()` and `_has_giac_method()` in `Giac.Commands`
+  for conflict resolution logic
+
 ## [0.3.0] - 2026-02-16
 
 ### Removed
