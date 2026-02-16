@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Adding Functions · Giac.jl</title><meta name="title" content="Adding Functions · Giac.jl"/><meta property="og:title" content="Adding Functions · Giac.jl"/><meta property="twitter:title" content="Adding Functions · Giac.jl"/><meta name="description" content="Documentation for Giac.jl."/><meta property="og:description" content="Documentation for Giac.jl."/><meta property="twitter:description" content="Documentation for Giac.jl."/><meta property="og:url" content="https://s-celles.github.io/Giac.jl/developer/contributing/"/><meta property="twitter:url" content="https://s-celles.github.io/Giac.jl/developer/contributing/"/><link rel="canonical" href="https://s-celles.github.io/Giac.jl/developer/contributing/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Giac.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../install/">Installation</a></li><li><a class="tocitem" href="../../quickstart/">Quick Start</a></li><li><a class="tocitem" href="../../variables/">Variable Declaration</a></li><li><a class="tocitem" href="../../pluto/">Using with Pluto reactive notebooks</a></li><li><a class="tocitem" href="../../command_discovery_help/">Command discovery and help</a></li><li><a class="tocitem" href="../../linear_algebra/">Linear Algebra</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/core/">Core API</a></li><li><a class="tocitem" href="../../api/giac_commands/">GIAC Commands</a></li><li><a class="tocitem" href="../../api/commands_submodule/">Commands submodule</a></li><li><a class="tocitem" href="../../api/tempapi/">TempApi</a></li></ul></li><li><span class="tocitem">Extensions</span><ul><li><a class="tocitem" href="../../extensions/symbolics/">Symbolics.jl</a></li></ul></li><li><span class="tocitem">Developer Guide</span><ul><li><a class="tocitem" href="../">Overview</a></li><li><a class="tocitem" href="../architecture/">Package Architecture</a></li><li><a class="tocitem" href="../tier-system/">Performance Tiers</a></li><li class="is-active"><a class="tocitem" href>Adding Functions</a><ul class="internal"><li><a class="tocitem" href="#Decision-Tree"><span>Decision Tree</span></a></li><li><a class="tocitem" href="#Step-by-Step:-Adding-a-Tier-1-Function"><span>Step-by-Step: Adding a Tier 1 Function</span></a></li><li><a class="tocitem" href="#Step-by-Step:-Adding-a-Tier-2/3-Function"><span>Step-by-Step: Adding a Tier 2/3 Function</span></a></li><li><a class="tocitem" href="#Extending-Base-Functions"><span>Extending Base Functions</span></a></li><li><a class="tocitem" href="#Complete-Example:-Adding-sinh"><span>Complete Example: Adding <code>sinh</code></span></a></li><li><a class="tocitem" href="#Checklist-for-Adding-Functions"><span>Checklist for Adding Functions</span></a></li><li><a class="tocitem" href="#See-Also"><span>See Also</span></a></li></ul></li><li><a class="tocitem" href="../memory/">Memory Management</a></li><li><a class="tocitem" href="../troubleshooting/">Troubleshooting</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Developer Guide</a></li><li class="is-active"><a href>Adding Functions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Adding Functions</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl/blob/main/docs/src/developer/contributing.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Adding-Functions-to-Giac.jl"><a class="docs-heading-anchor" href="#Adding-Functions-to-Giac.jl">Adding Functions to Giac.jl</a><a id="Adding-Functions-to-Giac.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-Functions-to-Giac.jl" title="Permalink"></a></h1><p>This guide walks you through adding new mathematical functions to Giac.jl at each performance tier.</p><h2 id="Decision-Tree"><a class="docs-heading-anchor" href="#Decision-Tree">Decision Tree</a><a id="Decision-Tree-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Tree" title="Permalink"></a></h2><p>Use this flowchart to determine which tier to use for your new function:</p><div class="mermaid">flowchart TD
+    A[New Function to Add] --&gt; B{Is it frequently used?}
+    B --&gt;|Yes| C{C++ wrapper exists?}
+    B --&gt;|No| D[Use Tier 3: giac_cmd]
+
+    C --&gt;|Yes| E[Add Tier 1 Wrapper]
+    C --&gt;|No| F{Can add C++ wrapper?}
+
+    F --&gt;|Yes| G[Add C++ wrapper, then Tier 1]
+    F --&gt;|No| H{1-3 arguments?}
+
+    H --&gt;|Yes| I[Tier 2 via apply_func]
+    H --&gt;|No| D
+
+    E --&gt; J[Add Base extension]
+    G --&gt; J
+    I --&gt; K[Use giac_cmd directly]
+    D --&gt; L[Add to Commands submodule]
+
+    style E fill:#2ecc71
+    style G fill:#2ecc71
+    style I fill:#f1c40f
+    style D fill:#e74c3c
+    style L fill:#e74c3c</div><h2 id="Step-by-Step:-Adding-a-Tier-1-Function"><a class="docs-heading-anchor" href="#Step-by-Step:-Adding-a-Tier-1-Function">Step-by-Step: Adding a Tier 1 Function</a><a id="Step-by-Step:-Adding-a-Tier-1-Function-1"></a><a class="docs-heading-anchor-permalink" href="#Step-by-Step:-Adding-a-Tier-1-Function" title="Permalink"></a></h2><p>Adding a Tier 1 function requires modifications to two files and provides the best performance.</p><h3 id="Prerequisites"><a class="docs-heading-anchor" href="#Prerequisites">Prerequisites</a><a id="Prerequisites-1"></a><a class="docs-heading-anchor-permalink" href="#Prerequisites" title="Permalink"></a></h3><ol><li>Confirm the C++ function exists in <code>libgiac-julia-wrapper</code></li><li>Know the function&#39;s arity (number of arguments)</li><li>Know the GIAC command name</li></ol><h3 id="Step-1:-Add-the-Tier-1-Wrapper"><a class="docs-heading-anchor" href="#Step-1:-Add-the-Tier-1-Wrapper">Step 1: Add the Tier 1 Wrapper</a><a id="Step-1:-Add-the-Tier-1-Wrapper-1"></a><a class="docs-heading-anchor-permalink" href="#Step-1:-Add-the-Tier-1-Wrapper" title="Permalink"></a></h3><p>In <code>src/wrapper.jl</code>, add the wrapper function after the existing Tier 1 functions (around line 1038):</p><pre><code class="language-julia hljs"># For unary functions (1 argument)
+_giac_sinh_tier1(expr_ptr::Ptr{Cvoid}) =
+    _tier1_unary(GiacCxxBindings.giac_sinh, expr_ptr)
+
+# For binary functions (2 arguments)
+_giac_hypot_tier1(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}) =
+    _tier1_binary(GiacCxxBindings.giac_hypot, a_ptr, b_ptr)
+
+# For ternary functions (3 arguments)
+_giac_horner_tier1(a::Ptr{Cvoid}, b::Ptr{Cvoid}, c::Ptr{Cvoid}) =
+    _tier1_ternary(GiacCxxBindings.giac_horner, a, b, c)</code></pre><h3 id="Step-2:-Add-the-Base-Extension"><a class="docs-heading-anchor" href="#Step-2:-Add-the-Base-Extension">Step 2: Add the Base Extension</a><a id="Step-2:-Add-the-Base-Extension-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2:-Add-the-Base-Extension" title="Permalink"></a></h3><p>In <code>src/command_utils.jl</code>, add the user-facing function (around line 330):</p><pre><code class="language-julia hljs"># For unary functions
+Base.sinh(expr::GiacExpr)::GiacExpr =
+    _tier1_or_fallback(_giac_sinh_tier1, :sinh, expr)
+
+# For binary functions
+Base.hypot(a::GiacExpr, b::GiacExpr)::GiacExpr =
+    _tier1_or_fallback_binary(_giac_hypot_tier1, :hypot, a, b)</code></pre><h3 id="Step-3:-Export-the-Function-(if-needed)"><a class="docs-heading-anchor" href="#Step-3:-Export-the-Function-(if-needed)">Step 3: Export the Function (if needed)</a><a id="Step-3:-Export-the-Function-(if-needed)-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3:-Export-the-Function-(if-needed)" title="Permalink"></a></h3><p>If extending a <code>Base</code> function, no export is needed. For new functions, add to exports in <code>src/Giac.jl</code>:</p><pre><code class="language-julia hljs">export my_new_function</code></pre><h3 id="Step-4:-Add-Tests"><a class="docs-heading-anchor" href="#Step-4:-Add-Tests">Step 4: Add Tests</a><a id="Step-4:-Add-Tests-1"></a><a class="docs-heading-anchor-permalink" href="#Step-4:-Add-Tests" title="Permalink"></a></h3><p>In <code>test/test_commands.jl</code>:</p><pre><code class="language-julia hljs">@testset &quot;sinh function&quot; begin
+    x = giac_eval(&quot;x&quot;)
+
+    # Test symbolic evaluation
+    result = sinh(x)
+    @test result isa GiacExpr
+    @test string(result) == &quot;sinh(x)&quot;
+
+    # Test numeric evaluation
+    result_num = sinh(giac_eval(&quot;0&quot;))
+    @test to_julia(result_num) == 0
+end</code></pre><h3 id="Step-5:-Add-Documentation"><a class="docs-heading-anchor" href="#Step-5:-Add-Documentation">Step 5: Add Documentation</a><a id="Step-5:-Add-Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#Step-5:-Add-Documentation" title="Permalink"></a></h3><p>Add a docstring to your function:</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
+    sinh(expr::GiacExpr) -&gt; GiacExpr
+
+Compute the hyperbolic sine of a GIAC expression.
+
+# Examples</code></pre><p>jldoctest julia&gt; using Giac</p><p>julia&gt; x = giac_eval(&quot;x&quot;) x</p><p>julia&gt; sinh(x) sinh(x)</p><pre><code class="nohighlight hljs">&quot;&quot;&quot;
+Base.sinh(expr::GiacExpr)::GiacExpr =
+    _tier1_or_fallback(_giac_sinh_tier1, :sinh, expr)</code></pre><h2 id="Step-by-Step:-Adding-a-Tier-2/3-Function"><a class="docs-heading-anchor" href="#Step-by-Step:-Adding-a-Tier-2/3-Function">Step-by-Step: Adding a Tier 2/3 Function</a><a id="Step-by-Step:-Adding-a-Tier-2/3-Function-1"></a><a class="docs-heading-anchor-permalink" href="#Step-by-Step:-Adding-a-Tier-2/3-Function" title="Permalink"></a></h2><p>For functions that don&#39;t need maximum performance or don&#39;t have C++ wrappers.</p><h3 id="Option-A:-Using-giac_cmd-Directly"><a class="docs-heading-anchor" href="#Option-A:-Using-giac_cmd-Directly">Option A: Using giac_cmd Directly</a><a id="Option-A:-Using-giac_cmd-Directly-1"></a><a class="docs-heading-anchor-permalink" href="#Option-A:-Using-giac_cmd-Directly" title="Permalink"></a></h3><p>For occasional use, simply call <code>giac_cmd</code>:</p><pre><code class="language-julia hljs"># In your code
+result = giac_cmd(:my_function, arg1, arg2)</code></pre><h3 id="Option-B:-Adding-to-Commands-Submodule"><a class="docs-heading-anchor" href="#Option-B:-Adding-to-Commands-Submodule">Option B: Adding to Commands Submodule</a><a id="Option-B:-Adding-to-Commands-Submodule-1"></a><a class="docs-heading-anchor-permalink" href="#Option-B:-Adding-to-Commands-Submodule" title="Permalink"></a></h3><p>For functions you want accessible via <code>Giac.Commands</code>:</p><p>In <code>src/Commands.jl</code>, the functions are auto-generated from <code>VALID_COMMANDS</code>. To add a custom function:</p><pre><code class="language-julia hljs"># In src/Commands.jl or command_utils.jl
+&quot;&quot;&quot;
+    my_special_function(expr) -&gt; GiacExpr
+
+Compute something special.
+&quot;&quot;&quot;
+function my_special_function(expr::GiacExpr)::GiacExpr
+    return giac_cmd(:my_special_function, expr)
+end
+
+export my_special_function</code></pre><h3 id="Option-C:-Creating-a-Convenience-Wrapper"><a class="docs-heading-anchor" href="#Option-C:-Creating-a-Convenience-Wrapper">Option C: Creating a Convenience Wrapper</a><a id="Option-C:-Creating-a-Convenience-Wrapper-1"></a><a class="docs-heading-anchor-permalink" href="#Option-C:-Creating-a-Convenience-Wrapper" title="Permalink"></a></h3><p>For better ergonomics, create a dedicated function:</p><pre><code class="language-julia hljs"># In src/api.jl or a new file
+&quot;&quot;&quot;
+    partial_fractions(expr, var) -&gt; GiacExpr
+
+Compute partial fraction decomposition of `expr` with respect to `var`.
+&quot;&quot;&quot;
+function partial_fractions(expr::GiacExpr, var::GiacExpr)::GiacExpr
+    return giac_cmd(:partfrac, expr, var)
+end
+
+export partial_fractions</code></pre><h2 id="Extending-Base-Functions"><a class="docs-heading-anchor" href="#Extending-Base-Functions">Extending Base Functions</a><a id="Extending-Base-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Extending-Base-Functions" title="Permalink"></a></h2><p>When extending Julia&#39;s <code>Base</code> module functions, follow these guidelines:</p><h3 id="Pattern-for-GiacExpr"><a class="docs-heading-anchor" href="#Pattern-for-GiacExpr">Pattern for GiacExpr</a><a id="Pattern-for-GiacExpr-1"></a><a class="docs-heading-anchor-permalink" href="#Pattern-for-GiacExpr" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Correct: Use _tier1_or_fallback when Tier 1 exists
+Base.sin(expr::GiacExpr)::GiacExpr =
+    _tier1_or_fallback(_giac_sin_tier1, :sin, expr)
+
+# Correct: Use giac_cmd when no Tier 1
+Base.sinc(expr::GiacExpr)::GiacExpr =
+    giac_cmd(:sinc, expr)</code></pre><h3 id="Avoiding-Type-Piracy"><a class="docs-heading-anchor" href="#Avoiding-Type-Piracy">Avoiding Type Piracy</a><a id="Avoiding-Type-Piracy-1"></a><a class="docs-heading-anchor-permalink" href="#Avoiding-Type-Piracy" title="Permalink"></a></h3><p>Only extend Base functions for types you own (GiacExpr, GiacMatrix):</p><pre><code class="language-julia hljs"># Good: Extending for our type
+Base.sin(expr::GiacExpr) = ...
+
+# Bad: This would be type piracy
+Base.sin(x::Float64) = ...  # Don&#39;t do this!</code></pre><h3 id="Method-Signatures"><a class="docs-heading-anchor" href="#Method-Signatures">Method Signatures</a><a id="Method-Signatures-1"></a><a class="docs-heading-anchor-permalink" href="#Method-Signatures" title="Permalink"></a></h3><p>Match Julia&#39;s expected signatures where possible:</p><pre><code class="language-julia hljs"># Good: Matches Base.diff signature pattern
+Base.diff(f::GiacExpr, x::GiacExpr) = giac_diff(f, x)
+
+# For multiple dispatch
+Base.diff(f::GiacExpr, x::GiacExpr, n::Integer) = giac_diff(f, x, n)</code></pre><h2 id="Complete-Example:-Adding-sinh"><a class="docs-heading-anchor" href="#Complete-Example:-Adding-sinh">Complete Example: Adding <code>sinh</code></a><a id="Complete-Example:-Adding-sinh-1"></a><a class="docs-heading-anchor-permalink" href="#Complete-Example:-Adding-sinh" title="Permalink"></a></h2><p>Here&#39;s a complete example of adding the hyperbolic sine function.</p><h3 id="1.-Check-C-Availability"><a class="docs-heading-anchor" href="#1.-Check-C-Availability">1. Check C++ Availability</a><a id="1.-Check-C-Availability-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Check-C-Availability" title="Permalink"></a></h3><p>First, verify <code>giac_sinh</code> exists in <code>GiacCxxBindings</code>:</p><pre><code class="language-julia hljs"># In Julia REPL
+using Giac
+hasmethod(Giac.GiacCxxBindings.giac_sinh, Tuple{Any})</code></pre><h3 id="2.-Add-Tier-1-Wrapper-(wrapper.jl)"><a class="docs-heading-anchor" href="#2.-Add-Tier-1-Wrapper-(wrapper.jl)">2. Add Tier 1 Wrapper (wrapper.jl)</a><a id="2.-Add-Tier-1-Wrapper-(wrapper.jl)-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Add-Tier-1-Wrapper-(wrapper.jl)" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Add after line ~1037 in wrapper.jl
+
+# Hyperbolic trigonometry (Tier 1)
+_giac_sinh_tier1(expr_ptr::Ptr{Cvoid}) =
+    _tier1_unary(GiacCxxBindings.giac_sinh, expr_ptr)
+_giac_cosh_tier1(expr_ptr::Ptr{Cvoid}) =
+    _tier1_unary(GiacCxxBindings.giac_cosh, expr_ptr)
+_giac_tanh_tier1(expr_ptr::Ptr{Cvoid}) =
+    _tier1_unary(GiacCxxBindings.giac_tanh, expr_ptr)</code></pre><h3 id="3.-Add-Base-Extension-(command_utils.jl)"><a class="docs-heading-anchor" href="#3.-Add-Base-Extension-(command_utils.jl)">3. Add Base Extension (command_utils.jl)</a><a id="3.-Add-Base-Extension-(command_utils.jl)-1"></a><a class="docs-heading-anchor-permalink" href="#3.-Add-Base-Extension-(command_utils.jl)" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Add after line ~330 in command_utils.jl
+
+# Hyperbolic functions
+&quot;&quot;&quot;
+    sinh(expr::GiacExpr) -&gt; GiacExpr
+
+Compute the hyperbolic sine of a GIAC expression.
+
+# Examples</code></pre><p>jldoctest julia&gt; using Giac</p><p>julia&gt; sinh(giac_eval(&quot;0&quot;)) 0</p><pre><code class="nohighlight hljs">&quot;&quot;&quot;
+Base.sinh(expr::GiacExpr)::GiacExpr =
+    _tier1_or_fallback(_giac_sinh_tier1, :sinh, expr)
+
+Base.cosh(expr::GiacExpr)::GiacExpr =
+    _tier1_or_fallback(_giac_cosh_tier1, :cosh, expr)
+
+Base.tanh(expr::GiacExpr)::GiacExpr =
+    _tier1_or_fallback(_giac_tanh_tier1, :tanh, expr)</code></pre><h3 id="4.-Add-Tests-(test/test_commands.jl)"><a class="docs-heading-anchor" href="#4.-Add-Tests-(test/test_commands.jl)">4. Add Tests (test/test_commands.jl)</a><a id="4.-Add-Tests-(test/test_commands.jl)-1"></a><a class="docs-heading-anchor-permalink" href="#4.-Add-Tests-(test/test_commands.jl)" title="Permalink"></a></h3><pre><code class="language-julia hljs">@testset &quot;Hyperbolic functions&quot; begin
+    x = giac_eval(&quot;x&quot;)
+
+    @testset &quot;sinh&quot; begin
+        @test sinh(x) isa GiacExpr
+        @test string(sinh(x)) == &quot;sinh(x)&quot;
+        @test to_julia(sinh(giac_eval(&quot;0&quot;))) == 0
+    end
+
+    @testset &quot;cosh&quot; begin
+        @test cosh(x) isa GiacExpr
+        @test to_julia(cosh(giac_eval(&quot;0&quot;))) == 1
+    end
+
+    @testset &quot;tanh&quot; begin
+        @test tanh(x) isa GiacExpr
+        @test to_julia(tanh(giac_eval(&quot;0&quot;))) == 0
+    end
+end</code></pre><h3 id="5.-Run-Tests"><a class="docs-heading-anchor" href="#5.-Run-Tests">5. Run Tests</a><a id="5.-Run-Tests-1"></a><a class="docs-heading-anchor-permalink" href="#5.-Run-Tests" title="Permalink"></a></h3><pre><code class="language-bash hljs">julia --project -e &#39;using Pkg; Pkg.test()&#39;</code></pre><h2 id="Checklist-for-Adding-Functions"><a class="docs-heading-anchor" href="#Checklist-for-Adding-Functions">Checklist for Adding Functions</a><a id="Checklist-for-Adding-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Checklist-for-Adding-Functions" title="Permalink"></a></h2><ul><li>[ ] Determine the appropriate tier (1, 2, or 3)</li><li>[ ] If Tier 1: Add wrapper in <code>wrapper.jl</code></li><li>[ ] Add user-facing function in <code>command_utils.jl</code> or <code>api.jl</code></li><li>[ ] Add docstring with examples</li><li>[ ] Add tests in <code>test/</code></li><li>[ ] Run test suite</li><li>[ ] Update documentation if needed</li></ul><h2 id="See-Also"><a class="docs-heading-anchor" href="#See-Also">See Also</a><a id="See-Also-1"></a><a class="docs-heading-anchor-permalink" href="#See-Also" title="Permalink"></a></h2><ul><li><a href="../tier-system/">Performance Tiers</a> - Detailed tier system explanation</li><li><a href="../architecture/">Package Architecture</a> - Where files are located</li><li><a href="../memory/">Memory Management</a> - Important for wrapped types</li></ul><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral"
+});
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../tier-system/">« Performance Tiers</a><a class="docs-footer-nextpage" href="../memory/">Memory Management »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 16 February 2026 18:33">Monday 16 February 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
