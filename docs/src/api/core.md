@@ -15,6 +15,7 @@ GiacMatrix
 GiacError
 HelpResult
 GiacCommand
+GiacInput
 ```
 
 ## Expression Evaluation
