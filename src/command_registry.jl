@@ -998,6 +998,12 @@ function suggest_commands_with_distances(input::Union{Symbol, String}; n::Int=ge
         return Tuple{Symbol, Int}[]
     end
 
+    # If input is already a valid command, no suggestions needed
+    input_sym = input isa Symbol ? input : Symbol(input)
+    if input_sym in VALID_COMMANDS
+        return Tuple{Symbol, Int}[]
+    end
+
     threshold = _max_threshold(input_str)
 
     # Compute distances for all commands within threshold

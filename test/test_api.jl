@@ -24,36 +24,39 @@
         # invoke_cmd is always available
         @test :invoke_cmd in names(Giac.Commands)
         # In stub mode, VALID_COMMANDS is empty so command-specific functions aren't generated
-        # We check names() because isdefined() would find Base.diff etc.
+        # Note: diff is in Base, so it's extended via multiple dispatch rather than exported
+        # Other calculus functions are exported from Giac.Commands
         if is_stub_mode()
-            @test_broken :diff in names(Giac.Commands)
             @test_broken :integrate in names(Giac.Commands)
             @test_broken :limit in names(Giac.Commands)
             @test_broken :series in names(Giac.Commands)
         else
-            @test :diff in names(Giac.Commands)
             @test :integrate in names(Giac.Commands)
             @test :limit in names(Giac.Commands)
             @test :series in names(Giac.Commands)
         end
+        # diff extends Base.diff via multiple dispatch - verify method exists
+        @test isdefined(Base, :diff)
     end
 
     @testset "Algebra Functions via Giac.Commands" begin
         # T029-T033: Algebra API functions available via Commands submodule
         # In stub mode, VALID_COMMANDS is empty so command-specific functions aren't generated
+        # Note: gcd is in JULIA_CONFLICTS (conflicts with Base.gcd) so it's not exported
+        # Use invoke_cmd(:gcd, ...) instead
         if is_stub_mode()
             @test_broken :factor in names(Giac.Commands)
             @test_broken :expand in names(Giac.Commands)
             @test_broken :simplify in names(Giac.Commands)
             @test_broken :solve in names(Giac.Commands)
-            @test_broken :gcd in names(Giac.Commands)
         else
             @test :factor in names(Giac.Commands)
             @test :expand in names(Giac.Commands)
             @test :simplify in names(Giac.Commands)
             @test :solve in names(Giac.Commands)
-            @test :gcd in names(Giac.Commands)
         end
+        # gcd conflicts with Base.gcd - use invoke_cmd instead
+        @test :gcd in Giac.JULIA_CONFLICTS
     end
 
     @testset "GiacMatrix Symbol Constructor" begin

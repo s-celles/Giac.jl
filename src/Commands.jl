@@ -176,6 +176,14 @@ for each command in `exportable_commands()`. The functions are exported from
 - No impact on command execution performance
 """
 function _generate_command_functions()
+    # Skip generation during precompilation of extensions to avoid
+    # "Evaluation into closed module" errors. The functions will be
+    # generated when the package is actually loaded at runtime.
+    if ccall(:jl_generating_output, Cint, ()) != 0
+        @debug "Skipping command function generation during precompilation"
+        return
+    end
+
     for cmd in exportable_commands()  # exportable_commands() returns Vector{Symbol}
         # Skip if already defined IN THIS MODULE (not inherited from Base)
         # We check parentmodule to distinguish our definitions from Base bindings
@@ -198,8 +206,8 @@ function _generate_command_functions()
                     invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
                 end
             end
-            # Re-export the extended Base function
-            @eval export $(cmd)
+            # Note: Don't export Base-extended functions - they're already accessible
+            # via Base and exporting undefined local symbols causes Aqua warnings
         else
             # Create new function and export it
             @eval begin
