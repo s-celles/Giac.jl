@@ -3,22 +3,35 @@
 using Giac.Commands: factor, expand, diff, integrate, limit, simplify, solve
 
 # Check mode
-println(&quot;Stub mode: &quot;, is_stub_mode())
+println(&quot;Stub mode: &quot;, is_stub_mode())  # if library is installed correctly it should return false
 
 # Basic evaluation through GIAC
 result = giac_eval(&quot;2 + 3&quot;)        # 5
 factored = giac_eval(&quot;factor(x^2 - 1)&quot;)  # (x-1)*(x+1)
 
+# Create symbolic variables
+@giac_var x y
+
 # Arithmetic
-@giac_var x
-@giac_var y
 println(x + y)   # x+y
 println(x * y)   # x*y
 println(x ^ 2)   # x^2
 
+# Evaluate expressions
+expr = x^2 + 2*x*y + y^2
+
+# Factor polynomials
+result = factor(expr)  # Returns (x+y)^2
+
+# Differentiate
+derivative = diff(result, x)  # Returns 2*(x+y)
+
+# Integrate
+integral = integrate(x^2, x)  # Returns x^3/3
+
 # Calculus using Giac.Commands
 f = giac_eval(&quot;x^3&quot;)
-# or using
+# or using simpler syntax
 f = x^3
 df = diff(f, x)                    # 3*x^2
 F = integrate(f, x)                # x^4/4
@@ -49,4 +62,4 @@ mermaid.initialize({
     startOnLoad: true,
     theme: "neutral"
 });
-</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../install/">« Installation</a><a class="docs-footer-nextpage" href="../variables/">Variable Declaration »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 16 February 2026 17:48">Monday 16 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../install/">« Installation</a><a class="docs-footer-nextpage" href="../variables/">Variable Declaration »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 16 February 2026 17:55">Monday 16 February 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
