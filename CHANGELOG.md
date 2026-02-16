@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helper functions `_extendable_conflicts()` and `_has_giac_method()` in `Giac.Commands`
   for conflict resolution logic
 
+- **Equation syntax with `~` operator**: Create symbolic equations using the tilde operator,
+  following Julia's Symbolics.jl convention:
+  ```julia
+  @giac_var x
+  eq = x^2 - 1 ~ 0    # Creates equation: x^2-1=0
+  solve(eq, x)        # Solves for roots: [-1, 1]
+  ```
+
+  This provides a natural syntax alternative to `giac_eval("x^2-1=0")`. The `~` operator
+  works with mixed types (`GiacExpr ~ Number` and `Number ~ GiacExpr`).
+
 ### Changed
 
 - **Suppressed misleading conflict warnings**: The "GIAC command 'X' conflicts with Julia"

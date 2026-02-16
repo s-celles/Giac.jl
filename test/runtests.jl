@@ -48,6 +48,9 @@ using LinearAlgebra
 
     # Multiple dispatch for conflicts tests (023-conflicts-multidispatch)
     include("test_conflicts_multidispatch.jl")
+
+    # Equation syntax tests (024-equation-syntax)
+    include("test_equation_syntax.jl")
 end
 
 # Aqua.jl package quality tests

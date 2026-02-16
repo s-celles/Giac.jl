@@ -234,6 +234,77 @@ end
 Base.:*(c::Number, A::GiacMatrix) = A * c
 
 # =============================================================================
+# Equation Operator (~) - 024-equation-syntax
+# =============================================================================
+
+"""
+    ~(a::GiacExpr, b::GiacExpr) -> GiacExpr
+
+Create a symbolic equation from two GIAC expressions.
+
+This operator follows the Julia Symbolics.jl convention where `~` creates
+an equation (equality relation) rather than a boolean comparison.
+
+# Arguments
+- `a::GiacExpr`: Left-hand side of the equation
+- `b::GiacExpr`: Right-hand side of the equation
+
+# Returns
+- `GiacExpr`: A GIAC expression representing the equation `a = b`
+
+# Examples
+```julia
+@giac_var x
+eq = x^2 - 1 ~ giac_eval("0")  # Creates equation x^2-1=0
+solve(eq, x)                    # Solves for x: [-1, 1]
+
+# Multiple variable equation
+@giac_several_vars x y
+eq = x + y ~ giac_eval("10")   # Creates equation x+y=10
+```
+
+# See also
+- [`==`](@ref): Boolean equality check (returns `Bool`)
+- [`solve`](@ref): Solve equations
+"""
+function Base.:~(a::GiacExpr, b::GiacExpr)::GiacExpr
+    eq_str = "$(string(a))=$(string(b))"
+    return giac_eval(eq_str)
+end
+
+"""
+    ~(a::GiacExpr, b::Number) -> GiacExpr
+
+Create a symbolic equation from a GIAC expression and a number.
+
+# Examples
+```julia
+@giac_var x
+eq = x ~ 5      # Creates equation x=5
+eq = x^2 ~ 4    # Creates equation x^2=4
+```
+"""
+function Base.:~(a::GiacExpr, b::Number)::GiacExpr
+    return a ~ giac_eval(string(b))
+end
+
+"""
+    ~(a::Number, b::GiacExpr) -> GiacExpr
+
+Create a symbolic equation from a number and a GIAC expression.
+
+# Examples
+```julia
+@giac_var x
+eq = 0 ~ x^2 - 1    # Creates equation 0=x^2-1
+eq = 10 ~ x + 5     # Creates equation 10=x+5
+```
+"""
+function Base.:~(a::Number, b::GiacExpr)::GiacExpr
+    return giac_eval(string(a)) ~ b
+end
+
+# =============================================================================
 # Promotion and Conversion
 # =============================================================================
 
