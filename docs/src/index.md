@@ -19,6 +19,7 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 - **LaTeX Support**: Automatic LaTeX rendering in Pluto notebooks
 - **Symbolics.jl Integration**: Bidirectional conversion with Symbolics.jl
 - **Tables.jl Compatibility**: Convert GiacMatrix and command help to DataFrames, CSV export
+- **Variable Substitution**: Symbolics.jl-compatible `substitute(expr, Dict(var => value))` interface
 
 ## Installation
 

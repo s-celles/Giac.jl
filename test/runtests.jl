@@ -57,6 +57,9 @@ using LinearAlgebra
 
     # Julia help system integration tests (026-julia-help-docstrings)
     include("test_docstrings.jl")
+
+    # Substitute function tests (028-substitute-mechanism)
+    include("test_substitute.jl")
 end
 
 # Aqua.jl package quality tests

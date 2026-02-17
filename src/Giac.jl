@@ -74,6 +74,7 @@ include("api.jl")
 include("operators.jl")
 include("macros.jl")
 include("tables.jl")
+include("substitute.jl")
 
 # Include Commands submodule (009-commands-submodule)
 include("Commands.jl")
@@ -103,6 +104,9 @@ export search_commands_by_description
 
 # Tables.jl compatibility (025-tables-compatibility)
 export commands_table, clear_commands_cache!, CommandsTable
+
+# Substitute function (028-substitute-mechanism)
+export substitute
 
 # All commands access (008-all-giac-commands)
 export JULIA_CONFLICTS, exportable_commands, is_valid_command, conflict_reason

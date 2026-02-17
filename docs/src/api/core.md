@@ -102,6 +102,10 @@ available_commands
 reset_conflict_warnings!
 ```
 
+## Substitution
+
+See [Variable Substitution](../substitute.md) for the `substitute` function documentation.
+
 ## Conversion Functions
 
 ```@docs
