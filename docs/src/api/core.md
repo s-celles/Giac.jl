@@ -22,7 +22,6 @@ GiacInput
 
 ```@docs
 giac_eval
-to_julia
 ```
 
 ## Symbolic Variables
@@ -106,11 +105,66 @@ reset_conflict_warnings!
 
 See [Variable Substitution](../substitute.md) for the `substitute` function documentation.
 
+## Type Introspection
+
+Functions for querying the type of GIAC expressions:
+
+```@docs
+Giac.giac_type
+Giac.subtype
+Giac.is_integer
+Giac.is_numeric
+Giac.is_vector
+Giac.is_symbolic
+Giac.is_identifier
+Giac.is_fraction
+Giac.is_complex
+Giac.is_string
+```
+
+### Type Constants
+
+| Constant | Description |
+|----------|-------------|
+| `GIAC_INT` | Machine integer (Int64) |
+| `GIAC_DOUBLE` | Double-precision float (Float64) |
+| `GIAC_ZINT` | Arbitrary-precision integer (BigInt) |
+| `GIAC_REAL` | Extended precision real |
+| `GIAC_CPLX` | Complex number |
+| `GIAC_VECT` | Vector/list/sequence |
+| `GIAC_SYMB` | Symbolic expression |
+| `GIAC_IDNT` | Identifier/variable |
+| `GIAC_STRNG` | String value |
+| `GIAC_FRAC` | Rational fraction |
+| `GIAC_FUNC` | Function reference |
+
+### Vector Subtype Constants
+
+| Constant | Description |
+|----------|-------------|
+| `GIAC_SEQ_VECT` | Sequence (function arguments) |
+| `GIAC_SET_VECT` | Set (unordered collection) |
+| `GIAC_LIST_VECT` | List (ordered collection) |
+
+## Component Access
+
+Functions for accessing components of compound types:
+
+```@docs
+Giac.numer
+Giac.denom
+Giac.real_part
+Giac.imag_part
+Giac.symb_funcname
+Giac.symb_argument
+```
+
 ## Conversion Functions
 
 ```@docs
-to_giac
-to_symbolics
+Giac.to_julia
+Giac.to_giac
+Giac.to_symbolics
 ```
 
 ## Utility Functions
