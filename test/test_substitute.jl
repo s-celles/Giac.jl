@@ -193,4 +193,102 @@
             @test_throws ArgumentError substitute(expr, Dict(x => nothing))
         end
     end
+
+    # ========================================================================
+    # T030: GiacMatrix Substitution (Element-wise)
+    # ========================================================================
+
+    @testset "GiacMatrix Substitution" begin
+        @testset "T030a: Single variable matrix substitution with Dict" begin
+            @giac_var x
+            M = GiacMatrix([x x+1; 2*x x^2])
+            result = substitute(M, Dict(x => 3))
+            @test result isa GiacMatrix
+            @test size(result) == (2, 2)
+            # Check elements: [3 4; 6 9]
+            @test string(result[1, 1]) == "3"
+            @test string(result[1, 2]) == "4"
+            @test string(result[2, 1]) == "6"
+            @test string(result[2, 2]) == "9"
+        end
+
+        @testset "T030b: Single variable matrix substitution with Pair" begin
+            @giac_var x
+            M = GiacMatrix([x 2*x; x+1 x^2])
+            result = substitute(M, x => 3)
+            @test result isa GiacMatrix
+            @test size(result) == (2, 2)
+            # Check elements: [3 6; 4 9]
+            @test string(result[1, 1]) == "3"
+            @test string(result[1, 2]) == "6"
+            @test string(result[2, 1]) == "4"
+            @test string(result[2, 2]) == "9"
+        end
+
+        @testset "T030c: Multi-variable matrix substitution" begin
+            @giac_var x y
+            M = GiacMatrix([x+y x*y; x-y x/y])
+            result = substitute(M, Dict(x => 6, y => 2))
+            @test result isa GiacMatrix
+            @test size(result) == (2, 2)
+            # x=6, y=2: [8 12; 4 3]
+            @test string(result[1, 1]) == "8"
+            @test string(result[1, 2]) == "12"
+            @test string(result[2, 1]) == "4"
+            @test string(result[2, 2]) == "3"
+        end
+
+        @testset "T030d: Partial substitution in matrix" begin
+            @giac_var x y
+            M = GiacMatrix([x y; x+y x*y])
+            result = substitute(M, Dict(x => 2))
+            @test result isa GiacMatrix
+            @test size(result) == (2, 2)
+            # Only x=2: [2 y; 2+y 2*y]
+            @test string(result[1, 1]) == "2"
+            @test string(result[1, 2]) == "y"
+            result_21 = string(result[2, 1])
+            result_22 = string(result[2, 2])
+            @test occursin("2", result_21) && occursin("y", result_21)
+            @test occursin("2", result_22) && occursin("y", result_22)
+        end
+
+        @testset "T030e: Empty Dict returns matrix copy" begin
+            @giac_var x
+            M = GiacMatrix([x x+1; 2*x 3*x])
+            result = substitute(M, Dict{GiacExpr, Int}())
+            @test result isa GiacMatrix
+            @test size(result) == size(M)
+            # Elements should be unchanged
+            @test string(result[1, 1]) == string(M[1, 1])
+            @test string(result[2, 2]) == string(M[2, 2])
+        end
+
+        @testset "T030f: Symbolic substitution in matrix" begin
+            @giac_var x y
+            M = GiacMatrix([x^2 x; 1 x+1])
+            result = substitute(M, Dict(x => y + 1))
+            @test result isa GiacMatrix
+            @test size(result) == (2, 2)
+            # x -> y+1: [(y+1)^2 y+1; 1 y+2]
+            result_11 = string(result[1, 1])
+            result_12 = string(result[1, 2])
+            result_22 = string(result[2, 2])
+            @test occursin("y", result_11)
+            @test occursin("y", result_12)
+            @test occursin("y", result_22)
+        end
+
+        @testset "T030g: Vector (1D matrix) substitution" begin
+            @giac_var x
+            V = GiacMatrix([x, 2*x, x^2])  # Column vector
+            result = substitute(V, x => 2)
+            @test result isa GiacMatrix
+            @test size(result) == (3, 1)
+            # x=2: [2, 4, 4]
+            @test string(result[1, 1]) == "2"
+            @test string(result[2, 1]) == "4"
+            @test string(result[3, 1]) == "4"
+        end
+    end
 end

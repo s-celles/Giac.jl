@@ -128,6 +128,58 @@ substitute(x + 1, Dict{GiacExpr, Int}())  # Returns: x + 1
 substitute(x + 1, Dict(y => 5))  # Returns: x + 1 (y not in expr)
 ```
 
+## Matrix Substitution
+
+The `substitute` function also works element-wise on `GiacMatrix`:
+
+### Single Variable in Matrix
+
+```julia
+@giac_var x
+
+M = GiacMatrix([x x+1; 2*x x^2])
+
+# Substitute x = 3 in all elements
+result = substitute(M, x => 3)
+# Returns: [[3, 4], [6, 9]]
+```
+
+### Multiple Variables in Matrix
+
+```julia
+@giac_var x y
+
+M = GiacMatrix([x+y x*y; x-y x/y])
+
+# Substitute x = 6, y = 2 in all elements
+result = substitute(M, Dict(x => 6, y => 2))
+# Returns: [[8, 12], [4, 3]]
+```
+
+### Partial Substitution
+
+```julia
+@giac_var x y
+
+M = GiacMatrix([x y; x+y x*y])
+
+# Only substitute x, leave y symbolic
+result = substitute(M, Dict(x => 2))
+# Returns: [[2, y], [2+y, 2*y]]
+```
+
+### Symbolic Substitution in Matrix
+
+```julia
+@giac_var x y
+
+M = GiacMatrix([x^2 x; 1 x+1])
+
+# Replace x with y+1
+result = substitute(M, Dict(x => y + 1))
+# Returns: [[(y+1)^2, y+1], [1, y+2]]
+```
+
 ## API Reference
 
 ```@docs
