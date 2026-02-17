@@ -76,6 +76,11 @@ include("macros.jl")
 include("tables.jl")
 include("substitute.jl")
 
+# Output handling (029-output-handling)
+include("introspection.jl")
+include("conversion.jl")
+include("iteration.jl")
+
 # Include Commands submodule (009-commands-submodule)
 include("Commands.jl")
 
@@ -107,6 +112,16 @@ export commands_table, clear_commands_cache!, CommandsTable
 
 # Substitute function (028-substitute-mechanism)
 export substitute
+
+# Type introspection (029-output-handling)
+export GIAC_INT, GIAC_DOUBLE, GIAC_ZINT, GIAC_REAL, GIAC_CPLX, GIAC_VECT
+export GIAC_SYMB, GIAC_IDNT, GIAC_STRNG, GIAC_FRAC, GIAC_FUNC
+export GIAC_SEQ_VECT, GIAC_SET_VECT, GIAC_LIST_VECT
+export giac_type, subtype
+export is_integer, is_numeric, is_vector, is_symbolic, is_identifier
+export is_fraction, is_complex, is_string
+export numer, denom, real_part, imag_part
+export symb_funcname, symb_argument
 
 # All commands access (008-all-giac-commands)
 export JULIA_CONFLICTS, exportable_commands, is_valid_command, conflict_reason

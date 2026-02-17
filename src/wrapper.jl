@@ -385,6 +385,12 @@ end
 function _giac_to_int64(ptr::Ptr{Cvoid})::Int64
     if !_stub_mode[] && GiacCxxBindings._have_library
         expr_str = _get_stub_expr(ptr)
+        # Handle GIAC boolean representations
+        if expr_str == "true"
+            return Int64(1)
+        elseif expr_str == "false"
+            return Int64(0)
+        end
         return parse(Int64, expr_str)
     end
     return 0

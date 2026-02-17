@@ -260,6 +260,153 @@ mutable struct GiacMatrix
 end
 
 """
+    GiacMatrix(expr::GiacExpr)
+
+Construct a GiacMatrix from a GiacExpr representing a matrix.
+
+The GiacExpr should be a vector of vectors, e.g., from `giac_eval("[[1,2],[3,4]]")`.
+
+# Example
+```julia
+expr = giac_eval("[[1,2,3],[4,5,6]]")
+m = GiacMatrix(expr)  # 2×3 matrix
+```
+"""
+function GiacMatrix(expr::GiacExpr)
+    # Get string representation and parse dimensions
+    expr_str = string(expr)
+
+    # Validate it looks like a matrix [[...],[...],...]
+    if !startswith(expr_str, "[") || !endswith(expr_str, "]")
+        throw(ArgumentError("Expression is not a matrix: $expr_str"))
+    end
+
+    # Parse matrix structure to get dimensions
+    # Count rows by counting top-level comma-separated elements
+    inner = expr_str[2:end-1]
+    if isempty(inner)
+        throw(ArgumentError("Empty matrix expression"))
+    end
+
+    # Split into rows
+    rows_strs = _split_matrix_rows(inner)
+    nrows = length(rows_strs)
+    if nrows == 0
+        throw(ArgumentError("Matrix has no rows"))
+    end
+
+    # Get column count from first row
+    first_row = rows_strs[1]
+    if startswith(first_row, "[") && endswith(first_row, "]")
+        first_row_inner = first_row[2:end-1]
+        ncols = _count_vector_elements(first_row_inner)
+    else
+        # Single element row
+        ncols = 1
+    end
+
+    if ncols == 0
+        throw(ArgumentError("Matrix has no columns"))
+    end
+
+    # Use the expression's pointer directly
+    return GiacMatrix(expr.ptr, nrows, ncols)
+end
+
+"""
+    GiacMatrix(exprs::Vector{GiacExpr})
+
+Construct a GiacMatrix from a vector of GiacExpr.
+
+If each element is a vector (row), creates a matrix with those rows.
+If each element is a scalar, creates a column vector (n×1 matrix).
+
+# Example
+```julia
+# Row vectors create a matrix
+row1 = giac_eval("[1, 2, 3]")
+row2 = giac_eval("[4, 5, 6]")
+m = GiacMatrix([row1, row2])  # 2×3 matrix
+
+# Scalars create a column vector
+@giac_var x
+v = GiacMatrix([x, 2*x, x^2])  # 3×1 column vector
+```
+"""
+function GiacMatrix(exprs::Vector{GiacExpr})
+    if isempty(exprs)
+        throw(ArgumentError("Cannot create matrix from empty vector"))
+    end
+
+    nrows = length(exprs)
+
+    # Get column count from first element
+    first_str = string(exprs[1])
+    if startswith(first_str, "[") && endswith(first_str, "]")
+        # First element is a vector - use it as a row
+        ncols = _count_vector_elements(first_str[2:end-1])
+        # Build matrix string representation (rows are vectors)
+        rows_strs = [string(e) for e in exprs]
+        matrix_str = "[" * join(rows_strs, ",") * "]"
+    else
+        # First element is a scalar - create column vector
+        # Each scalar becomes a row with 1 element: [[a],[b],[c]]
+        ncols = 1
+        rows_strs = ["[" * string(e) * "]" for e in exprs]
+        matrix_str = "[" * join(rows_strs, ",") * "]"
+    end
+
+    # Evaluate to get proper GIAC matrix
+    matrix_ptr = _giac_eval_string(matrix_str, C_NULL)
+
+    return GiacMatrix(matrix_ptr, nrows, ncols)
+end
+
+# Helper function to split matrix string into row strings
+function _split_matrix_rows(s::AbstractString)::Vector{String}
+    result = String[]
+    depth = 0
+    current = ""
+    for c in s
+        if c == '['
+            depth += 1
+            current *= c
+        elseif c == ']'
+            depth -= 1
+            current *= c
+        elseif c == ',' && depth == 0
+            push!(result, strip(current))
+            current = ""
+        else
+            current *= c
+        end
+    end
+    if !isempty(current)
+        push!(result, strip(current))
+    end
+    return result
+end
+
+# Helper function to count elements in a comma-separated string
+function _count_vector_elements(s::AbstractString)::Int
+    if isempty(s)
+        return 0
+    end
+    depth = 0
+    count = 1
+    for c in s
+        if c == '[' || c == '('
+            depth += 1
+        elseif c == ']' || c == ')'
+            depth -= 1
+        elseif c == ',' && depth == 0
+            count += 1
+        end
+    end
+    return count
+end
+
+"""
     _finalize_giacmatrix(m::GiacMatrix)
 
 Cleanup function for GiacMatrix. Called by the garbage collector.

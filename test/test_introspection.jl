@@ -65,14 +65,16 @@
                 @test julia_val isa Complex
             end
 
-            # T-082: Matrix - currently returns GiacExpr (not yet implemented)
+            # T-082: Matrix - returns nested Vector
             @testset "Matrix" begin
                 result = giac_eval("[[1,2],[3,4]]")
                 julia_val = to_julia(result)
-                # Currently returns GiacExpr for matrices
-                @test julia_val isa GiacExpr
-                @test occursin("1", string(julia_val))
-                @test occursin("4", string(julia_val))
+                # Matrices are converted to nested arrays
+                @test julia_val isa Vector
+                @test length(julia_val) == 2
+                @test julia_val[1] isa Vector
+                @test julia_val[1] == [1, 2]
+                @test julia_val[2] == [3, 4]
             end
 
             # T-083: Identifier - currently returns GiacExpr (not yet implemented)
@@ -94,14 +96,13 @@
                 @test occursin("cos", string(julia_val))
             end
 
-            # Vector - currently returns GiacExpr
+            # Vector - returns Julia Vector
             @testset "Vector" begin
                 result = giac_eval("[1, 2, 3, 4, 5]")
                 julia_val = to_julia(result)
-                # Currently returns GiacExpr for vectors
-                @test julia_val isa GiacExpr
-                @test occursin("1", string(julia_val))
-                @test occursin("5", string(julia_val))
+                # Vectors are converted to Julia arrays
+                @test julia_val isa Vector
+                @test julia_val == [1, 2, 3, 4, 5]
             end
 
             # Boolean (GIAC represents true as 1)
@@ -304,44 +305,46 @@
     # ========================================================================
     @testset "CxxWrap Gen Type" begin
         if !Giac.is_stub_mode() && Giac.GiacCxxBindings._have_library
-            using Giac.GiacCxxBindings: giac_eval as cxx_eval, to_string, type, subtype
-            using Giac.GiacCxxBindings: giac_sin, giac_cos, giac_diff
-            using Giac.GiacCxxBindings: is_zero, is_one, is_integer
+            # Use fully qualified names to avoid polluting Main namespace
+            # (which would conflict with Giac.is_integer for GiacExpr)
+            GCB = Giac.GiacCxxBindings
+            cxx_eval = GCB.giac_eval
+            to_string = GCB.to_string
 
             @testset "Gen Type Information" begin
                 # Integer type
                 g = cxx_eval("42")
-                @test type(g) == Giac.GiacCxxBindings.GENTYPE_INT
+                @test GCB.type(g) == GCB.GENTYPE_INT
 
                 # Symbolic type
                 g = cxx_eval("x")
-                @test type(g) == Giac.GiacCxxBindings.GENTYPE_IDNT
+                @test GCB.type(g) == GCB.GENTYPE_IDNT
 
                 # Expression type
                 g = cxx_eval("x + 1")
-                @test type(g) == Giac.GiacCxxBindings.GENTYPE_SYMB
+                @test GCB.type(g) == GCB.GENTYPE_SYMB
             end
 
             @testset "Gen Predicates" begin
-                @test is_zero(cxx_eval("0")) == true
-                @test is_zero(cxx_eval("1")) == false
-                @test is_one(cxx_eval("1")) == true
-                @test is_one(cxx_eval("0")) == false
-                @test is_integer(cxx_eval("42")) == true
-                @test is_integer(cxx_eval("3.14")) == false
+                @test GCB.is_zero(cxx_eval("0")) == true
+                @test GCB.is_zero(cxx_eval("1")) == false
+                @test GCB.is_one(cxx_eval("1")) == true
+                @test GCB.is_one(cxx_eval("0")) == false
+                @test GCB.is_integer(cxx_eval("42")) == true
+                @test GCB.is_integer(cxx_eval("3.14")) == false
             end
 
             @testset "Gen Tier 1 Direct Wrappers" begin
                 x = cxx_eval("x")
 
-                result = giac_sin(x)
+                result = GCB.giac_sin(x)
                 @test occursin("sin", to_string(result))
 
-                result = giac_cos(x)
+                result = GCB.giac_cos(x)
                 @test occursin("cos", to_string(result))
 
                 # Differentiation
-                result = giac_diff(cxx_eval("x^2"), x)
+                result = GCB.giac_diff(cxx_eval("x^2"), x)
                 @test occursin("2", to_string(result))
                 @test occursin("x", to_string(result))
             end
