@@ -49,7 +49,7 @@ det(M)  # m11*m22-m12*m21
 
 # Or use the compact constructor:
 M = GiacMatrix(:m, 3, 3)
-# 3×3 GiacMatrix with entries m_1_1, m_1_2, ...
+# 3×3 GiacMatrix with entries m11, m12, ...
 ```
 
 For very large matrices:
@@ -62,6 +62,51 @@ M = GiacMatrix(:m, 100, 100)
 #      ⋮        ⋮        ⋮     ⋱          ⋮
 # m_100_1  m_100_2  m_100_3   ...  m_100_100
 ```
+
+### Custom Index Ranges
+
+Create matrices with non-1-based indexing using UnitRange or StepRange arguments:
+
+```julia
+# 0-based indexing (useful for physics, quantum mechanics)
+M = GiacMatrix(:ψ, 0:2, 0:2)
+# 3×3 GiacMatrix with entries ψ00, ψ01, ψ02, ψ10, ψ11, ...
+
+# Negative indices (useful for angular momentum states)
+J = GiacMatrix(:J, -1:1)
+# 3×1 column vector with entries J_m1, J_0, J_1 (m = minus)
+
+# Custom ranges
+A = GiacMatrix(:A, 5:7, 1:3)
+# 3×3 GiacMatrix with entries A51, A52, A53, A61, ...
+
+# StepRange for even indices
+E = GiacMatrix(:E, 0:2:6)
+# 4×1 column vector with entries E0, E2, E4, E6
+
+# Mixed integer and range arguments
+M = GiacMatrix(:M, 3, 0:2)
+# 3×3 matrix: rows use 1:3, columns use 0:2
+# Entries: M10, M11, M12, M20, M21, M22, M30, M31, M32
+```
+
+The same range syntax works with `@giac_several_vars`:
+
+```julia
+@giac_several_vars ψ 0:2
+# Creates: ψ0, ψ1, ψ2
+
+@giac_several_vars T 0:1 0:2
+# Creates: T00, T01, T02, T10, T11, T12
+
+@giac_several_vars c -1:1
+# Creates: c_m1, c_0, c_1 (m = minus for negative indices)
+```
+
+**Naming Convention:**
+- Indices 0-9: concatenated directly (e.g., `m12`, `ψ00`)
+- Indices > 9: underscore separators (e.g., `m_1_10`)
+- Negative indices: `m` prefix for minus (e.g., `-1` → `m1`, so `c_m1` for index -1)
 
 ## Determinant
 
@@ -227,7 +272,9 @@ A^2
 | Function | Description |
 |----------|-------------|
 | `GiacMatrix(array)` | Create symbolic matrix from array |
-| `GiacMatrix(:sym, m, n)` | Create m×n symbolic matrix |
+| `GiacMatrix(:sym, m, n)` | Create m×n symbolic matrix (1-based) |
+| `GiacMatrix(:sym, a:b, c:d)` | Create matrix with custom index ranges |
+| `GiacMatrix(:sym, m, a:b)` | Mixed integer and range arguments |
 | `det(M)` | Determinant |
 | `inv(M)` | Inverse |
 | `tr(M)` | Trace |

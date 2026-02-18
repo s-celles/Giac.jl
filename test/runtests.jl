@@ -79,6 +79,12 @@ using LinearAlgebra
     # Physics domain documentation tests
     include("test_docs_physics_mechanics.jl")
     include("test_docs_physics_em.jl")
+
+    # ============================================================================
+    # UnitRange Indices Support Tests (037-unitrange-indices)
+    # Verifies UnitRange support in GiacMatrix and @giac_several_vars
+    # ============================================================================
+    include("test_unitrange_indices.jl")
 end
 
 # Aqua.jl package quality tests

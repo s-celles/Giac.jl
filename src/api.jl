@@ -115,7 +115,45 @@ end
 
 # =============================================================================
 # GiacMatrix Symbol Constructor (Feature 013)
+# Extended with UnitRange support (Feature 037)
 # =============================================================================
+
+"""
+    _to_range(dim::Integer) -> UnitRange{Int}
+    _to_range(dim::OrdinalRange) -> OrdinalRange
+
+Convert a dimension specification to a range.
+Integer n becomes 1:n for backward compatibility.
+Ranges pass through unchanged.
+"""
+_to_range(dim::Integer) = 1:dim
+_to_range(dim::OrdinalRange) = dim
+
+"""
+    _needs_separator_for_range(range::OrdinalRange) -> Bool
+
+Check if underscore separators are needed for the given range.
+Returns true if any index is > 9 or < 0.
+"""
+function _needs_separator_for_range(range::OrdinalRange)
+    isempty(range) && return false
+    return minimum(range) < 0 || maximum(range) > 9
+end
+
+"""
+    _needs_separator_for_ranges(ranges) -> Bool
+
+Check if underscore separators are needed for a collection of ranges.
+Returns true if any range has an index > 9 or < 0.
+"""
+function _needs_separator_for_ranges(ranges)
+    for r in ranges
+        if _needs_separator_for_range(r)
+            return true
+        end
+    end
+    return false
+end
 
 """
     GiacMatrix(base::Symbol, dims::Integer...)
@@ -196,6 +234,84 @@ function GiacMatrix(base::Symbol, dims::Integer...)
 end
 
 """
+    GiacMatrix(base::Symbol, dims::Union{Integer, OrdinalRange}...)
+
+Create a symbolic GiacMatrix with variable elements using custom index ranges.
+
+This constructor allows non-1-based indexing for symbolic matrices. Integer arguments
+are treated as 1:n for backward compatibility. UnitRange and StepRange arguments
+specify custom index ranges.
+
+# Arguments
+- `base::Symbol`: Base name for the symbolic variables (e.g., `:m`, `:α`)
+- `dims::Union{Integer, OrdinalRange}...`: One or two dimension specifications
+  - Integer `n`: Creates indices 1:n (backward compatible)
+  - UnitRange `a:b`: Creates indices from a to b
+  - StepRange `a:s:b`: Creates indices from a to b with step s
+
+# Naming Convention
+- Indices 0-9: concatenated directly (e.g., `m00`, `m12`)
+- Indices > 9: underscore separators (e.g., `m_1_10`)
+- Negative indices: `m` prefix for minus (e.g., -1 → `m1`, so `x_m1`)
+
+# Examples
+
+0-based indexing:
+```julia
+M = GiacMatrix(:m, 0:2, 0:2)
+# Elements: m00, m01, m02, m10, ..., m22
+```
+
+Negative indices:
+```julia
+J = GiacMatrix(:J, -1:1)
+# Elements: J_m1, J_0, J_1 (m = minus)
+```
+
+Mixed integer and range:
+```julia
+A = GiacMatrix(:A, 3, 0:2)
+# Rows use 1:3, columns use 0:2
+# Elements: A10, A11, A12, A20, ..., A32
+```
+
+StepRange:
+```julia
+v = GiacMatrix(:v, 0:2:6)
+# Elements: v0, v2, v4, v6
+```
+
+# See also
+- [`@giac_several_vars`](@ref): Macro for creating indexed symbolic variables
+"""
+function GiacMatrix(base::Symbol, dims::Union{Integer, OrdinalRange}...)
+    # Validate dimension count
+    if length(dims) == 0
+        throw(ArgumentError("At least one dimension required"))
+    end
+    if length(dims) > 2
+        throw(ArgumentError("GiacMatrix supports at most 2 dimensions. Use GiacTensor for N-dimensional arrays."))
+    end
+
+    # Convert all dims to ranges
+    ranges = [_to_range(d) for d in dims]
+
+    # Validate integer dimensions (must be positive for backward compat)
+    for d in dims
+        if d isa Integer && d <= 0
+            throw(ArgumentError("Dimensions must be positive, got $d"))
+        end
+    end
+
+    # Handle based on number of dimensions
+    if length(ranges) == 1
+        return _create_symbolic_vector_range(base, ranges[1])
+    else
+        return _create_symbolic_matrix_range(base, ranges[1], ranges[2])
+    end
+end
+
+"""
     _create_symbolic_vector(base::Symbol, n::Int) -> GiacMatrix
 
 Internal helper to create an n×1 column vector with symbolic elements.
@@ -231,6 +347,65 @@ function _create_symbolic_matrix(base::Symbol, rows::Int, cols::Int)
         for j in 1:cols
             varname = _format_indices(base, (i, j), needs_sep)
             elements[i, j] = giac_eval(string(varname))
+        end
+    end
+
+    return GiacMatrix(elements)
+end
+
+"""
+    _create_symbolic_vector_range(base::Symbol, range::OrdinalRange) -> GiacMatrix
+
+Internal helper to create a column vector with symbolic elements using custom index range.
+Elements are named using the actual index values from the range.
+"""
+function _create_symbolic_vector_range(base::Symbol, range::OrdinalRange)
+    n = length(range)
+
+    # Handle empty range
+    if n == 0
+        elements = Matrix{GiacExpr}(undef, 0, 1)
+        return GiacMatrix(elements)
+    end
+
+    # Determine if we need underscore separators
+    needs_sep = _needs_separator_for_range(range)
+
+    # Create elements as column vector
+    elements = Matrix{GiacExpr}(undef, n, 1)
+    for (pos, idx) in enumerate(range)
+        varname = _format_indices(base, (idx,), needs_sep)
+        elements[pos, 1] = giac_eval(string(varname))
+    end
+
+    return GiacMatrix(elements)
+end
+
+"""
+    _create_symbolic_matrix_range(base::Symbol, row_range::OrdinalRange, col_range::OrdinalRange) -> GiacMatrix
+
+Internal helper to create a matrix with symbolic elements using custom index ranges.
+Elements are named using the actual index values from the ranges.
+"""
+function _create_symbolic_matrix_range(base::Symbol, row_range::OrdinalRange, col_range::OrdinalRange)
+    nrows = length(row_range)
+    ncols = length(col_range)
+
+    # Handle empty ranges
+    if nrows == 0 || ncols == 0
+        elements = Matrix{GiacExpr}(undef, nrows, ncols)
+        return GiacMatrix(elements)
+    end
+
+    # Determine if we need underscore separators
+    needs_sep = _needs_separator_for_ranges([row_range, col_range])
+
+    # Create elements in row-major order
+    elements = Matrix{GiacExpr}(undef, nrows, ncols)
+    for (row_pos, row_idx) in enumerate(row_range)
+        for (col_pos, col_idx) in enumerate(col_range)
+            varname = _format_indices(base, (row_idx, col_idx), needs_sep)
+            elements[row_pos, col_pos] = giac_eval(string(varname))
         end
     end
 
