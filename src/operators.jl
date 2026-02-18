@@ -110,20 +110,20 @@ end
 # =============================================================================
 
 # Addition
-Base.:+(a::GiacExpr, b::Number) = a + giac_eval(string(b))
-Base.:+(a::Number, b::GiacExpr) = giac_eval(string(a)) + b
+Base.:+(a::GiacExpr, b::Number) = a + convert(GiacExpr, b)
+Base.:+(a::Number, b::GiacExpr) = convert(GiacExpr, a) + b
 
 # Subtraction
-Base.:-(a::GiacExpr, b::Number) = a - giac_eval(string(b))
-Base.:-(a::Number, b::GiacExpr) = giac_eval(string(a)) - b
+Base.:-(a::GiacExpr, b::Number) = a - convert(GiacExpr, b)
+Base.:-(a::Number, b::GiacExpr) = convert(GiacExpr, a) - b
 
 # Multiplication
-Base.:*(a::GiacExpr, b::Number) = a * giac_eval(string(b))
-Base.:*(a::Number, b::GiacExpr) = giac_eval(string(a)) * b
+Base.:*(a::GiacExpr, b::Number) = a * convert(GiacExpr, b)
+Base.:*(a::Number, b::GiacExpr) = convert(GiacExpr, a) * b
 
 # Division
-Base.:/(a::GiacExpr, b::Number) = a / giac_eval(string(b))
-Base.:/(a::Number, b::GiacExpr) = giac_eval(string(a)) / b
+Base.:/(a::GiacExpr, b::Number) = a / convert(GiacExpr, b)
+Base.:/(a::Number, b::GiacExpr) = convert(GiacExpr, a) / b
 
 # =============================================================================
 # Comparison Operators
@@ -141,8 +141,8 @@ function Base.:(==)(a::GiacExpr, b::GiacExpr)::Bool
     end
 end
 
-Base.:(==)(a::GiacExpr, b::Number) = a == giac_eval(string(b))
-Base.:(==)(a::Number, b::GiacExpr) = giac_eval(string(a)) == b
+Base.:(==)(a::GiacExpr, b::Number) = a == convert(GiacExpr, b)
+Base.:(==)(a::Number, b::GiacExpr) = convert(GiacExpr, a) == b
 
 """
     hash(expr::GiacExpr, h::UInt)
@@ -221,7 +221,7 @@ end
 Scalar multiplication of matrix.
 """
 function Base.:*(A::GiacMatrix, c::Number)::GiacMatrix
-    scalar = giac_eval(string(c))
+    scalar = convert(GiacExpr, c)
     with_giac_lock() do
         ptr = _giac_matrix_scalar_mul(A.ptr, scalar.ptr)
         if ptr == C_NULL
@@ -285,7 +285,7 @@ eq = x^2 ~ 4    # Creates equation x^2=4
 ```
 """
 function Base.:~(a::GiacExpr, b::Number)::GiacExpr
-    return a ~ giac_eval(string(b))
+    return a ~ convert(GiacExpr, b)
 end
 
 """
@@ -301,7 +301,7 @@ eq = 10 ~ x + 5     # Creates equation 10=x+5
 ```
 """
 function Base.:~(a::Number, b::GiacExpr)::GiacExpr
-    return giac_eval(string(a)) ~ b
+    return convert(GiacExpr, a) ~ b
 end
 
 # =============================================================================
@@ -310,7 +310,29 @@ end
 
 # Enable automatic conversion in mixed operations
 Base.promote_rule(::Type{GiacExpr}, ::Type{<:Number}) = GiacExpr
-Base.convert(::Type{GiacExpr}, x::Number) = giac_eval(string(x))
+"""
+    convert(::Type{GiacExpr}, x::Number) -> GiacExpr
+
+Convert a Julia number to a GIAC expression.
+
+Handles special floating-point values:
+- `Inf` is converted to GIAC's `inf` (positive infinity)
+- `-Inf` is converted to GIAC's `-inf` (negative infinity)
+
+# Examples
+```julia
+convert(GiacExpr, 42)     # Returns GiacExpr representing 42
+convert(GiacExpr, Inf)    # Returns GiacExpr representing +infinity
+convert(GiacExpr, -Inf)   # Returns GiacExpr representing -infinity
+```
+"""
+function Base.convert(::Type{GiacExpr}, x::Number)
+    if x isa AbstractFloat && isinf(x)
+        return giac_eval(x > 0 ? "inf" : "-inf")
+    else
+        return giac_eval(string(x))
+    end
+end
 
 # =============================================================================
 # Iteration support for expression components (future enhancement)

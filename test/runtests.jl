@@ -85,6 +85,18 @@ using LinearAlgebra
     # Verifies UnitRange support in GiacMatrix and @giac_several_vars
     # ============================================================================
     include("test_unitrange_indices.jl")
+
+    # ============================================================================
+    # Inf and -Inf Support Tests (038-inf-support)
+    # Verifies Julia Inf/-Inf conversion to GIAC inf/-inf
+    # ============================================================================
+    include("test_inf_support.jl")
+
+    # ============================================================================
+    # Z-Transform Function Tests (039-z-transform)
+    # Verifies z-transform and inverse z-transform functions
+    # ============================================================================
+    include("test_ztransform.jl")
 end
 
 # Aqua.jl package quality tests

@@ -81,7 +81,17 @@ function _arg_to_giac_string(arg::AbstractIrrational)::String
     end
 end
 
-# General Number fallback (integers, floats, etc.)
+# AbstractFloat handling for Inf/-Inf (038-inf-support)
+# Julia's Inf becomes "Inf" (uppercase) but GIAC expects "inf" (lowercase)
+function _arg_to_giac_string(arg::AbstractFloat)::String
+    if isinf(arg)
+        return arg > 0 ? "inf" : "-inf"
+    else
+        return string(arg)
+    end
+end
+
+# General Number fallback (integers, etc.)
 function _arg_to_giac_string(arg::Number)::String
     return string(arg)
 end

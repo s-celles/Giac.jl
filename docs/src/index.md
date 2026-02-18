@@ -20,6 +20,8 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 - **Symbolics.jl Integration**: Bidirectional conversion with Symbolics.jl
 - **Tables.jl Compatibility**: Convert GiacMatrix and command help to DataFrames, CSV export
 - **Variable Substitution**: Symbolics.jl-compatible `substitute(expr, Dict(var => value))` interface
+- **Infinity Support**: Use Julia's `Inf` and `-Inf` directly in limits and improper integrals
+- **Z-Transform**: `ztrans` and `invztrans` commands for discrete-time signal processing
 
 ## Installation
 
@@ -127,6 +129,27 @@ end
 
 # Collect to Julia vector
 to_julia(g)  # [10, 20, 30]::Vector{Int64}
+```
+
+## Infinity Support
+
+Use Julia's native `Inf` and `-Inf` in limits and improper integrals:
+
+```julia
+using Giac
+using Giac.Commands: limit, integrate
+
+@giac_var x
+
+# Limits at infinity
+limit(1/x, x, Inf)     # 0
+limit(1/x, x, -Inf)    # 0
+limit(x^2, x, Inf)     # +infinity
+
+# Improper integrals
+integrate(exp(-x), x, 0, Inf)    # 1
+integrate(1/x^2, x, 1, Inf)      # 1
+integrate(exp(x), x, -Inf, 0)    # 1
 ```
 
 ## Modules
