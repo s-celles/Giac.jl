@@ -224,88 +224,35 @@ function _narrow_vector_type(elements::Vector{Any})
 end
 
 # Internal vector access helpers
+# Part of feature 031-fix-solve-to-julia: Use CxxWrap bindings exclusively
 function _vector_length(g::GiacExpr)::Int
     with_giac_lock() do
         if !_stub_mode[] && GiacCxxBindings._have_library
-            gen = _ptr_to_gen(g.ptr)
+            gen = _ptr_to_gen(g)
             if gen !== nothing
-                return GiacCxxBindings.vector_size(gen)
+                # Use correct CxxWrap method name: vect_size() on Gen object
+                return Int(GiacCxxBindings.vect_size(gen))
             end
         end
-        # Fallback: parse from string
-        str = string(g)
-        # Count commas + 1, handling nested structures
-        # Simple heuristic for now
-        if startswith(str, "[") && endswith(str, "]")
-            inner = str[2:end-1]
-            if isempty(inner)
-                return 0
-            end
-            # Count top-level commas (not inside nested brackets)
-            depth = 0
-            count = 1
-            for c in inner
-                if c == '[' || c == '('
-                    depth += 1
-                elseif c == ']' || c == ')'
-                    depth -= 1
-                elseif c == ',' && depth == 0
-                    count += 1
-                end
-            end
-            return count
-        end
-        return 1
+        # CxxWrap bindings required for vector conversion (031-fix-solve-to-julia)
+        throw(GiacError("Vector conversion requires CxxWrap bindings", :type))
     end
 end
 
 function _vector_element(g::GiacExpr, i::Int)::GiacExpr
     with_giac_lock() do
         if !_stub_mode[] && GiacCxxBindings._have_library
-            gen = _ptr_to_gen(g.ptr)
+            gen = _ptr_to_gen(g)
             if gen !== nothing
+                # Use correct CxxWrap method name: vect_at(index) on Gen object
                 # 0-based indexing in C++
-                elem_gen = GiacCxxBindings.vector_getindex(gen, i - 1)
+                elem_gen = GiacCxxBindings.vect_at(gen, i - 1)
                 return _gen_to_giacexpr(elem_gen)
             end
         end
-        # Fallback: parse and evaluate element
-        str = string(g)
-        if startswith(str, "[") && endswith(str, "]")
-            inner = str[2:end-1]
-            # Split by top-level commas
-            elements = _split_vector_string(inner)
-            if i >= 1 && i <= length(elements)
-                return giac_eval(elements[i])
-            end
-        end
-        throw(BoundsError(g, i))
+        # CxxWrap bindings required for vector conversion (031-fix-solve-to-julia)
+        throw(GiacError("Vector conversion requires CxxWrap bindings", :type))
     end
-end
-
-# Helper to split vector string by top-level commas
-function _split_vector_string(s::AbstractString)::Vector{String}
-    result = String[]
-    depth = 0
-    current = ""
-    for c in s
-        if c == '[' || c == '('
-            depth += 1
-            current *= c
-        elseif c == ']' || c == ')'
-            depth -= 1
-            current *= c
-        elseif c == ',' && depth == 0
-            push!(result, strip(current))
-            current = ""
-        else
-            current *= c
-        end
-    end
-    if !isempty(current)
-        push!(result, strip(current))
-    end
-    return result
 end
 
 # ============================================================================
