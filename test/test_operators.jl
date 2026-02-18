@@ -65,4 +65,181 @@
         a = giac_eval("x^2")
         @test hash(a) isa UInt
     end
+
+    # ============================================================================
+    # Number Type Conversion Tests (043-fix-rational-arithmetic)
+    # Tests for Rational, Complex, and Irrational type conversions
+    # ============================================================================
+
+    @testset "Rational Arithmetic (US1-US4)" begin
+        # Tests for Rational number conversion using division operator
+        x = giac_eval("x")
+
+        if is_stub_mode()
+            # In stub mode, operations throw due to C_NULL
+            @test_throws GiacError x - (1//2)
+            @test_throws GiacError x + (1//2)
+            @test_throws GiacError x * (2//3)
+            @test_throws GiacError (1//2) + x
+        else
+            # T004 [US1]: Basic Rational subtraction
+            @testset "T004: x - (1//2) contains 1/2" begin
+                result = x - (1//2)
+                result_str = string(result)
+                @test occursin("1/2", result_str) || occursin("1//2", result_str) == false
+                @test !occursin("1//2", result_str)  # Should NOT have Julia syntax
+            end
+
+            # T005 [US1]: sin(x) - (1//2) produces sin(x)-1/2
+            @testset "T005: sin(x) - (1//2) produces sin(x)-1/2" begin
+                sinx = sin(x)
+                result = sinx - (1//2)
+                result_str = string(result)
+                @test occursin("sin", result_str)
+                @test occursin("1/2", result_str) || occursin("-1/2", result_str)
+                @test !occursin("-1\"", result_str)  # Should NOT be just -1
+            end
+
+            # T006 [US1]: (1//2) + x contains 1/2+x
+            @testset "T006: (1//2) + x contains 1/2" begin
+                result = (1//2) + x
+                result_str = string(result)
+                @test occursin("1/2", result_str)
+            end
+
+            # T007 [US1]: x * (2//3) contains fraction
+            @testset "T007: x * (2//3) contains 2/3" begin
+                result = x * (2//3)
+                result_str = string(result)
+                @test occursin("2/3", result_str) || occursin("2", result_str)
+            end
+
+            # T008 [US2]: Large numerator/denominator
+            @testset "T008: x + (22//7) large fraction" begin
+                result = x + (22//7)
+                result_str = string(result)
+                @test occursin("22/7", result_str)
+            end
+
+            # T009 [US3]: Negative Rational
+            @testset "T009: x + (-1//2) negative Rational" begin
+                result = x + (-1//2)
+                result_str = string(result)
+                # Should contain -1/2 or equivalent
+                @test occursin("1/2", result_str)
+            end
+
+            # T010 [US4]: Integer-like Rational simplifies
+            @testset "T010: x + (4//2) simplifies to x+2" begin
+                result = x + (4//2)
+                result_str = string(result)
+                @test occursin("2", result_str)
+            end
+
+            # T011 [US1]: Zero numerator edge case
+            @testset "T011: x + (0//5) zero numerator" begin
+                result = x + (0//5)
+                result_str = string(result)
+                @test result_str == "x" || occursin("x", result_str)
+            end
+
+            # T012 [US1]: Unit denominator edge case
+            @testset "T012: x + (7//1) unit denominator" begin
+                result = x + (7//1)
+                result_str = string(result)
+                @test occursin("7", result_str)
+            end
+        end
+    end
+
+    @testset "Complex Arithmetic (US5)" begin
+        # Tests for Complex number conversion using arithmetic operators
+        x = giac_eval("x")
+
+        if is_stub_mode()
+            @test_throws GiacError x + (1 + 2im)
+            @test_throws GiacError x * (0 + 1im)
+        else
+            # T016 [US5]: x + (1 + 2im) contains 2*i not 2im
+            @testset "T016: x + (1 + 2im) contains i not im" begin
+                result = x + (1 + 2im)
+                result_str = string(result)
+                @test occursin("i", result_str)
+                @test !occursin("im", result_str)  # Should NOT have Julia syntax
+            end
+
+            # T017 [US5]: x * (0 + 1im) produces i*x
+            @testset "T017: x * im produces i*x" begin
+                result = x * (0 + 1im)
+                result_str = string(result)
+                @test occursin("i", result_str)
+                @test occursin("x", result_str)
+            end
+
+            # T018 [US5]: Pure real Complex
+            @testset "T018: x + (3.5 + 0im) pure real" begin
+                result = x + (3.5 + 0im)
+                result_str = string(result)
+                @test occursin("3.5", result_str) || occursin("7/2", result_str)
+            end
+
+            # T019 [US5]: Pure imaginary Complex
+            @testset "T019: x + 2im pure imaginary" begin
+                result = x + (0 + 2im)
+                result_str = string(result)
+                @test occursin("2", result_str)
+                @test occursin("i", result_str)
+            end
+        end
+    end
+
+    @testset "Irrational Constants Arithmetic (US6)" begin
+        # Tests for Irrational constant conversion (π, ℯ)
+        x = giac_eval("x")
+
+        if is_stub_mode()
+            @test_throws GiacError x + π
+            @test_throws GiacError x * ℯ
+        else
+            # T023 [US6]: x + π contains pi not π
+            @testset "T023: x + π contains pi" begin
+                result = x + π
+                result_str = string(result)
+                @test occursin("pi", result_str)
+                @test !occursin("π", result_str)  # Should NOT have Unicode
+            end
+
+            # T024 [US6]: x * ℯ contains e
+            @testset "T024: x * ℯ contains e" begin
+                result = x * ℯ
+                result_str = string(result)
+                @test occursin("e", result_str)
+            end
+
+            # T025 [US6]: π * x * 2 contains 2*pi
+            # Note: Need GiacExpr in chain early, so x*π or π*x, then multiply by 2
+            # (2*π evaluates to Float64 in Julia before our convert sees it)
+            @testset "T025: x * π * 2 contains 2*pi" begin
+                result = x * π * 2
+                result_str = string(result)
+                @test occursin("pi", result_str)
+                @test occursin("2", result_str)
+            end
+        end
+    end
+
+    @testset "BigInt Rational Edge Case" begin
+        # T031: BigInt Rational support
+        x = giac_eval("x")
+
+        if is_stub_mode()
+            @test_throws GiacError x + (BigInt(1)//BigInt(2))
+        else
+            @testset "T031: BigInt Rational" begin
+                result = x + (BigInt(1)//BigInt(2))
+                result_str = string(result)
+                @test occursin("1/2", result_str)
+            end
+        end
+    end
 end

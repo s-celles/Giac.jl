@@ -54,6 +54,12 @@ solve(eq, x)                           # Solves: [-1, 1]
 eq1 = x ~ 5                            # x=5
 eq2 = 0 ~ x^2 - 4                      # 0=x^2-4
 
+# Mixed-type arithmetic with Julia numbers
+x - (1//2)                             # x-1/2 (Rational)
+x + (1 + 2im)                          # x+1+2*i (Complex)
+x + π                                  # x+pi (Irrational)
+x * ℯ                                  # e*x (Euler's number)
+
 # Or use invoke_cmd for any command
 invoke_cmd(:factor, giac_eval("x^2 - 1"))  # (x-1)*(x+1)
 

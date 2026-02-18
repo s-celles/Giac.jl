@@ -315,16 +315,31 @@ Base.promote_rule(::Type{GiacExpr}, ::Type{<:Number}) = GiacExpr
 
 Convert a Julia number to a GIAC expression.
 
-Handles special floating-point values:
+# Supported Types
+
+- **Integer/Float**: Direct string conversion via `giac_eval`
+- **Rational**: Uses division operator (`1//2` → `1/2`)
+- **Complex**: Uses arithmetic with GIAC's `i` unit (`1+2im` → `1+2*i`)
+- **Irrational{:π}**: Maps to GIAC's `pi` constant
+- **Irrational{:ℯ}**: Maps to GIAC's `e` constant
+
+# Special Values
+
 - `Inf` is converted to GIAC's `inf` (positive infinity)
 - `-Inf` is converted to GIAC's `-inf` (negative infinity)
 
 # Examples
 ```julia
-convert(GiacExpr, 42)     # Returns GiacExpr representing 42
-convert(GiacExpr, Inf)    # Returns GiacExpr representing +infinity
-convert(GiacExpr, -Inf)   # Returns GiacExpr representing -infinity
+convert(GiacExpr, 42)       # Returns GiacExpr representing 42
+convert(GiacExpr, 1//2)     # Returns GiacExpr representing 1/2
+convert(GiacExpr, 1+2im)    # Returns GiacExpr representing 1+2*i
+convert(GiacExpr, π)        # Returns GiacExpr representing pi
+convert(GiacExpr, ℯ)        # Returns GiacExpr representing e
+convert(GiacExpr, Inf)      # Returns GiacExpr representing +infinity
 ```
+
+See also: Type-specific methods for [`Rational`](@ref), [`Complex`](@ref),
+[`Irrational{:π}`](@ref), [`Irrational{:ℯ}`](@ref).
 """
 function Base.convert(::Type{GiacExpr}, x::Number)
     if x isa AbstractFloat && isinf(x)
@@ -332,6 +347,83 @@ function Base.convert(::Type{GiacExpr}, x::Number)
     else
         return giac_eval(string(x))
     end
+end
+
+# =============================================================================
+# Type-Specific Conversions (043-fix-rational-arithmetic)
+# These methods use C++ operators instead of string parsing for better
+# performance and correctness.
+# =============================================================================
+
+"""
+    convert(::Type{GiacExpr}, x::Rational) -> GiacExpr
+
+Convert a Julia Rational number to a GIAC expression using the division operator.
+
+Uses the C++ `_giac_div` function (tier 1/2) instead of string parsing,
+which correctly handles the conversion from Julia's `//` syntax to GIAC's `/`.
+
+# Examples
+```julia
+convert(GiacExpr, 1//2)     # Returns GiacExpr representing 1/2
+convert(GiacExpr, -3//4)    # Returns GiacExpr representing -3/4
+convert(GiacExpr, 22//7)    # Returns GiacExpr representing 22/7
+```
+"""
+function Base.convert(::Type{GiacExpr}, x::Rational)
+    num = convert(GiacExpr, numerator(x))
+    den = convert(GiacExpr, denominator(x))
+    return num / den
+end
+
+"""
+    convert(::Type{GiacExpr}, x::Complex) -> GiacExpr
+
+Convert a Julia Complex number to a GIAC expression using arithmetic operators.
+
+Uses C++ `_giac_add` and `_giac_mul` functions (tier 1/2) to construct
+`real + imag * i` where `i` is GIAC's imaginary unit.
+
+# Examples
+```julia
+convert(GiacExpr, 1 + 2im)    # Returns GiacExpr representing 1+2*i
+convert(GiacExpr, 3.5 + 0im)  # Returns GiacExpr representing 3.5
+convert(GiacExpr, 2im)        # Returns GiacExpr representing 2*i
+```
+"""
+function Base.convert(::Type{GiacExpr}, x::Complex)
+    re = convert(GiacExpr, real(x))
+    im_part = convert(GiacExpr, imag(x))
+    i_unit = giac_eval("i")
+    return re + im_part * i_unit
+end
+
+"""
+    convert(::Type{GiacExpr}, ::Irrational{:π}) -> GiacExpr
+
+Convert Julia's π constant to GIAC's `pi` constant.
+
+# Examples
+```julia
+convert(GiacExpr, π)    # Returns GiacExpr representing pi
+```
+"""
+function Base.convert(::Type{GiacExpr}, ::Irrational{:π})
+    return giac_eval("pi")
+end
+
+"""
+    convert(::Type{GiacExpr}, ::Irrational{:ℯ}) -> GiacExpr
+
+Convert Julia's ℯ (Euler's number) constant to GIAC's `e` constant.
+
+# Examples
+```julia
+convert(GiacExpr, ℯ)    # Returns GiacExpr representing e
+```
+"""
+function Base.convert(::Type{GiacExpr}, ::Irrational{:ℯ})
+    return giac_eval("e")
 end
 
 # =============================================================================
