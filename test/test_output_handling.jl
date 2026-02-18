@@ -343,10 +343,12 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
                 @test result isa Vector{Float64}
             end
 
-            @testset "Vector with symbolic returns Vector{Any}" begin
+            @testset "Vector with symbolic returns Vector{GiacExpr}" begin
+                # If ANY element is symbolic, keep ALL as GiacExpr for consistency
                 g = giac_eval("[1, x, 3]")
                 result = to_julia(g)
-                @test result isa Vector{Any}
+                @test result isa Vector{GiacExpr}
+                @test length(result) == 3
             end
 
             @testset "Empty vector handling" begin

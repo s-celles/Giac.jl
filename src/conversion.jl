@@ -179,18 +179,54 @@ function _convert_to_vector(g::GiacExpr)
     n = _vector_length(g)
 
     if n == 0
-        return Vector{Any}()
+        return Vector{GiacExpr}()
     end
 
-    # First pass: convert all elements
-    elements = Vector{Any}(undef, n)
+    # First: get all elements as GiacExpr
+    raw_elements = Vector{GiacExpr}(undef, n)
     for i in 1:n
-        elem = _vector_element(g, i)
-        elements[i] = to_julia(elem)
+        raw_elements[i] = _vector_element(g, i)
     end
 
-    # Second pass: narrow type
-    return _narrow_vector_type(elements)
+    # Check if ALL elements can be fully converted (no symbolic remains)
+    if all(_can_convert_fully, raw_elements)
+        # Convert all elements to Julia types
+        elements = Vector{Any}(undef, n)
+        for i in 1:n
+            elements[i] = to_julia(raw_elements[i])
+        end
+        return _narrow_vector_type(elements)
+    else
+        # At least one element is symbolic - keep all as GiacExpr
+        return raw_elements
+    end
+end
+
+"""
+    _can_convert_fully(g::GiacExpr)::Bool
+
+Check if a GiacExpr can be fully converted to native Julia types
+(no GiacExpr remains in the result). For vectors, recursively checks all elements.
+"""
+function _can_convert_fully(g::GiacExpr)::Bool
+    t = giac_type(g)
+    if t == GIAC_VECT
+        # For vectors, recursively check all elements
+        n = _vector_length(g)
+        for i in 1:n
+            elem = _vector_element(g, i)
+            if !_can_convert_fully(elem)
+                return false
+            end
+        end
+        return true
+    elseif t in (GIAC_INT, GIAC_DOUBLE, GIAC_REAL, GIAC_ZINT, GIAC_FRAC, GIAC_CPLX, GIAC_STRNG)
+        # Numeric and string types can be fully converted
+        return true
+    else
+        # GIAC_SYMB, GIAC_IDNT, GIAC_FUNC - symbolic, cannot fully convert
+        return false
+    end
 end
 
 """
