@@ -188,6 +188,44 @@ end
 # It converts Julia arguments to GIAC-compatible string representations.
 
 """
+    _extract_function_name(expr_str::String) -> Union{String, Nothing}
+
+Extract the function name from a simple function call expression.
+
+For expressions like "u(t)" or "f(x,y)", returns the function name ("u" or "f").
+For complex expressions or non-function-call expressions, returns nothing.
+
+This is used by the callable GiacExpr to enable `u(0)` to produce "u(0)"
+instead of "u(t)(0)" when `u` was created via `@giac_var u(t)`.
+
+# Examples
+```julia
+_extract_function_name("u(t)")      # "u"
+_extract_function_name("f(x,y)")    # "f"
+_extract_function_name("x")         # nothing (not a function call)
+_extract_function_name("diff(u,t)") # nothing (complex expression)
+_extract_function_name("a+b")       # nothing (not a function call)
+```
+"""
+function _extract_function_name(expr_str::String)
+    # Match simple function call pattern: identifier followed by (...)
+    # Must be a simple identifier (letters, digits, underscore) not containing operators
+    m = match(r"^([a-zA-Z_][a-zA-Z0-9_]*)\(.*\)$", expr_str)
+    if m !== nothing
+        funcname = m.captures[1]
+        # Exclude known GIAC functions that should NOT be extracted
+        # (e.g., diff, integrate, etc. - these are operations, not user functions)
+        giac_operations = Set(["diff", "integrate", "limit", "sum", "product",
+                               "solve", "desolve", "simplify", "factor", "expand",
+                               "sin", "cos", "tan", "exp", "log", "sqrt", "abs"])
+        if funcname ∉ giac_operations
+            return funcname
+        end
+    end
+    return nothing
+end
+
+"""
     (expr::GiacExpr)(args...)
 
 Make GiacExpr callable (functor) for function evaluation syntax.
@@ -246,11 +284,16 @@ function (expr::GiacExpr)(args...)
     # Get the expression string (e.g., "u" or "u(t)" or "diff(u(t),t)")
     expr_str = string(expr)
 
+    # For simple function expressions like "u(t)", extract the function name "u"
+    # so that u(0) produces "u(0)" instead of "u(t)(0)"
+    funcname = _extract_function_name(expr_str)
+    base_str = funcname !== nothing ? funcname : expr_str
+
     # Convert arguments to GIAC format
     arg_strs = [_arg_to_giac_string(arg) for arg in args]
 
-    # Build function call string: "expr_str(arg1,arg2,...)"
-    call_str = expr_str * "(" * join(arg_strs, ",") * ")"
+    # Build function call string: "base_str(arg1,arg2,...)"
+    call_str = base_str * "(" * join(arg_strs, ",") * ")"
 
     return giac_eval(call_str)
 end

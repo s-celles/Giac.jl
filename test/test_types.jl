@@ -76,6 +76,27 @@
             @test Giac._arg_to_giac_string(:x) == "x"
             @test Giac._arg_to_giac_string(:abc) == "abc"
         end
+
+        # Test _extract_function_name helper
+        @testset "_extract_function_name" begin
+            # Simple function calls should extract the name
+            @test Giac._extract_function_name("u(t)") == "u"
+            @test Giac._extract_function_name("f(x,y)") == "f"
+            @test Giac._extract_function_name("func(a,b,c)") == "func"
+
+            # Simple identifiers should return nothing
+            @test Giac._extract_function_name("x") === nothing
+            @test Giac._extract_function_name("abc") === nothing
+
+            # Expressions with operators should return nothing
+            @test Giac._extract_function_name("a+b") === nothing
+            @test Giac._extract_function_name("x^2") === nothing
+
+            # GIAC operations should NOT be extracted (they are operations, not user functions)
+            @test Giac._extract_function_name("diff(u,t)") === nothing
+            @test Giac._extract_function_name("sin(x)") === nothing
+            @test Giac._extract_function_name("integrate(f,x)") === nothing
+        end
     end
 
     @testset "Callable GiacExpr - US1: Basic Function Evaluation" begin
