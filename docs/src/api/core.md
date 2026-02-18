@@ -70,6 +70,47 @@ diff(f, y)            # Partial derivative ∂f/∂y
 laplacian = diff(diff(u, x), x) + diff(diff(u, y), y)
 ```
 
+### Callable GiacExpr (Function Evaluation)
+
+GiacExpr objects are callable, allowing natural function evaluation syntax like `u(0)`. This is essential for specifying ODE initial conditions.
+
+**Basic function evaluation:**
+```julia
+@giac_var u(t)
+u(0)           # Returns GiacExpr: "u(0)"
+u(1)           # Returns GiacExpr: "u(1)"
+```
+
+**ODE initial conditions:**
+```julia
+using Giac.Commands: diff, desolve
+@giac_var t u(t) tau U0
+
+# ODE: τu' + u = U₀ with u(0) = 1
+ode = tau * diff(u, t) + u ~ U0
+initial = u(0) ~ 1
+desolve([ode, initial], u)
+```
+
+**Derivative initial conditions:**
+```julia
+@giac_var t u(t)
+
+# First derivative at t=0: u'(0) = 1
+diff(u, t)(0) ~ 1
+
+# Second derivative at t=0: u''(0) = 0
+diff(u, t, 2)(0) ~ 0
+```
+
+**Multi-variable function evaluation:**
+```julia
+@giac_var f(x, y) a b
+f(0, 0)        # Returns "f(0,0)"
+f(a, b)        # Returns "f(a,b)"
+f(1, 2)        # Returns "f(1,2)"
+```
+
 ## Calculus Operations
 
 Calculus functions are available via `Giac.Commands` or `invoke_cmd`:
