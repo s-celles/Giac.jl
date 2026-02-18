@@ -180,6 +180,81 @@ function Base.propertynames(::GiacExpr, ::Bool=false)
     return (:ptr,)
 end
 
+# ============================================================================
+# Callable GiacExpr (034-callable-giacexpr)
+# ============================================================================
+
+# Note: _arg_to_giac_string is defined in command_utils.jl and used here.
+# It converts Julia arguments to GIAC-compatible string representations.
+
+"""
+    (expr::GiacExpr)(args...)
+
+Make GiacExpr callable (functor) for function evaluation syntax.
+
+This enables natural mathematical notation like `u(0)` for evaluating
+a function at a point, which is essential for ODE initial conditions.
+
+# Examples
+```julia
+# Basic function evaluation
+@giac_var u(t)
+u(0)           # Returns GiacExpr: "u(0)"
+u(1)           # Returns GiacExpr: "u(1)"
+
+# ODE initial conditions
+@giac_var t u(t) tau U0
+ode = tau * diff(u, t) + u ~ U0
+initial = u(0) ~ 1
+desolve([ode, initial], u)
+
+# Derivative initial conditions
+@giac_var t u(t)
+diff(u, t)(0) ~ 1      # u'(0) = 1
+diff(u, t, 2)(0) ~ 0   # u''(0) = 0
+
+# Multi-variable functions
+@giac_var f(x, y)
+f(0, 0)        # Returns GiacExpr: "f(0,0)"
+f(1, 2)        # Returns GiacExpr: "f(1,2)"
+
+# With symbolic arguments
+@giac_var a b
+f(a, b)        # Returns GiacExpr: "f(a,b)"
+```
+
+# Arguments
+- `args...`: Arguments to pass to the function. Each argument must be a
+  `GiacExpr`, `Number`, or `Symbol`.
+
+# Returns
+- `GiacExpr`: A new expression representing the function call
+
+# Throws
+- `GiacError`: If the GiacExpr has a null pointer
+- `ArgumentError`: If any argument has an unsupported type
+
+# See also
+- [`@giac_var`](@ref): For declaring function variables like `u(t)`
+- [`diff`](@ref): For creating derivatives that can be evaluated at points
+"""
+function (expr::GiacExpr)(args...)
+    if expr.ptr == C_NULL
+        throw(GiacError("Cannot call null GiacExpr", :eval))
+    end
+
+    # Get the expression string (e.g., "u" or "u(t)" or "diff(u(t),t)")
+    expr_str = string(expr)
+
+    # Convert arguments to GIAC format
+    arg_strs = [_arg_to_giac_string(arg) for arg in args]
+
+    # Build function call string: "expr_str(arg1,arg2,...)"
+    call_str = expr_str * "(" * join(arg_strs, ",") * ")"
+
+    return giac_eval(call_str)
+end
+
 """
     GiacContext
 

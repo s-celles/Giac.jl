@@ -155,6 +155,13 @@ result = giac_diff(expr, x)  # 2*x
 # For ODEs
 @giac_var t u(t)
 # u''(t) + u(t) = 0
+
+# Callable syntax for initial conditions (034-callable-giacexpr)
+@giac_var t u(t) tau U0
+u(0)                    # Returns GiacExpr: "u(0)"
+u(0) ~ 1                # Initial condition: u(0) = 1
+diff(u, t)(0) ~ 0       # Derivative condition: u'(0) = 0
+desolve([tau * diff(u, t) + u ~ U0, u(0) ~ 1], u)
 ```
 
 # See also
