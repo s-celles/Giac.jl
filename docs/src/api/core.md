@@ -271,6 +271,7 @@ Giac.is_identifier
 Giac.is_fraction
 Giac.is_complex
 Giac.is_string
+Giac.is_boolean
 ```
 
 ### Type Constants

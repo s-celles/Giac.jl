@@ -138,7 +138,7 @@ to_julia(g)  # [10, 20, 30]::Vector{Int64}
 ## Contents
 
 ```@contents
-Pages = ["install.md", "api/core.md", "api/commands.md", "api/tempapi.md"]
+Pages = ["install.md", "quickstart.md", "variables.md", "linear_algebra.md", "differential_equations.md", "api/core.md", "api/commands_submodule.md", "api/tempapi.md"]
 ```
 
 ## Related Projects

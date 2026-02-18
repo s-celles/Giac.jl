@@ -425,7 +425,7 @@ desolve([ode, y(0) ~ 1, D(y)(0) ~ 1, D(y,2)(0) ~ 1], t, y)
 
 # See also
 - [`DerivativeExpr`](@ref): The derivative expression type
-- [`desolve`](@ref): Solving differential equations
+- `desolve`: Solving differential equations (via `Giac.Commands`)
 """
 function D(expr::GiacExpr)
     parsed = _parse_function_expr(string(expr))

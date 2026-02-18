@@ -23,6 +23,7 @@ makedocs(
         "Using with Pluto reactive notebooks" => "pluto.md",
         "Command discovery and help" => "command_discovery_help.md",
         "Linear Algebra" => "linear_algebra.md",
+        "Differential Equations" => "differential_equations.md",
         "Tables.jl Compatibility" => "tables.md",
         "Variable Substitution" => "substitute.md",
         "API Reference" => [
