@@ -201,10 +201,13 @@ function _symbol_to_type_const(sym::Symbol)::Int32
     end
 end
 
-# Internal helper to convert pointer to Gen (for CxxWrap)
-function _ptr_to_gen(ptr::Ptr{Cvoid})
-    # This will be used when we have the CxxWrap Gen type available
-    # For now, return nothing to trigger fallback
+# Internal helper to convert GiacExpr to CxxWrap Gen
+# Used for vector operations and other CxxWrap-based conversions
+function _ptr_to_gen(g::GiacExpr)
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        expr_str = string(g)
+        return GiacCxxBindings.giac_eval(expr_str)
+    end
     return nothing
 end
 
@@ -391,7 +394,7 @@ function numer(g::GiacExpr)::GiacExpr
         # Use existing _giac_rational_num or CxxWrap frac_num
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
-                gen = _ptr_to_gen(g.ptr)
+                gen = _ptr_to_gen(g)
                 if gen !== nothing
                     num_gen = GiacCxxBindings.frac_num(gen)
                     return _gen_to_giacexpr(num_gen)
@@ -429,7 +432,7 @@ function denom(g::GiacExpr)::GiacExpr
         # Use existing _giac_rational_den or CxxWrap frac_den
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
-                gen = _ptr_to_gen(g.ptr)
+                gen = _ptr_to_gen(g)
                 if gen !== nothing
                     den_gen = GiacCxxBindings.frac_den(gen)
                     return _gen_to_giacexpr(den_gen)
@@ -464,7 +467,7 @@ function real_part(g::GiacExpr)::GiacExpr
     if t == GIAC_CPLX
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
-                gen = _ptr_to_gen(g.ptr)
+                gen = _ptr_to_gen(g)
                 if gen !== nothing
                     re_gen = GiacCxxBindings.cplx_re(gen)
                     return _gen_to_giacexpr(re_gen)
@@ -499,7 +502,7 @@ function imag_part(g::GiacExpr)::GiacExpr
     if t == GIAC_CPLX
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
-                gen = _ptr_to_gen(g.ptr)
+                gen = _ptr_to_gen(g)
                 if gen !== nothing
                     im_gen = GiacCxxBindings.cplx_im(gen)
                     return _gen_to_giacexpr(im_gen)
@@ -535,7 +538,7 @@ function symb_funcname(g::GiacExpr)::String
 
     with_giac_lock() do
         if !_stub_mode[] && GiacCxxBindings._have_library
-            gen = _ptr_to_gen(g.ptr)
+            gen = _ptr_to_gen(g)
             ctx = _get_cxxwrap_context()
             if gen !== nothing && ctx !== nothing
                 return GiacCxxBindings.symb_funcname(gen, ctx)
@@ -569,7 +572,7 @@ function symb_argument(g::GiacExpr)::GiacExpr
 
     with_giac_lock() do
         if !_stub_mode[] && GiacCxxBindings._have_library
-            gen = _ptr_to_gen(g.ptr)
+            gen = _ptr_to_gen(g)
             if gen !== nothing
                 arg_gen = GiacCxxBindings.symb_argument(gen)
                 return _gen_to_giacexpr(arg_gen)
@@ -584,11 +587,12 @@ end
 
 # Internal helper to convert Gen to GiacExpr
 function _gen_to_giacexpr(gen)
-    # This will be implemented when CxxWrap Gen type is properly integrated
-    # For now, use string conversion
+    # Convert CxxWrap Gen to GiacExpr via string representation
     if gen !== nothing
-        str = GiacCxxBindings.to_string(gen)
-        return giac_eval(str)
+        # GiacCxxBindings.to_string returns a CxxWrap StdString, convert to Julia String
+        std_str = GiacCxxBindings.to_string(gen)
+        julia_str = String(std_str)
+        return giac_eval(julia_str)
     end
     throw(GiacError("Cannot convert Gen to GiacExpr", :type))
 end

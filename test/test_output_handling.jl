@@ -526,4 +526,63 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
         end
     end
 
+    # ========================================================================
+    # solve Result Conversion (031-fix-solve-to-julia)
+    # ========================================================================
+    @testset "solve Result Conversion (031)" begin
+        if !Giac.is_stub_mode()
+            @testset "T002: _ptr_to_gen returns valid Gen" begin
+                # Verify _ptr_to_gen works correctly
+                g = giac_eval("[1, 2, 3]")
+                gen = Giac._ptr_to_gen(g)
+                @test gen !== nothing
+            end
+
+            @testset "T006: solve(x^2-1~0) |> to_julia returns Vector with -1 and 1" begin
+                # Use giac_eval for direct GIAC commands
+                result = giac_eval("solve(x^2-1,x)")
+                julia_result = to_julia(result)
+                @test julia_result isa Vector
+                @test length(julia_result) == 2
+                @test sort(julia_result) == [-1, 1]
+            end
+
+            @testset "T007: cSolve(x^2+1=0) |> to_julia returns Vector with complex solutions" begin
+                # Use cSolve to get complex solutions (solve returns empty for x^2+1=0 in real mode)
+                result = giac_eval("cSolve(x^2+1=0,x)")
+                julia_result = to_julia(result)
+                @test julia_result isa Vector
+                @test length(julia_result) == 2
+                # Complex solutions: i and -i converted to Julia Complex
+                @test julia_result isa Vector{Complex{Int64}}
+            end
+
+            @testset "T008: Empty solution set returns empty Vector" begin
+                # Use an unsolvable equation (0=1 has no solutions)
+                result = giac_eval("solve(0=1,x)")
+                julia_result = to_julia(result)
+                @test julia_result isa Vector
+                @test isempty(julia_result)
+            end
+
+            @testset "T015: giac_eval(\"[1,2,3]\") vector conversion" begin
+                g = giac_eval("[1, 2, 3]")
+                result = to_julia(g)
+                @test result isa Vector{Int64}
+                @test result == [1, 2, 3]
+            end
+
+            @testset "T021: Nested collections from systems of equations" begin
+                # Use giac_eval for direct GIAC command
+                result = giac_eval("solve([x+y=1,x-y=0],[x,y])")
+                julia_result = to_julia(result)
+                @test julia_result isa Vector
+                # Should contain nested structure with solution values
+            end
+        else
+            @warn "Skipping solve conversion tests - GIAC library not available (stub mode)"
+            @test_broken false
+        end
+    end
+
 end  # @testset "Output Handling"
