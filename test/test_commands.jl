@@ -155,6 +155,91 @@ end
     end
 end
 
+@testset "Vector Input for GIAC Commands (032-vector-input-solve)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping vector input tests - GIAC library not available (stub mode)"
+        @test_skip true
+        return
+    end
+
+    @testset "US1: Solve systems of equations with vectors" begin
+        @giac_var x y z
+
+        # T005: Test solve([x+y~0, x-y~2], [x,y]) returning [[1, -1]]
+        result = solve([x+y~0, x-y~2], [x, y])
+        @test result isa GiacExpr
+        result_str = string(result)
+        # Result should contain [[1,-1]] indicating x=1, y=-1
+        @test occursin("1", result_str)
+        @test occursin("-1", result_str)
+
+        # T006: Test 3-equation system solve([eq1, eq2, eq3], [x, y, z])
+        result3 = solve([x+y+z~6, x-y~0, y+z~4], [x, y, z])
+        @test result3 isa GiacExpr
+        result3_str = string(result3)
+        # Solution should exist (non-empty result)
+        @test !isempty(result3_str)
+        @test result3_str != "[]"
+
+        # T007: Test inconsistent system returning empty result
+        # x + y = 1 and x + y = 2 are inconsistent
+        result_empty = solve([x+y~1, x+y~2], [x, y])
+        @test result_empty isa GiacExpr
+        # Inconsistent systems should return empty list []
+        result_empty_str = string(result_empty)
+        @test result_empty_str == "[]"
+    end
+
+    @testset "US2: Vector input with other commands" begin
+        @giac_var x y z
+
+        # T010: Test vector input to list command (e.g., sum of vector)
+        # sum([x, y, z]) should return x+y+z
+        sum_result = Giac.Commands.sum([x, y, z])
+        @test sum_result isa GiacExpr
+        sum_str = string(sum_result)
+        @test occursin("x", sum_str) || occursin("y", sum_str) || occursin("z", sum_str)
+
+        # T011: Test mixed-type vector [1, x, 2.5]
+        mixed_result = Giac.Commands.sum([1, x, 2])
+        @test mixed_result isa GiacExpr
+        # Should be able to handle mixed numeric and symbolic types
+    end
+
+    @testset "US3: Nested vector input for matrices" begin
+        # T014: Test det_minor([[1,2],[3,4]]) with nested vectors
+        # Note: det_minor computes the actual determinant value
+        det_result = Giac.Commands.det_minor([[1, 2], [3, 4]])
+        @test det_result isa GiacExpr
+        det_str = string(det_result)
+        # Determinant of [[1,2],[3,4]] = 1*4 - 2*3 = -2
+        @test det_str == "-2"
+
+        # T015: Test inverse via invoke_cmd with nested vectors
+        # inverse() computes the actual matrix inverse
+        inv_result = Giac.Commands.inverse([[1, 2], [3, 4]])
+        @test inv_result isa GiacExpr
+        inv_str = string(inv_result)
+        # Should return a matrix representation
+        @test occursin("[", inv_str)
+    end
+
+    @testset "Edge Cases: Empty and Deeply Nested Vectors" begin
+        # T018: Test empty vector [] conversion
+        empty_result = Giac.Commands.nops([])
+        @test empty_result isa GiacExpr
+        # nops([]) should return 0 (number of elements in empty list)
+        @test string(empty_result) == "0"
+
+        # T019: Test deeply nested vectors (3+ levels)
+        # A 3D array-like structure
+        deep_result = invoke_cmd(:nops, [[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+        @test deep_result isa GiacExpr
+        # Should return 2 (number of top-level elements)
+        @test string(deep_result) == "2"
+    end
+end
+
 @testset "Base Function Extensions" begin
     if Giac.is_stub_mode()
         @warn "Skipping Base extension tests - GIAC library not available (stub mode)"

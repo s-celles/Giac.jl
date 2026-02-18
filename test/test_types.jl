@@ -1,4 +1,17 @@
 @testset "Types" begin
+    @testset "GiacInput type alias (032-vector-input-solve)" begin
+        # T002: Test that AbstractVector is part of GiacInput union
+        @test AbstractVector <: GiacInput
+        @test Vector{GiacExpr} <: GiacInput
+        @test Vector{Int} <: GiacInput
+        @test Vector{Any} <: GiacInput
+        # Verify existing types still work
+        @test GiacExpr <: GiacInput
+        @test Number <: GiacInput
+        @test String <: GiacInput
+        @test Symbol <: GiacInput
+    end
+
     @testset "GiacError" begin
         # T007: Test GiacError exception type
         err = GiacError("test error", :parse)

@@ -104,6 +104,7 @@ types in addition to `GiacExpr`, providing a more ergonomic API.
 - `Number`: All Julia numeric types (Integer, AbstractFloat, Rational, Complex, etc.)
 - `String`: String representations of GIAC expressions
 - `Symbol`: Variable names (e.g., `:x`, `:y`)
+- `AbstractVector`: Julia vectors/arrays (converted to GIAC list syntax)
 
 # Examples
 ```julia
@@ -114,13 +115,18 @@ using Giac.Commands
 ifactor(1000)           # Integer
 ifactor(giac_eval("1000"))  # GiacExpr
 simplify("x^2 - 1")     # String
+
+# Vectors work directly (032-vector-input-solve):
+@giac x y
+solve([x+y~0, x-y~2], [x,y])  # System of equations
+det([[1,2],[3,4]])            # Nested vectors for matrices
 ```
 
 # See also
 - [`GiacExpr`](@ref): The primary GIAC expression type
 - [`invoke_cmd`](@ref): Universal command invocation
 """
-const GiacInput = Union{GiacExpr, Number, String, Symbol}
+const GiacInput = Union{GiacExpr, Number, String, Symbol, AbstractVector}
 
 # ============================================================================
 # Method Syntax Support (003-giac-commands)
