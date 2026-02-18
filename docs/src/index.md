@@ -22,6 +22,7 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 - **Variable Substitution**: Symbolics.jl-compatible `substitute(expr, Dict(var => value))` interface
 - **Infinity Support**: Use Julia's `Inf` and `-Inf` directly in limits and improper integrals
 - **Z-Transform**: `ztrans` and `invztrans` commands for discrete-time signal processing
+- **Laplace Transform**: `laplace` and `ilaplace` commands for continuous-time signal processing
 
 ## Installation
 

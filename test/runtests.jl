@@ -97,6 +97,12 @@ using LinearAlgebra
     # Verifies z-transform and inverse z-transform functions
     # ============================================================================
     include("test_ztransform.jl")
+
+    # ============================================================================
+    # Laplace Transform Function Tests (040-laplace-transform)
+    # Verifies Laplace transform and inverse Laplace transform functions
+    # ============================================================================
+    include("test_laplace.jl")
 end
 
 # Aqua.jl package quality tests

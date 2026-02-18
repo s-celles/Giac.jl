@@ -33,6 +33,10 @@ makedocs(
             "Mechanics" => "physics/mechanics.md",
             "Electromagnetism" => "physics/electromagnetism.md",
         ],
+        "Signal Processing" => [
+            "Discrete-Time Transforms" => "domains/signal/discrete_transforms.md",
+            "Continuous-Time Transforms" => "domains/signal/continuous_transforms.md",
+        ],
         "Tables.jl Compatibility" => "tables.md",
         "Variable Substitution" => "substitute.md",
         "API Reference" => [

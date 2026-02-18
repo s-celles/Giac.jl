@@ -111,5 +111,6 @@ invoke_cmd(:invztrans, z/(z-a), z, n)
 
 ## See Also
 
-- [Calculus Operations](../math/calculus.md) - Laplace transforms and other integral transforms
+- [Continuous-Time Transforms](continuous_transforms.md) - Laplace transforms for continuous-time signals
+- [Calculus Operations](../math/calculus.md) - Integration, differentiation, and limits
 - [GIAC Z-Transform Documentation](https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/doc/en/cascmd_en/cascmd_en467.html) - Official GIAC documentation
