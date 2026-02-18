@@ -447,6 +447,77 @@ function Base.show(io::IO, m::GiacMatrix)
 end
 
 # ============================================================================
+# GiacMatrix to_julia Conversion (030-to-julia-bool-conversion)
+# ============================================================================
+
+"""
+    to_julia(m::GiacMatrix) -> Matrix
+
+Convert a GiacMatrix to a Julia Matrix with appropriate element type narrowing.
+
+Boolean elements are converted to `Bool`, integers to `Int64`, etc.
+The resulting matrix type is narrowed to the most specific common type.
+
+# Example
+```julia
+# Integer matrix
+g = giac_eval("[[1, 2], [3, 4]]")
+m = GiacMatrix(g)
+to_julia(m)  # 2×2 Matrix{Int64}
+
+# Boolean matrix
+g = giac_eval("[[true, false], [false, true]]")
+m = GiacMatrix(g)
+to_julia(m)  # 2×2 Matrix{Bool}
+```
+
+# See also
+[`to_julia`](@ref), [`GiacMatrix`](@ref)
+"""
+function to_julia(m::GiacMatrix)
+    # Convert each element
+    result = Matrix{Any}(undef, m.rows, m.cols)
+    for i in 1:m.rows
+        for j in 1:m.cols
+            result[i, j] = to_julia(m[i, j])
+        end
+    end
+
+    # Narrow the element type
+    return _narrow_matrix_type(result)
+end
+
+"""
+    _narrow_matrix_type(elements::Matrix{Any}) -> Matrix
+
+Narrow a Matrix{Any} to the most specific element type.
+
+For homogeneous matrices, returns a typed matrix.
+For mixed numeric types, promotes to common numeric type.
+For matrices containing non-numeric types, returns Matrix{Any}.
+"""
+function _narrow_matrix_type(elements::Matrix{Any})
+    if isempty(elements)
+        return elements
+    end
+
+    types = unique(typeof.(elements))
+
+    if length(types) == 1
+        # Homogeneous type
+        T = types[1]
+        return convert(Matrix{T}, elements)
+    elseif all(T -> T <: Number, types)
+        # Mixed numeric types - promote
+        T = reduce(promote_type, types)
+        return convert(Matrix{T}, elements)
+    else
+        # Mixed types including non-numeric
+        return elements
+    end
+end
+
+# ============================================================================
 # GiacMatrix Display Improvement (011-giacmatrix-display)
 # ============================================================================
 

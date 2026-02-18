@@ -380,4 +380,38 @@
         end
     end
 
+    # ========================================================================
+    # Boolean Predicate (030-to-julia-bool-conversion)
+    # ========================================================================
+    @testset "Boolean Predicate" begin
+        if !Giac.is_stub_mode()
+            @testset "is_boolean returns true for boolean literals" begin
+                @test Giac.is_boolean(giac_eval("true")) == true
+                @test Giac.is_boolean(giac_eval("false")) == true
+            end
+
+            @testset "is_boolean returns true for comparison results" begin
+                @test Giac.is_boolean(giac_eval("1==1")) == true
+                @test Giac.is_boolean(giac_eval("1==0")) == true
+                @test Giac.is_boolean(giac_eval("2>1")) == true
+                @test Giac.is_boolean(giac_eval("1<0")) == true
+            end
+
+            @testset "is_boolean returns false for integers" begin
+                @test Giac.is_boolean(giac_eval("1")) == false
+                @test Giac.is_boolean(giac_eval("0")) == false
+                @test Giac.is_boolean(giac_eval("42")) == false
+            end
+
+            @testset "is_boolean returns false for other types" begin
+                @test Giac.is_boolean(giac_eval("3.14")) == false
+                @test Giac.is_boolean(giac_eval("x")) == false
+                @test Giac.is_boolean(giac_eval("[1,2,3]")) == false
+            end
+        else
+            @warn "Skipping boolean predicate tests - GIAC library not available (stub mode)"
+            @test_broken false
+        end
+    end
+
 end

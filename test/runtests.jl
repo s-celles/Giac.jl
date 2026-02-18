@@ -60,6 +60,9 @@ using LinearAlgebra
 
     # Substitute function tests (028-substitute-mechanism)
     include("test_substitute.jl")
+
+    # Output handling tests (029-output-handling)
+    include("test_output_handling.jl")
 end
 
 # Aqua.jl package quality tests

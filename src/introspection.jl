@@ -338,6 +338,32 @@ function is_string(g::GiacExpr)::Bool
     return giac_type(g) == GIAC_STRNG
 end
 
+"""
+    is_boolean(g::GiacExpr) -> Bool
+
+Return `true` if the expression represents a boolean value (`true` or `false`).
+
+Note: GIAC represents booleans as integers internally (type `GIAC_INT`), but
+displays them as "true" or "false". This function detects boolean values by
+checking the string representation.
+
+# Example
+```julia
+is_boolean(giac_eval("true"))      # true
+is_boolean(giac_eval("false"))     # true
+is_boolean(giac_eval("1==1"))      # true (comparison returns boolean)
+is_boolean(giac_eval("1"))         # false (integer, not boolean)
+is_boolean(giac_eval("0"))         # false (integer, not boolean)
+```
+
+# See also
+[`to_julia`](@ref), [`is_integer`](@ref)
+"""
+function is_boolean(g::GiacExpr)::Bool
+    str = string(g)
+    return str == "true" || str == "false"
+end
+
 # ============================================================================
 # Component Access Functions
 # ============================================================================

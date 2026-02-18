@@ -1,6 +1,6 @@
 name = "Giac"
 uuid = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
-version = "0.6.0"
+version = "0.8.0"
 authors = ["Sébastien Celles <s.celles@gmail.com>"]
 
 [deps]

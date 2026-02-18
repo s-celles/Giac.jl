@@ -65,6 +65,70 @@ invoke_cmd(:factor, giac_eval("x^2-1"))
 invoke_cmd(:sin, giac_eval("pi/6"))
 ```
 
+## Type Conversion and Introspection
+
+Convert GIAC results to native Julia types:
+
+```julia
+using Giac
+
+# Boolean conversion
+to_julia(giac_eval("true"))   # true::Bool
+to_julia(giac_eval("1==1"))   # true::Bool (comparison result)
+to_julia(giac_eval("1"))      # 1::Int64 (integer, not boolean)
+
+# Use in control flow
+if to_julia(giac_eval("2 > 1"))
+    println("Works!")
+end
+
+# Automatic type conversion
+g = giac_eval("[1, 2, 3]")
+result = to_julia(g)  # Vector{Int64}
+
+# Boolean detection
+is_boolean(giac_eval("true"))  # true
+is_boolean(giac_eval("1"))     # false
+
+# Type introspection
+giac_type(g) == GIAC_VECT  # true
+is_vector(g)               # true
+
+# Fraction components
+frac = giac_eval("3/4")
+numer(frac)  # 3
+denom(frac)  # 4
+
+# Complex components
+z = giac_eval("3+4*i")
+real_part(z)  # 3
+imag_part(z)  # 4
+
+# Matrix conversion
+m = GiacMatrix(giac_eval("[[1, 2], [3, 4]]"))
+to_julia(m)  # 2×2 Matrix{Int64}
+```
+
+## Vector Indexing and Iteration
+
+Access GIAC vectors with Julia's native indexing:
+
+```julia
+using Giac
+
+g = giac_eval("[10, 20, 30]")
+g[1]  # GiacExpr(10)
+g[2]  # GiacExpr(20)
+
+# Iterate over elements
+for elem in g
+    println(to_julia(elem))
+end
+
+# Collect to Julia vector
+to_julia(g)  # [10, 20, 30]::Vector{Int64}
+```
+
 ## Modules
 
 - **[Core API](@ref)**: Types, evaluation, and main functions

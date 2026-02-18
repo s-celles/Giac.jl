@@ -82,8 +82,9 @@
         # T012: Export count should be reasonable (not the ~2000+ commands)
         # Count only the non-private exports (those not starting with underscore)
         public_exports = filter(s -> !startswith(string(s), "_"), giac_exports)
-        # Core API + utilities should be under 50 symbols (not thousands)
-        @test length(public_exports) <= 50
+        # Core API + utilities + output handling (029) should be under 75 symbols (not thousands)
+        # Output handling adds: 13 type constants + 10 predicates + 6 accessors = ~29 exports
+        @test length(public_exports) <= 75
     end
 
     @testset "Exportable Commands Generation" begin

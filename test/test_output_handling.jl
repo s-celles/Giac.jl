@@ -1,11 +1,11 @@
-# Tests for output handling (029-output-handling)
+# Tests for output handling (029-output-handling, 030-to-julia-bool-conversion)
 # Type introspection, conversion, and iteration
 
 using Test
 using Giac
 # Import specific functions to avoid ambiguity with Symbolics.jl
 using Giac: numer, denom, is_integer, is_numeric, is_vector, is_symbolic
-using Giac: is_identifier, is_fraction, is_complex, real_part, imag_part
+using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_part
 
 @testset "Output Handling" begin
 
@@ -142,6 +142,89 @@ using Giac: is_identifier, is_fraction, is_complex, real_part, imag_part
             end
         else
             @warn "Skipping type conversion tests - GIAC library not available (stub mode)"
+            @test_broken false
+        end
+    end
+
+    # ========================================================================
+    # Boolean Conversion (030-to-julia-bool-conversion)
+    # ========================================================================
+    @testset "Boolean Conversion - to_julia" begin
+        if !Giac.is_stub_mode()
+            @testset "T005: to_julia(giac_eval(\"true\")) returns true::Bool" begin
+                g = giac_eval("true")
+                result = to_julia(g)
+                @test result isa Bool
+                @test result === true
+            end
+
+            @testset "T006: to_julia(giac_eval(\"false\")) returns false::Bool" begin
+                g = giac_eval("false")
+                result = to_julia(g)
+                @test result isa Bool
+                @test result === false
+            end
+
+            @testset "T007: to_julia(giac_eval(\"1==1\")) returns true::Bool" begin
+                g = giac_eval("1==1")
+                result = to_julia(g)
+                @test result isa Bool
+                @test result === true
+            end
+
+            @testset "T008: to_julia(giac_eval(\"1==0\")) returns false::Bool" begin
+                g = giac_eval("1==0")
+                result = to_julia(g)
+                @test result isa Bool
+                @test result === false
+            end
+
+            @testset "T013-T016: Boolean in control flow" begin
+                # T013: Boolean in if statement
+                result = to_julia(giac_eval("1==1"))
+                @test if result; true else; false end
+
+                # T014: Boolean with && operator
+                @test to_julia(giac_eval("true")) && true
+                @test !(to_julia(giac_eval("false")) && true)
+
+                # T015: Boolean with || operator
+                @test to_julia(giac_eval("true")) || false
+                @test to_julia(giac_eval("false")) || true
+
+                # T016: Boolean with ! (not) operator
+                @test !to_julia(giac_eval("false"))
+                @test !(!to_julia(giac_eval("true")))
+            end
+
+            @testset "T018-T021: Integer vs Boolean distinction" begin
+                # T018: Integer 1 returns Int64
+                g = giac_eval("1")
+                result = to_julia(g)
+                @test result isa Int64
+                @test result == 1
+
+                # T019: Integer 0 returns Int64
+                g = giac_eval("0")
+                result = to_julia(g)
+                @test result isa Int64
+                @test result == 0
+
+                # T020: Integer 42 returns Int64
+                g = giac_eval("42")
+                result = to_julia(g)
+                @test result isa Int64
+                @test result == 42
+
+                # T021: Integer 1 vs boolean true type comparison
+                int_one = to_julia(giac_eval("1"))
+                bool_true = to_julia(giac_eval("1==1"))
+                @test int_one isa Int64
+                @test bool_true isa Bool
+                @test int_one != bool_true  # Different types
+            end
+        else
+            @warn "Skipping boolean conversion tests - GIAC library not available (stub mode)"
             @test_broken false
         end
     end
@@ -307,8 +390,98 @@ using Giac: is_identifier, is_fraction, is_complex, real_part, imag_part
                 g = giac_eval("x")  # symbolic
                 @test_throws MethodError convert(Int64, g)
             end
+
+            # T023-T025: Base.convert(Bool, ...) tests (030-to-julia-bool-conversion)
+            @testset "T023: convert(Bool, giac_eval(\"true\"))" begin
+                g = giac_eval("true")
+                result = convert(Bool, g)
+                @test result isa Bool
+                @test result === true
+            end
+
+            @testset "T024: convert(Bool, giac_eval(\"1\")) returns true" begin
+                g = giac_eval("1")
+                result = convert(Bool, g)
+                @test result isa Bool
+                @test result === true
+            end
+
+            @testset "T025: convert(Bool, giac_eval(\"2\")) throws InexactError" begin
+                g = giac_eval("2")
+                @test_throws InexactError convert(Bool, g)
+            end
+
+            @testset "convert(Bool, giac_eval(\"0\")) returns false" begin
+                g = giac_eval("0")
+                result = convert(Bool, g)
+                @test result isa Bool
+                @test result === false
+            end
         else
             @warn "Skipping explicit conversion tests - GIAC library not available (stub mode)"
+            @test_broken false
+        end
+    end
+
+    # ========================================================================
+    # Vector Boolean Narrowing (030-to-julia-bool-conversion)
+    # ========================================================================
+    @testset "T026: Vector with booleans" begin
+        if !Giac.is_stub_mode()
+            @testset "to_julia([true, false]) returns Vector{Bool}" begin
+                g = giac_eval("[true, false]")
+                result = to_julia(g)
+                @test result isa Vector{Bool}
+                @test result == [true, false]
+            end
+
+            @testset "Mixed boolean/integer vector" begin
+                g = giac_eval("[true, 1, 2]")
+                result = to_julia(g)
+                # Mixed types - should be Any or promoted
+                @test result isa Vector
+            end
+        else
+            @warn "Skipping vector boolean narrowing tests - GIAC library not available (stub mode)"
+            @test_broken false
+        end
+    end
+
+    # ========================================================================
+    # GiacMatrix Conversion (030-to-julia-bool-conversion)
+    # ========================================================================
+    @testset "T027: to_julia(::GiacMatrix)" begin
+        if !Giac.is_stub_mode()
+            @testset "to_julia(GiacMatrix) returns Julia Matrix" begin
+                g = giac_eval("[[1, 2], [3, 4]]")
+                m = GiacMatrix(g)
+                result = to_julia(m)
+                @test result isa Matrix
+                @test size(result) == (2, 2)
+                @test result[1, 1] == 1
+                @test result[2, 2] == 4
+            end
+
+            @testset "to_julia(GiacMatrix) with booleans" begin
+                g = giac_eval("[[true, false], [false, true]]")
+                m = GiacMatrix(g)
+                result = to_julia(m)
+                @test result isa Matrix{Bool}
+                @test result[1, 1] === true
+                @test result[1, 2] === false
+                @test result[2, 1] === false
+                @test result[2, 2] === true
+            end
+
+            @testset "to_julia(GiacMatrix) with integers" begin
+                g = giac_eval("[[1, 2, 3], [4, 5, 6]]")
+                m = GiacMatrix(g)
+                result = to_julia(m)
+                @test result isa Matrix{Int64}
+                @test result == [1 2 3; 4 5 6]
+            end
+        else
+            @warn "Skipping GiacMatrix conversion tests - GIAC library not available (stub mode)"
             @test_broken false
         end
     end

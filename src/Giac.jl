@@ -119,7 +119,7 @@ export GIAC_SYMB, GIAC_IDNT, GIAC_STRNG, GIAC_FRAC, GIAC_FUNC
 export GIAC_SEQ_VECT, GIAC_SET_VECT, GIAC_LIST_VECT
 export giac_type, subtype
 export is_integer, is_numeric, is_vector, is_symbolic, is_identifier
-export is_fraction, is_complex, is_string
+export is_fraction, is_complex, is_string, is_boolean
 export numer, denom, real_part, imag_part
 export symb_funcname, symb_argument
 
