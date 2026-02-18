@@ -481,16 +481,38 @@ to_julia(m)  # 2×2 Matrix{Bool}
 [`to_julia`](@ref), [`GiacMatrix`](@ref)
 """
 function to_julia(m::GiacMatrix)
-    # Convert each element
-    result = Matrix{Any}(undef, m.rows, m.cols)
+    # First: check if ALL elements can be fully converted
+    all_convertible = true
     for i in 1:m.rows
         for j in 1:m.cols
-            result[i, j] = to_julia(m[i, j])
+            if !_can_convert_fully(m[i, j])
+                all_convertible = false
+                break
+            end
         end
+        !all_convertible && break
     end
 
-    # Narrow the element type
-    return _narrow_matrix_type(result)
+    if all_convertible
+        # Convert each element to Julia types
+        result = Matrix{Any}(undef, m.rows, m.cols)
+        for i in 1:m.rows
+            for j in 1:m.cols
+                result[i, j] = to_julia(m[i, j])
+            end
+        end
+        # Narrow the element type
+        return _narrow_matrix_type(result)
+    else
+        # At least one element is symbolic - keep all as GiacExpr
+        result = Matrix{GiacExpr}(undef, m.rows, m.cols)
+        for i in 1:m.rows
+            for j in 1:m.cols
+                result[i, j] = m[i, j]
+            end
+        end
+        return result
+    end
 end
 
 """
