@@ -166,7 +166,7 @@ end
         @giac_var x y z
 
         # T005: Test solve([x+y~0, x-y~2], [x,y]) returning [[1, -1]]
-        result = solve([x+y~0, x-y~2], [x, y])
+        result = Giac.Commands.solve([x+y~0, x-y~2], [x, y])
         @test result isa GiacExpr
         result_str = string(result)
         # Result should contain [[1,-1]] indicating x=1, y=-1
@@ -174,7 +174,7 @@ end
         @test occursin("-1", result_str)
 
         # T006: Test 3-equation system solve([eq1, eq2, eq3], [x, y, z])
-        result3 = solve([x+y+z~6, x-y~0, y+z~4], [x, y, z])
+        result3 = Giac.Commands.solve([x+y+z~6, x-y~0, y+z~4], [x, y, z])
         @test result3 isa GiacExpr
         result3_str = string(result3)
         # Solution should exist (non-empty result)
@@ -183,7 +183,7 @@ end
 
         # T007: Test inconsistent system returning empty result
         # x + y = 1 and x + y = 2 are inconsistent
-        result_empty = solve([x+y~1, x+y~2], [x, y])
+        result_empty = Giac.Commands.solve([x+y~1, x+y~2], [x, y])
         @test result_empty isa GiacExpr
         # Inconsistent systems should return empty list []
         result_empty_str = string(result_empty)

@@ -221,7 +221,7 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
                 bool_true = to_julia(giac_eval("1==1"))
                 @test int_one isa Int64
                 @test bool_true isa Bool
-                @test int_one != bool_true  # Different types
+                @test typeof(int_one) != typeof(bool_true)  # Different types
             end
         else
             @warn "Skipping boolean conversion tests - GIAC library not available (stub mode)"
