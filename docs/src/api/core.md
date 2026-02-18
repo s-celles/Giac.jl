@@ -31,6 +31,45 @@ giac_eval
 @giac_several_vars
 ```
 
+### Function Syntax for @giac_var
+
+The `@giac_var` macro supports function notation for defining symbolic functions that depend on other variables. This is useful for differential equations and calculus with unknown functions.
+
+**Single-variable functions:**
+```julia
+@giac_var u(t)        # u is a GiacExpr representing "u(t)"
+@giac_var t           # t is the independent variable
+diff(u, t)            # Symbolic derivative of u with respect to t
+```
+
+**Multi-variable functions:**
+```julia
+@giac_var f(x, y)     # f represents "f(x,y)"
+@giac_var x y
+diff(f, x)            # Partial derivative ∂f/∂x
+diff(f, y)            # Partial derivative ∂f/∂y
+```
+
+**Mixed declarations:**
+```julia
+@giac_var t x y u(t) f(x, y)
+# Creates: t, x, y as simple variables
+#          u as "u(t)", f as "f(x,y)"
+```
+
+**Common use case - ODEs:**
+```julia
+@giac_var t u(t)
+# Express ODE: u''(t) + u(t) = 0
+```
+
+**Common use case - PDEs:**
+```julia
+@giac_var x y u(x, y)
+# Laplacian: ∂²u/∂x² + ∂²u/∂y²
+laplacian = diff(diff(u, x), x) + diff(diff(u, y), y)
+```
+
 ## Calculus Operations
 
 Calculus functions are available via `Giac.Commands` or `invoke_cmd`:

@@ -1,5 +1,6 @@
 # Tests for @giac_var macro (011-giac-symbol-macro)
 # Tests for @giac_several_vars macro (012-giac-several-var)
+# Tests for @giac_var function syntax (033-giac-var-function)
 
 @testset "Macros" begin
     @testset "Single Variable Declaration (US1)" begin
@@ -110,6 +111,107 @@
         # T028: numeric argument error
         @testset "numeric argument throws ArgumentError" begin
             @test_throws ArgumentError @macroexpand @giac_var 1
+        end
+    end
+
+    # Tests for @giac_var function syntax (033-giac-var-function)
+    @testset "Function Syntax - US1: Single-Variable Functions" begin
+        # T002: Backward compatibility - existing @giac_var x y z still works
+        @testset "backward compatibility @giac_var x y z" begin
+            @giac_var x_compat y_compat z_compat
+            @test x_compat isa GiacExpr
+            @test y_compat isa GiacExpr
+            @test z_compat isa GiacExpr
+            @test string(x_compat) == "x_compat"
+            @test string(y_compat) == "y_compat"
+            @test string(z_compat) == "z_compat"
+        end
+
+        # T005: @giac_var u(t) returns GiacExpr with string(u) == "u(t)"
+        @testset "@giac_var u(t) creates function GiacExpr" begin
+            @giac_var u(t)
+            @test u isa GiacExpr
+            @test string(u) == "u(t)"
+        end
+
+        # T006: @giac_var f(x) followed by diff(f, x)
+        @testset "@giac_var f(x) with differentiation" begin
+            @giac_var func_x(x_var)
+            @test func_x isa GiacExpr
+            @test string(func_x) == "func_x(x_var)"
+            if !is_stub_mode()
+                @giac_var x_var
+                result = invoke_cmd(:diff, func_x, x_var)
+                @test result isa GiacExpr
+                # Result should be the derivative of func_x with respect to x_var
+            end
+        end
+
+        # T007: Separate @giac_var u(t) and @giac_var t work together
+        @testset "separate @giac_var u(t) and @giac_var t" begin
+            @giac_var u_sep(t_sep)
+            @giac_var t_sep
+            @test u_sep isa GiacExpr
+            @test t_sep isa GiacExpr
+            @test string(u_sep) == "u_sep(t_sep)"
+            @test string(t_sep) == "t_sep"
+        end
+    end
+
+    @testset "Function Syntax - US2: Multi-Variable Functions" begin
+        # T010: @giac_var f(x, y) returns GiacExpr with string(f) == "f(x,y)"
+        @testset "@giac_var f(x, y) creates multi-var function" begin
+            @giac_var f_xy(x_mv, y_mv)
+            @test f_xy isa GiacExpr
+            @test string(f_xy) == "f_xy(x_mv,y_mv)"
+        end
+
+        # T011: @giac_var g(x, y, z) with 3 arguments
+        @testset "@giac_var g(x, y, z) with 3 arguments" begin
+            @giac_var g_xyz(x_3, y_3, z_3)
+            @test g_xyz isa GiacExpr
+            @test string(g_xyz) == "g_xyz(x_3,y_3,z_3)"
+        end
+    end
+
+    @testset "Function Syntax - US3: Mixed Declarations" begin
+        # T014: @giac_var x y u(t) creates 2 variables and 1 function
+        @testset "@giac_var x y u(t) mixed declaration" begin
+            @giac_var x_mix y_mix u_mix(t_mix)
+            @test x_mix isa GiacExpr
+            @test y_mix isa GiacExpr
+            @test u_mix isa GiacExpr
+            @test string(x_mix) == "x_mix"
+            @test string(y_mix) == "y_mix"
+            @test string(u_mix) == "u_mix(t_mix)"
+        end
+
+        # T015: @giac_var t u(t) v(t) creates 1 variable and 2 functions
+        @testset "@giac_var t u(t) v(t) one var two functions" begin
+            @giac_var t_two u_two(t_two) v_two(t_two)
+            @test t_two isa GiacExpr
+            @test u_two isa GiacExpr
+            @test v_two isa GiacExpr
+            @test string(t_two) == "t_two"
+            @test string(u_two) == "u_two(t_two)"
+            @test string(v_two) == "v_two(t_two)"
+        end
+    end
+
+    @testset "Function Syntax - Edge Cases" begin
+        # T018: @giac_var u() raises ArgumentError (zero arguments)
+        @testset "@giac_var u() throws ArgumentError" begin
+            @test_throws ArgumentError @macroexpand @giac_var u()
+        end
+
+        # T019: @giac_var u(1) raises ArgumentError (non-symbol argument)
+        @testset "@giac_var u(1) throws ArgumentError" begin
+            @test_throws ArgumentError @macroexpand @giac_var u(1)
+        end
+
+        # T020: @giac_var u(t, 2) raises ArgumentError (mixed arguments)
+        @testset "@giac_var u(t, 2) throws ArgumentError" begin
+            @test_throws ArgumentError @macroexpand @giac_var u(t, 2)
         end
     end
 
