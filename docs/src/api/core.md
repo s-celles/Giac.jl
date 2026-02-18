@@ -62,6 +62,28 @@ invoke_cmd(:solve, expr, x)
 invoke_cmd(:gcd, a, b)
 ```
 
+## Vector Input Support
+
+GIAC commands accept Julia vectors directly, enabling natural syntax for systems of equations and matrix operations:
+
+```julia
+using Giac
+using Giac.Commands: solve, det_minor, inverse
+@giac_var x y z
+
+# Solve systems of equations with vector syntax
+solve([x + y ~ 1, x - y ~ 0], [x, y])  # Returns [[1/2, 1/2]]
+
+# Three-variable system
+solve([x + y + z ~ 6, x - y ~ 0, y + z ~ 4], [x, y, z])
+
+# Matrix operations with nested vectors
+det_minor([[1, 2], [3, 4]])  # Returns -2
+inverse([[1, 2], [3, 4]])    # Returns inverse matrix
+```
+
+See [`GiacInput`](@ref) for the full list of supported input types.
+
 ## Command Discovery
 
 ```@docs
