@@ -5,24 +5,24 @@ A Julia wrapper for the [GIAC](https://www-fourier.ujf-grenoble.fr/~parisse/giac
 ## Features
 
 - **Dynamic Command Invocation**: Access all 2200+ GIAC commands via `invoke_cmd(:cmd, args...)`
-- **Expression Evaluation**: Parse and evaluate mathematical expressions
-- **Arithmetic Operations**: +, -, *, /, ^, unary negation, equality
-- **Calculus**: Differentiation, integration, limits, and series expansion
-- **Algebra**: Factorization, expansion, simplification, equation solving and GCD
-- **Linear Algebra**: Symbolic matrices with determinant, inverse, trace, transpose operations
-- **Command Discovery**: Search commands, browse by category, built-in help via `?cmd`
 - **Commands Submodule**: All ~2000+ commands available via `Giac.Commands` for clean namespace
-- **TempApi Submodule**: Simplified function names (`diff`, `factor`, etc.) via `Giac.TempApi`
-- **Method Syntax**: Call commands as methods: `expr.factor()`, `expr.diff(x)`
+- **Expression Evaluation**: Parse and evaluate mathematical expressions
+- **Command Discovery**: Search commands, browse by category, built-in help via `?cmd`
+- **Arithmetic Operations**: +, -, *, /, ^, unary negation, equality
+- **Algebra**: Factorization, expansion, simplification, equation solving and GCD
+- **Calculus**: Differentiation, integration, limits, and series expansion
+- **Infinity Support**: Use Julia's `Inf` and `-Inf` directly in limits and improper integrals
+- **Linear Algebra**: Symbolic matrices with determinant, inverse, trace, transpose operations
 - **Base Extensions**: Use `sin(expr)`, `cos(expr)`, `exp(expr)` with GiacExpr
+- **Method Syntax**: Call commands as methods: `expr.factor()`, `expr.diff(x)`
+- **Variable Substitution**: Symbolics.jl-compatible `substitute(expr, Dict(var => value))` interface
+- **Laplace Transform**: `laplace` and `ilaplace` commands for continuous-time signal processing
+- **Z-Transform**: `ztrans` and `invztrans` commands for discrete-time signal processing
 - **Type Conversion**: Convert results to Julia native types (Int64, Float64, Rational)
-- **LaTeX Support**: Automatic LaTeX rendering in Pluto notebooks
 - **Symbolics.jl Integration**: Bidirectional conversion with Symbolics.jl
 - **Tables.jl Compatibility**: Convert GiacMatrix and command help to DataFrames, CSV export
-- **Variable Substitution**: Symbolics.jl-compatible `substitute(expr, Dict(var => value))` interface
-- **Infinity Support**: Use Julia's `Inf` and `-Inf` directly in limits and improper integrals
-- **Z-Transform**: `ztrans` and `invztrans` commands for discrete-time signal processing
-- **Laplace Transform**: `laplace` and `ilaplace` commands for continuous-time signal processing
+- **LaTeX Support**: Automatic LaTeX rendering in Pluto notebooks
+- **TempApi Submodule**: Simplified function names (`diff`, `factor`, etc.) via `Giac.TempApi`
 
 ## Installation
 

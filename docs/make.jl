@@ -20,8 +20,9 @@ makedocs(
         "Installation" => "install.md",
         "Quick Start" => "quickstart.md",
         "Variable Declaration" => "variables.md",
-        "Using with Pluto reactive notebooks" => "pluto.md",
         "Command discovery and help" => "command_discovery_help.md",
+        "Variable Substitution" => "substitute.md",
+        "Using with Pluto reactive notebooks" => "pluto.md",
         "Mathematics" => [
             "Algebra" => "mathematics/algebra.md",
             "Calculus" => "mathematics/calculus.md",
@@ -37,14 +38,13 @@ makedocs(
             "Discrete-Time Transforms" => "domains/signal/discrete_transforms.md",
             "Continuous-Time Transforms" => "domains/signal/continuous_transforms.md",
         ],
-        "Tables.jl Compatibility" => "tables.md",
-        "Variable Substitution" => "substitute.md",
         "API Reference" => [
             "Core API" => "api/core.md",
             "GIAC Commands" => "api/giac_commands.md",
             "Commands submodule" => "api/commands_submodule.md",
             "TempApi" => "api/tempapi.md",
         ],
+        "Tables.jl Compatibility" => "tables.md",
         "Extensions" => [
              "Symbolics.jl" => "extensions/symbolics.md",
         ],
