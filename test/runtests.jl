@@ -109,6 +109,12 @@ using LinearAlgebra
     # Verifies T enum for GIAC expression types
     # ============================================================================
     include("test_gen_types.jl")
+
+    # ============================================================================
+    # Symbolics Extension Tests (042-preserve-symbolic-sqrt)
+    # Verifies symbolic expression preservation in to_symbolics
+    # ============================================================================
+    include("test_symbolics_ext.jl")
 end
 
 # Aqua.jl package quality tests
