@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Electromagnetism · Giac.jl</title><meta name="title" content="Electromagnetism · Giac.jl"/><meta property="og:title" content="Electromagnetism · Giac.jl"/><meta property="twitter:title" content="Electromagnetism · Giac.jl"/><meta name="description" content="Documentation for Giac.jl."/><meta property="og:description" content="Documentation for Giac.jl."/><meta property="twitter:description" content="Documentation for Giac.jl."/><meta property="og:url" content="https://s-celles.github.io/Giac.jl/physics/electromagnetism/"/><meta property="twitter:url" content="https://s-celles.github.io/Giac.jl/physics/electromagnetism/"/><link rel="canonical" href="https://s-celles.github.io/Giac.jl/physics/electromagnetism/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Giac.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../install/">Installation</a></li><li><a class="tocitem" href="../../quickstart/">Quick Start</a></li><li><a class="tocitem" href="../../variables/">Variable Declaration</a></li><li><a class="tocitem" href="../../command_discovery_help/">Command discovery and help</a></li><li><a class="tocitem" href="../../substitute/">Variable Substitution</a></li><li><a class="tocitem" href="../../pluto/">Using with Pluto reactive notebooks</a></li><li><span class="tocitem">Mathematics</span><ul><li><a class="tocitem" href="../../mathematics/algebra/">Algebra</a></li><li><a class="tocitem" href="../../mathematics/calculus/">Calculus</a></li><li><a class="tocitem" href="../../mathematics/linear_algebra/">Linear Algebra</a></li><li><a class="tocitem" href="../../mathematics/differential_equations/">Differential Equations</a></li><li><a class="tocitem" href="../../mathematics/trigonometry/">Trigonometry</a></li></ul></li><li><span class="tocitem">Physics</span><ul><li><a class="tocitem" href="../mechanics/">Mechanics</a></li><li class="is-active"><a class="tocitem" href>Electromagnetism</a><ul class="internal"><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Electrostatics"><span>Electrostatics</span></a></li><li><a class="tocitem" href="#Circuit-Analysis"><span>Circuit Analysis</span></a></li><li><a class="tocitem" href="#Energy-in-Electromagnetic-Systems"><span>Energy in Electromagnetic Systems</span></a></li><li><a class="tocitem" href="#Electromagnetic-Waves"><span>Electromagnetic Waves</span></a></li><li><a class="tocitem" href="#Table-of-Useful-Equations"><span>Table of Useful Equations</span></a></li><li><a class="tocitem" href="#Notes"><span>Notes</span></a></li></ul></li></ul></li><li><span class="tocitem">Signal Processing</span><ul><li><a class="tocitem" href="../../domains/signal/discrete_transforms/">Discrete-Time Transforms</a></li><li><a class="tocitem" href="../../domains/signal/continuous_transforms/">Continuous-Time Transforms</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/core/">Core API</a></li><li><a class="tocitem" href="../../api/giac_commands/">GIAC Commands</a></li><li><a class="tocitem" href="../../api/commands_submodule/">Commands submodule</a></li><li><a class="tocitem" href="../../api/tempapi/">TempApi</a></li></ul></li><li><a class="tocitem" href="../../tables/">Tables.jl Compatibility</a></li><li><span class="tocitem">Extensions</span><ul><li><a class="tocitem" href="../../extensions/symbolics/">Symbolics.jl</a></li></ul></li><li><span class="tocitem">Developer Guide</span><ul><li><a class="tocitem" href="../../developer/">Overview</a></li><li><a class="tocitem" href="../../developer/architecture/">Package Architecture</a></li><li><a class="tocitem" href="../../developer/tier-system/">Performance Tiers</a></li><li><a class="tocitem" href="../../developer/contributing/">Adding Functions</a></li><li><a class="tocitem" href="../../developer/memory/">Memory Management</a></li><li><a class="tocitem" href="../../developer/troubleshooting/">Troubleshooting</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Physics</a></li><li class="is-active"><a href>Electromagnetism</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Electromagnetism</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl/blob/main/docs/src/physics/electromagnetism.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Electromagnetism"><a class="docs-heading-anchor" href="#Electromagnetism">Electromagnetism</a><a id="Electromagnetism-1"></a><a class="docs-heading-anchor-permalink" href="#Electromagnetism" title="Permalink"></a></h1><p>Giac.jl enables symbolic solutions to electromagnetism problems, including electrostatics, circuit analysis, and electromagnetic waves.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Giac
+using Giac.Commands: diff, integrate, solve, desolve
+
+@giac_var q r t V I R C L k</code></pre><h2 id="Electrostatics"><a class="docs-heading-anchor" href="#Electrostatics">Electrostatics</a><a id="Electrostatics-1"></a><a class="docs-heading-anchor-permalink" href="#Electrostatics" title="Permalink"></a></h2><h3 id="Coulomb&#39;s-Law"><a class="docs-heading-anchor" href="#Coulomb&#39;s-Law">Coulomb&#39;s Law</a><a id="Coulomb&#39;s-Law-1"></a><a class="docs-heading-anchor-permalink" href="#Coulomb&#39;s-Law" title="Permalink"></a></h3><p>Calculate electric forces between point charges:</p><pre><code class="language-julia hljs">@giac_var q1 q2 r k F
+
+# Coulomb&#39;s law: F = k*q1*q2/r²
+# Solve for distance given force
+solve(F ~ k * q1 * q2 / r^2, r)
+# Returns r in terms of other variables
+
+# Solve for charge
+solve(F ~ k * q1 * q2 / r^2, q1)
+# Output: [F*r^2/(k*q2)]</code></pre><h3 id="Electric-Field"><a class="docs-heading-anchor" href="#Electric-Field">Electric Field</a><a id="Electric-Field-1"></a><a class="docs-heading-anchor-permalink" href="#Electric-Field" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var q r k E
+
+# Electric field: E = k*q/r²
+# Solve for charge given field
+solve(E ~ k * q / r^2, q)
+# Output: [E*r^2/k]</code></pre><h3 id="Electric-Potential"><a class="docs-heading-anchor" href="#Electric-Potential">Electric Potential</a><a id="Electric-Potential-1"></a><a class="docs-heading-anchor-permalink" href="#Electric-Potential" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var q r k V
+
+# Electric potential: V = k*q/r
+# Solve for charge
+solve(V ~ k * q / r, q) |&gt; first |&gt; simplify
+# Output: [V*r/k]
+
+# Relationship between field and potential
+# E = -dV/dr
+V_r = k * q / r
+E_r = -diff(V_r, r)
+# Output: k*q/r^2</code></pre><h3 id="Capacitor-Systems"><a class="docs-heading-anchor" href="#Capacitor-Systems">Capacitor Systems</a><a id="Capacitor-Systems-1"></a><a class="docs-heading-anchor-permalink" href="#Capacitor-Systems" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var C1 C2 C_eq
+
+# Series capacitors: 1/C_eq = 1/C1 + 1/C2
+solve(1/C_eq ~ 1/C1 + 1/C2, C_eq)
+
+# Parallel capacitors: C_eq = C1 + C2
+C_parallel = C1 + C2</code></pre><h2 id="Circuit-Analysis"><a class="docs-heading-anchor" href="#Circuit-Analysis">Circuit Analysis</a><a id="Circuit-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Circuit-Analysis" title="Permalink"></a></h2><h3 id="Ohm&#39;s-Law"><a class="docs-heading-anchor" href="#Ohm&#39;s-Law">Ohm&#39;s Law</a><a id="Ohm&#39;s-Law-1"></a><a class="docs-heading-anchor-permalink" href="#Ohm&#39;s-Law" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var V I R
+
+# Ohm&#39;s law: V = IR
+solve(V ~ I * R, I)
+# Output: [V/R]
+
+solve(V ~ I * R, R)
+# Output: [V/I]</code></pre><h3 id="RC-Circuits"><a class="docs-heading-anchor" href="#RC-Circuits">RC Circuits</a><a id="RC-Circuits-1"></a><a class="docs-heading-anchor-permalink" href="#RC-Circuits" title="Permalink"></a></h3><p>Solve the RC circuit differential equation using the D operator:</p><pre><code class="language-julia hljs">@giac_var t R C V(t)
+
+# Capacitor discharging: dV/dt + V/(RC) = 0 using D operator
+ode = D(V) + V/(R*C) ~ 0
+desolve([ode], t, :V)
+# Output: V(t) = c_0*exp(-t/(R*C))
+
+# With initial condition, use function syntax from @giac_var V(t)
+# The solution will contain exp(-t/(R*C)) terms</code></pre><h3 id="Time-Constant"><a class="docs-heading-anchor" href="#Time-Constant">Time Constant</a><a id="Time-Constant-1"></a><a class="docs-heading-anchor-permalink" href="#Time-Constant" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var R C tau
+
+# Time constant: τ = RC
+solve(tau ~ R * C, R)
+# Output: [tau/C]</code></pre><h3 id="RL-Circuits"><a class="docs-heading-anchor" href="#RL-Circuits">RL Circuits</a><a id="RL-Circuits-1"></a><a class="docs-heading-anchor-permalink" href="#RL-Circuits" title="Permalink"></a></h3><p>Solve the RL circuit differential equation using the D operator:</p><pre><code class="language-julia hljs">@giac_var t R L I(t) E
+
+# Current decay in RL circuit: dI/dt + (R/L)*I = 0 using D operator
+ode = D(I) + R/L*I ~ 0
+initial = I(0) ~ E / R
+desolve([ode, initial], t, :I)
+# Output: I(t) = E/R*exp(-R*t/L)
+
+# Time constant for RL circuit: τ = L/R
+# Initial current: I0 = E/R</code></pre><h3 id="RLC-Circuits"><a class="docs-heading-anchor" href="#RLC-Circuits">RLC Circuits</a><a id="RLC-Circuits-1"></a><a class="docs-heading-anchor-permalink" href="#RLC-Circuits" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var R L C omega
+
+# RLC resonance frequency: ω = 1/sqrt(LC)
+solve(omega^2 ~ 1/(L*C), omega)
+# Output: [sqrt(1/(L*C)), -sqrt(1/(L*C))]</code></pre><h2 id="Energy-in-Electromagnetic-Systems"><a class="docs-heading-anchor" href="#Energy-in-Electromagnetic-Systems">Energy in Electromagnetic Systems</a><a id="Energy-in-Electromagnetic-Systems-1"></a><a class="docs-heading-anchor-permalink" href="#Energy-in-Electromagnetic-Systems" title="Permalink"></a></h2><h3 id="Capacitor-Energy"><a class="docs-heading-anchor" href="#Capacitor-Energy">Capacitor Energy</a><a id="Capacitor-Energy-1"></a><a class="docs-heading-anchor-permalink" href="#Capacitor-Energy" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var C V E Q
+
+# Energy stored in capacitor: E = (1/2)CV²
+solve(E ~ C * V^2 / 2, V)
+# Output: [sqrt(2*E/C), -sqrt(2*E/C)]
+
+# Alternative form: E = Q²/(2C)
+solve(E ~ Q^2 / (2 * C), Q)</code></pre><h3 id="Inductor-Energy"><a class="docs-heading-anchor" href="#Inductor-Energy">Inductor Energy</a><a id="Inductor-Energy-1"></a><a class="docs-heading-anchor-permalink" href="#Inductor-Energy" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var L I E
+
+# Energy stored in inductor: E = (1/2)LI²
+solve(E ~ L * I^2 / 2, I)
+# Output: [sqrt(2*E/L), -sqrt(2*E/L)]</code></pre><h3 id="Power-Dissipation"><a class="docs-heading-anchor" href="#Power-Dissipation">Power Dissipation</a><a id="Power-Dissipation-1"></a><a class="docs-heading-anchor-permalink" href="#Power-Dissipation" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var P V I R
+
+# Power: P = IV = I²R = V²/R
+solve(P ~ I * V, I)
+# Output: [P/V]
+
+solve(P ~ I^2 * R, I)
+# Output: [sqrt(P/R), -sqrt(P/R)]</code></pre><h2 id="Electromagnetic-Waves"><a class="docs-heading-anchor" href="#Electromagnetic-Waves">Electromagnetic Waves</a><a id="Electromagnetic-Waves-1"></a><a class="docs-heading-anchor-permalink" href="#Electromagnetic-Waves" title="Permalink"></a></h2><h3 id="Wave-Equation"><a class="docs-heading-anchor" href="#Wave-Equation">Wave Equation</a><a id="Wave-Equation-1"></a><a class="docs-heading-anchor-permalink" href="#Wave-Equation" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x t k omega E0
+
+# Electric field wave: E = E0*sin(kx - ωt)
+E = E0 * sin(k * x - omega * t)
+
+# Time derivative
+dE_dt = diff(E, t)
+# Output: -E0*omega*cos(k*x-omega*t)
+
+# Spatial derivative
+dE_dx = diff(E, x)
+# Output: E0*k*cos(k*x-omega*t)</code></pre><h3 id="Dispersion-Relation"><a class="docs-heading-anchor" href="#Dispersion-Relation">Dispersion Relation</a><a id="Dispersion-Relation-1"></a><a class="docs-heading-anchor-permalink" href="#Dispersion-Relation" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var k omega c
+
+# For electromagnetic waves in vacuum: ω = c*k
+solve(omega ~ c * k, k)
+# Output: [omega/c]</code></pre><h3 id="Wavelength-and-Frequency"><a class="docs-heading-anchor" href="#Wavelength-and-Frequency">Wavelength and Frequency</a><a id="Wavelength-and-Frequency-1"></a><a class="docs-heading-anchor-permalink" href="#Wavelength-and-Frequency" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var lambda f c
+
+# c = λf
+solve(c ~ lambda * f, lambda)
+# Output: [c/f]</code></pre><h2 id="Table-of-Useful-Equations"><a class="docs-heading-anchor" href="#Table-of-Useful-Equations">Table of Useful Equations</a><a id="Table-of-Useful-Equations-1"></a><a class="docs-heading-anchor-permalink" href="#Table-of-Useful-Equations" title="Permalink"></a></h2><table><tr><th style="text-align: right">Equation</th><th style="text-align: right">Description</th></tr><tr><td style="text-align: right"><code>F = k*q1*q2/r²</code></td><td style="text-align: right">Coulomb&#39;s law</td></tr><tr><td style="text-align: right"><code>V = k*q/r</code></td><td style="text-align: right">Electric potential</td></tr><tr><td style="text-align: right"><code>V = IR</code></td><td style="text-align: right">Ohm&#39;s law</td></tr><tr><td style="text-align: right"><code>τ = RC</code></td><td style="text-align: right">RC time constant</td></tr><tr><td style="text-align: right"><code>τ = L/R</code></td><td style="text-align: right">RL time constant</td></tr><tr><td style="text-align: right"><code>ω = 1/√(LC)</code></td><td style="text-align: right">RLC resonance</td></tr><tr><td style="text-align: right"><code>E = (1/2)CV²</code></td><td style="text-align: right">Capacitor energy</td></tr><tr><td style="text-align: right"><code>E = (1/2)LI²</code></td><td style="text-align: right">Inductor energy</td></tr></table><h2 id="Notes"><a class="docs-heading-anchor" href="#Notes">Notes</a><a id="Notes-1"></a><a class="docs-heading-anchor-permalink" href="#Notes" title="Permalink"></a></h2><ul><li>Use <code>desolve</code> for solving circuit differential equations</li><li>The time constant τ appears in exponential decay solutions</li><li>For AC circuits, complex impedance analysis can be performed symbolically</li><li>Electromagnetic wave solutions involve sinusoidal functions</li></ul><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral"
+});
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mechanics/">« Mechanics</a><a class="docs-footer-nextpage" href="../../domains/signal/discrete_transforms/">Discrete-Time Transforms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 18 February 2026 19:45">Wednesday 18 February 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
