@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Trigonometry · Giac.jl</title><meta name="title" content="Trigonometry · Giac.jl"/><meta property="og:title" content="Trigonometry · Giac.jl"/><meta property="twitter:title" content="Trigonometry · Giac.jl"/><meta name="description" content="Documentation for Giac.jl."/><meta property="og:description" content="Documentation for Giac.jl."/><meta property="twitter:description" content="Documentation for Giac.jl."/><meta property="og:url" content="https://s-celles.github.io/Giac.jl/mathematics/trigonometry/"/><meta property="twitter:url" content="https://s-celles.github.io/Giac.jl/mathematics/trigonometry/"/><link rel="canonical" href="https://s-celles.github.io/Giac.jl/mathematics/trigonometry/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Giac.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../install/">Installation</a></li><li><a class="tocitem" href="../../quickstart/">Quick Start</a></li><li><a class="tocitem" href="../../variables/">Variable Declaration</a></li><li><a class="tocitem" href="../../pluto/">Using with Pluto reactive notebooks</a></li><li><a class="tocitem" href="../../command_discovery_help/">Command discovery and help</a></li><li><span class="tocitem">Mathematics</span><ul><li><a class="tocitem" href="../algebra/">Algebra</a></li><li><a class="tocitem" href="../calculus/">Calculus</a></li><li><a class="tocitem" href="../linear_algebra/">Linear Algebra</a></li><li><a class="tocitem" href="../differential_equations/">Differential Equations</a></li><li class="is-active"><a class="tocitem" href>Trigonometry</a><ul class="internal"><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Fundamental-Identities"><span>Fundamental Identities</span></a></li><li><a class="tocitem" href="#Trigonometric-Expansion-(trigexpand)"><span>Trigonometric Expansion (trigexpand)</span></a></li><li><a class="tocitem" href="#Product-to-Sum-Conversion-(tlin)"><span>Product to Sum Conversion (tlin)</span></a></li><li><a class="tocitem" href="#Sum-to-Product-Conversion-(tcollect)"><span>Sum to Product Conversion (tcollect)</span></a></li><li><a class="tocitem" href="#Simplification"><span>Simplification</span></a></li><li><a class="tocitem" href="#Solving-Trigonometric-Equations"><span>Solving Trigonometric Equations</span></a></li><li><a class="tocitem" href="#Inverse-Trigonometric-Functions"><span>Inverse Trigonometric Functions</span></a></li><li><a class="tocitem" href="#Hyperbolic-Functions"><span>Hyperbolic Functions</span></a></li><li><a class="tocitem" href="#Table-of-Commands"><span>Table of Commands</span></a></li><li><a class="tocitem" href="#Notes"><span>Notes</span></a></li></ul></li></ul></li><li><span class="tocitem">Physics</span><ul><li><a class="tocitem" href="../../physics/mechanics/">Mechanics</a></li><li><a class="tocitem" href="../../physics/electromagnetism/">Electromagnetism</a></li></ul></li><li><a class="tocitem" href="../../tables/">Tables.jl Compatibility</a></li><li><a class="tocitem" href="../../substitute/">Variable Substitution</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/core/">Core API</a></li><li><a class="tocitem" href="../../api/giac_commands/">GIAC Commands</a></li><li><a class="tocitem" href="../../api/commands_submodule/">Commands submodule</a></li><li><a class="tocitem" href="../../api/tempapi/">TempApi</a></li></ul></li><li><span class="tocitem">Extensions</span><ul><li><a class="tocitem" href="../../extensions/symbolics/">Symbolics.jl</a></li></ul></li><li><span class="tocitem">Developer Guide</span><ul><li><a class="tocitem" href="../../developer/">Overview</a></li><li><a class="tocitem" href="../../developer/architecture/">Package Architecture</a></li><li><a class="tocitem" href="../../developer/tier-system/">Performance Tiers</a></li><li><a class="tocitem" href="../../developer/contributing/">Adding Functions</a></li><li><a class="tocitem" href="../../developer/memory/">Memory Management</a></li><li><a class="tocitem" href="../../developer/troubleshooting/">Troubleshooting</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Mathematics</a></li><li class="is-active"><a href>Trigonometry</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Trigonometry</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl/blob/main/docs/src/mathematics/trigonometry.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Trigonometry"><a class="docs-heading-anchor" href="#Trigonometry">Trigonometry</a><a id="Trigonometry-1"></a><a class="docs-heading-anchor-permalink" href="#Trigonometry" title="Permalink"></a></h1><p>Giac.jl provides comprehensive tools for trigonometric simplification, expansion, and identity verification.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Giac
+using Giac.Commands: simplify, solve, trigexpand, tlin, tcollect, asin, acos, atan, sinh, cosh
+
+@giac_var x y</code></pre><h2 id="Fundamental-Identities"><a class="docs-heading-anchor" href="#Fundamental-Identities">Fundamental Identities</a><a id="Fundamental-Identities-1"></a><a class="docs-heading-anchor-permalink" href="#Fundamental-Identities" title="Permalink"></a></h2><h3 id="Pythagorean-Identity"><a class="docs-heading-anchor" href="#Pythagorean-Identity">Pythagorean Identity</a><a id="Pythagorean-Identity-1"></a><a class="docs-heading-anchor-permalink" href="#Pythagorean-Identity" title="Permalink"></a></h3><p>Verify the fundamental Pythagorean identity:</p><pre><code class="language-julia hljs">@giac_var x
+
+simplify(sin(x)^2 + cos(x)^2)
+# Output: 1</code></pre><h3 id="Other-Pythagorean-Identities"><a class="docs-heading-anchor" href="#Other-Pythagorean-Identities">Other Pythagorean Identities</a><a id="Other-Pythagorean-Identities-1"></a><a class="docs-heading-anchor-permalink" href="#Other-Pythagorean-Identities" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x
+
+# 1 + tan²(x) = sec²(x)
+simplify(1 + tan(x)^2 - 1/cos(x)^2)
+# Should simplify to 0
+
+# 1 + cot²(x) = csc²(x)
+simplify(1 + cot(x)^2 - 1/sin(x)^2)</code></pre><h2 id="Trigonometric-Expansion-(trigexpand)"><a class="docs-heading-anchor" href="#Trigonometric-Expansion-(trigexpand)">Trigonometric Expansion (trigexpand)</a><a id="Trigonometric-Expansion-(trigexpand)-1"></a><a class="docs-heading-anchor-permalink" href="#Trigonometric-Expansion-(trigexpand)" title="Permalink"></a></h2><h3 id="Double-Angle-Formulas"><a class="docs-heading-anchor" href="#Double-Angle-Formulas">Double Angle Formulas</a><a id="Double-Angle-Formulas-1"></a><a class="docs-heading-anchor-permalink" href="#Double-Angle-Formulas" title="Permalink"></a></h3><p>Use <code>trigexpand</code> to expand trigonometric functions:</p><pre><code class="language-julia hljs">@giac_var x
+
+# sin(2x) = 2*sin(x)*cos(x)
+trigexpand(sin(2*x))
+# Output: 2*cos(x)*sin(x)
+
+# cos(2x) = cos²(x) - sin²(x)
+trigexpand(cos(2*x))
+# Output: cos(x)^2-sin(x)^2</code></pre><h3 id="Triple-Angle-Formulas"><a class="docs-heading-anchor" href="#Triple-Angle-Formulas">Triple Angle Formulas</a><a id="Triple-Angle-Formulas-1"></a><a class="docs-heading-anchor-permalink" href="#Triple-Angle-Formulas" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x
+
+# sin(3x) expansion
+trigexpand(sin(3*x))
+# Output: (4*cos(x)^2-1)*sin(x)
+
+# cos(3x) expansion
+trigexpand(cos(3*x))</code></pre><h3 id="Sum-Formulas"><a class="docs-heading-anchor" href="#Sum-Formulas">Sum Formulas</a><a id="Sum-Formulas-1"></a><a class="docs-heading-anchor-permalink" href="#Sum-Formulas" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x y
+
+# sin(x+y) = sin(x)cos(y) + cos(x)sin(y)
+trigexpand(sin(x+y))
+# Output: sin(x)*cos(y)+cos(x)*sin(y)
+
+# cos(x+y) = cos(x)cos(y) - sin(x)sin(y)
+trigexpand(cos(x+y))</code></pre><h2 id="Product-to-Sum-Conversion-(tlin)"><a class="docs-heading-anchor" href="#Product-to-Sum-Conversion-(tlin)">Product to Sum Conversion (tlin)</a><a id="Product-to-Sum-Conversion-(tlin)-1"></a><a class="docs-heading-anchor-permalink" href="#Product-to-Sum-Conversion-(tlin)" title="Permalink"></a></h2><p>Convert products of trigonometric functions to sums:</p><pre><code class="language-julia hljs">@giac_var x y
+
+# sin(x)*cos(x) = (1/2)*sin(2x)
+tlin(sin(x)*cos(x))
+# Output: (1/2)*sin(2*x)
+
+# cos(x)*cos(x) = (1/2)*(1 + cos(2x))
+tlin(cos(x)^2)
+# Output: (1/2)*cos(2*x)+1/2
+
+# sin(x)*sin(y)
+tlin(sin(x)*sin(y))
+# Output in terms of cos(x-y) and cos(x+y)</code></pre><h2 id="Sum-to-Product-Conversion-(tcollect)"><a class="docs-heading-anchor" href="#Sum-to-Product-Conversion-(tcollect)">Sum to Product Conversion (tcollect)</a><a id="Sum-to-Product-Conversion-(tcollect)-1"></a><a class="docs-heading-anchor-permalink" href="#Sum-to-Product-Conversion-(tcollect)" title="Permalink"></a></h2><p>Convert sums of trigonometric functions to products:</p><pre><code class="language-julia hljs">@giac_var x
+
+# sin(x) + cos(x) = sqrt(2)*cos(x - π/4)
+tcollect(sin(x)+cos(x))
+# Output: sqrt(2)*cos(x-1/4*pi)
+
+# More complex expressions
+tcollect(2*sin(x)*cos(x))</code></pre><h2 id="Simplification"><a class="docs-heading-anchor" href="#Simplification">Simplification</a><a id="Simplification-1"></a><a class="docs-heading-anchor-permalink" href="#Simplification" title="Permalink"></a></h2><h3 id="Basic-Simplification"><a class="docs-heading-anchor" href="#Basic-Simplification">Basic Simplification</a><a id="Basic-Simplification-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Simplification" title="Permalink"></a></h3><p>Simplify trigonometric expressions:</p><pre><code class="language-julia hljs">@giac_var x
+
+# tan(x)*cos(x) = sin(x)
+simplify(tan(x)*cos(x))
+# Output: sin(x)
+
+# sin(x)/cos(x) = tan(x)
+simplify(sin(x)/cos(x))
+# Output: tan(x)</code></pre><h3 id="Complex-Expressions"><a class="docs-heading-anchor" href="#Complex-Expressions">Complex Expressions</a><a id="Complex-Expressions-1"></a><a class="docs-heading-anchor-permalink" href="#Complex-Expressions" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x
+
+# (1 - cos(2x))/(2*sin(x)) simplifies
+simplify((1-cos(2*x))/(2*sin(x)))
+
+# tan(x) + cot(x)
+simplify(tan(x)+cot(x))</code></pre><h2 id="Solving-Trigonometric-Equations"><a class="docs-heading-anchor" href="#Solving-Trigonometric-Equations">Solving Trigonometric Equations</a><a id="Solving-Trigonometric-Equations-1"></a><a class="docs-heading-anchor-permalink" href="#Solving-Trigonometric-Equations" title="Permalink"></a></h2><h3 id="Basic-Equations"><a class="docs-heading-anchor" href="#Basic-Equations">Basic Equations</a><a id="Basic-Equations-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Equations" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x
+
+# sin(x) = 0
+julia&gt; solve(sin(x) ~ 0, x)
+# Output: list[0,pi]
+
+# cos(x) = 0
+solve(cos(x) ~ 0 , x)
+# Output: list[-1/2*pi,1/2*pi]</code></pre><h3 id="More-Complex-Equations"><a class="docs-heading-anchor" href="#More-Complex-Equations">More Complex Equations</a><a id="More-Complex-Equations-1"></a><a class="docs-heading-anchor-permalink" href="#More-Complex-Equations" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x
+
+# sin(x) = 1/2 - create 1/2 as GiacExpr
+half = giac_eval(&quot;1/2&quot;)
+solve(sin(x) - half, x)
+# Output: π/6 and 5π/6
+
+# cos(2x) = 0
+solve(cos(2*x), x)
+# Output: π/4, 3π/4, etc.</code></pre><h3 id="Equations-in-Intervals"><a class="docs-heading-anchor" href="#Equations-in-Intervals">Equations in Intervals</a><a id="Equations-in-Intervals-1"></a><a class="docs-heading-anchor-permalink" href="#Equations-in-Intervals" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Find all solutions of sin(x) = 1/2 in [0, 2π]
+# Use solve with constraints or numerical methods</code></pre><h2 id="Inverse-Trigonometric-Functions"><a class="docs-heading-anchor" href="#Inverse-Trigonometric-Functions">Inverse Trigonometric Functions</a><a id="Inverse-Trigonometric-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Inverse-Trigonometric-Functions" title="Permalink"></a></h2><h3 id="Basic-Evaluations"><a class="docs-heading-anchor" href="#Basic-Evaluations">Basic Evaluations</a><a id="Basic-Evaluations-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Evaluations" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x
+
+# asin(1/2) = π/6 - create 1/2 as GiacExpr
+half = giac_eval(&quot;1/2&quot;)
+asin(half)
+# Output: pi/6
+
+# acos(0) - create 0 as GiacExpr
+zero_expr = 0 * x + 0
+acos(zero_expr)
+# Output: pi/2
+
+# atan(1) - create 1 as GiacExpr
+one_expr = 0 * x + 1
+atan(one_expr)
+# Output: pi/4</code></pre><h3 id="Compositions"><a class="docs-heading-anchor" href="#Compositions">Compositions</a><a id="Compositions-1"></a><a class="docs-heading-anchor-permalink" href="#Compositions" title="Permalink"></a></h3><pre><code class="language-julia hljs">@giac_var x
+
+# sin(asin(x)) = x
+simplify(sin(asin(x)))
+# Should return x (with domain restrictions)</code></pre><h2 id="Hyperbolic-Functions"><a class="docs-heading-anchor" href="#Hyperbolic-Functions">Hyperbolic Functions</a><a id="Hyperbolic-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Hyperbolic-Functions" title="Permalink"></a></h2><p>GIAC also supports hyperbolic trigonometric functions:</p><pre><code class="language-julia hljs">@giac_var x
+
+# sinh(x) expression
+sinh(x)
+
+# cosh(x) + sinh(x) = exp(x)
+simplify(cosh(x)+sinh(x)-exp(x))
+# Output: 0</code></pre><h2 id="Table-of-Commands"><a class="docs-heading-anchor" href="#Table-of-Commands">Table of Commands</a><a id="Table-of-Commands-1"></a><a class="docs-heading-anchor-permalink" href="#Table-of-Commands" title="Permalink"></a></h2><table><tr><th style="text-align: right">Command</th><th style="text-align: right">Description</th></tr><tr><td style="text-align: right"><code>trigexpand(expr)</code></td><td style="text-align: right">Expand trig functions (double/triple angle)</td></tr><tr><td style="text-align: right"><code>tlin(expr)</code></td><td style="text-align: right">Product to sum conversion</td></tr><tr><td style="text-align: right"><code>tcollect(expr)</code></td><td style="text-align: right">Sum to product conversion</td></tr><tr><td style="text-align: right"><code>simplify(expr)</code></td><td style="text-align: right">General simplification</td></tr><tr><td style="text-align: right"><code>texpand(expr)</code></td><td style="text-align: right">Alternative expansion</td></tr></table><h2 id="Notes"><a class="docs-heading-anchor" href="#Notes">Notes</a><a id="Notes-1"></a><a class="docs-heading-anchor-permalink" href="#Notes" title="Permalink"></a></h2><ul><li>Trigonometric functions work with symbolic arguments from <code>@giac_var</code></li><li>To create fractional GiacExpr values, use arithmetic: <code>(1 + 0*x) / 2</code> for 1/2</li><li>Solutions to trig equations may include principal values or general solutions with n*π terms</li><li>For numerical evaluation of inverse trig functions, convert results to Julia floats</li></ul><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral"
+});
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../differential_equations/">« Differential Equations</a><a class="docs-footer-nextpage" href="../../physics/mechanics/">Mechanics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 18 February 2026 13:49">Wednesday 18 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
