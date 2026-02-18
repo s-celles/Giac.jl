@@ -185,6 +185,51 @@ initial = [x(0) ~ 1, y(0) ~ 0]
 result = desolve([sys..., initial...], t, [:x, :y])
 ```
 
+## Physics Applications
+
+### Exponential Decay
+
+Model radioactive decay: `dN/dt = -λN`
+
+```julia
+@giac_var t N(t) lambda N0
+
+# Decay equation
+ode = D(N) + lambda * N ~ 0
+initial = N(0) ~ N0
+
+result = desolve([ode, initial], t, :N)
+# Returns: N0*exp(-lambda*t)
+```
+
+### Population Growth
+
+Exponential growth model: `dP/dt = rP`
+
+```julia
+@giac_var t P(t) r P0
+
+ode = D(P) - r * P ~ 0
+initial = P(0) ~ P0
+
+result = desolve([ode, initial], t, :P)
+# Returns: P0*exp(r*t)
+```
+
+### Newton's Law of Cooling
+
+Temperature change: `dT/dt = -k(T - T_env)`
+
+```julia
+@giac_var t T(t) k T_env T0
+
+ode = D(T) + k * (T - T_env) ~ 0
+initial = T(0) ~ T0
+
+result = desolve([ode, initial], t, :T)
+# Returns exponential approach to T_env
+```
+
 ## Limitations
 
 - **ODEs only**: GIAC's `desolve` is designed for ordinary differential equations. For PDEs, consider Symbolics.jl + MethodOfLines.jl or other specialized packages.

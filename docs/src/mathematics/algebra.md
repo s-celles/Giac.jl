@@ -1,0 +1,207 @@
+# Algebra
+
+Giac.jl provides powerful symbolic algebra capabilities including polynomial factorization, expansion, simplification, equation solving, and polynomial arithmetic.
+
+## Setup
+
+```julia
+using Giac
+using Giac.Commands: factor, expand, simplify, solve, gcd, lcm, quo, rem
+
+@giac_var x y
+```
+
+## Polynomial Factorization
+
+### Factoring Polynomials
+
+Factor polynomials into irreducible factors using the `factor` command:
+
+```julia
+factor(x^2 - 1)
+# Output: (x-1)*(x+1)
+
+factor(x^2 - 4)
+# Output: (x-2)*(x+2)
+
+factor(x^2 + 2*x + 1)
+# Output: (x+1)^2
+```
+
+### Factoring Higher-Degree Polynomials
+
+```julia
+factor(x^3 - 1)
+# Output: (x-1)*(x^2+x+1)
+
+factor(x^4 - 1)
+# Output: (x-1)*(x+1)*(x^2+1)
+```
+
+## Polynomial Expansion
+
+### Expanding Products
+
+Expand products and powers of polynomials using the `expand` command:
+
+```julia
+expand((x + 1)^2)
+# Output: x^2+2*x+1
+
+expand((x + 1)^3)
+# Output: x^3+3*x^2+3*x+1
+
+expand((x - 1) * (x + 1))
+# Output: x^2-1
+```
+
+### Expanding More Complex Expressions
+
+```julia
+expand((x + 2) * (x - 3) * (x + 1))
+# Expands to full polynomial form
+
+expand((x + y)^2)
+# Output: x^2+2*x*y+y^2
+```
+
+## Simplification
+
+### Simplifying Rational Expressions
+
+Simplify expressions using the `simplify` command:
+
+```julia
+simplify((x^2-1)/(x-1))
+# Output: x+1
+
+simplify((x^3-x)/(x^2-1))
+# Output: x
+```
+
+### Simplifying Complex Expressions
+
+```julia
+simplify((x^2+2*x+1)/(x+1))
+# Output: x+1
+```
+
+## Equation Solving
+
+### Solving Polynomial Equations
+
+Solve equations using the `solve` command:
+
+```julia
+solve(x^2 - 4, x)
+# Output: [-2, 2]
+
+solve(x^2 - 1, x)
+# Output: [-1, 1]
+
+solve(x^2 + 2*x + 1, x)
+# Output: [-1]
+```
+
+### Solving Higher-Degree Equations
+
+```julia
+solve(x^3 - 1, x)
+# Returns all roots including complex
+
+solve(x^2 - 2, x)
+# Output includes sqrt(2) and -sqrt(2)
+```
+
+## GCD and LCM
+
+### Greatest Common Divisor
+
+Find the GCD of polynomials using the `gcd` command:
+
+```julia
+gcd(x^2 - 1, x - 1)
+# Output: x-1
+
+gcd(x^2 - 4, x^2 - 4*x + 4)
+# Output: x-2
+```
+
+### Least Common Multiple
+
+Find the LCM of polynomials using the `lcm` command:
+
+```julia
+lcm(x - 1, x + 1)
+# Output: (x-1)*(x+1) or equivalent
+
+lcm(x^2, x^3)
+# Output: x^3
+```
+
+## Polynomial Division
+
+### Quotient
+
+Compute the quotient of polynomial division using the `quo` command:
+
+```julia
+quo(x^3 - 1, x - 1)
+# Output: x^2+x+1
+
+quo(x^4, x^2)
+# Output: x^2
+```
+
+### Remainder
+
+Compute the remainder of polynomial division using the `rem` command:
+
+```julia
+rem(x^3, x - 1)
+# Output: 1
+
+rem(x^3 + x, x^2 + 1)
+# Computes the polynomial remainder
+```
+
+### Quotient and Remainder Together
+
+For polynomial division, the relationship `dividend = quotient * divisor + remainder` always holds:
+
+```julia
+# For x^3 - 1 divided by x - 1:
+# quo(x^3 - 1, x - 1) = x^2 + x + 1
+# rem(x^3 - 1, x - 1) = 0
+# Verification: (x - 1) * (x^2 + x + 1) = x^3 - 1 ✓
+```
+
+## Systems of Equations
+
+### Solving Linear Systems
+
+Solve systems of equations by passing lists of equations and variables:
+
+```julia
+@giac_var x y
+
+# System: x + y = 1, x - y = 0
+solve([x + y ~ 1, x - y ~ 0], [x, y])
+# Output: [[1/2, 1/2]]
+```
+
+### Solving Nonlinear Systems
+
+```julia
+# System: x^2 + y^2 = 1, x = y
+solve([x^2 + y^2 ~ 1, x ~ y], [x, y])
+# Returns solutions on the unit circle where x = y
+```
+
+## Notes
+
+- All algebraic operations work symbolically, not numerically
+- The `~` operator creates equations for use with `solve`
+- For numerical solutions, convert results using `to_julia`
+- `simplify` may not always produce the simplest form; try `normal` for rational simplification
+- `factor` factors over the rationals by default; use `cfactor` for complex factorization

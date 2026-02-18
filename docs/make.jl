@@ -22,8 +22,17 @@ makedocs(
         "Variable Declaration" => "variables.md",
         "Using with Pluto reactive notebooks" => "pluto.md",
         "Command discovery and help" => "command_discovery_help.md",
-        "Linear Algebra" => "linear_algebra.md",
-        "Differential Equations" => "differential_equations.md",
+        "Mathematics" => [
+            "Algebra" => "mathematics/algebra.md",
+            "Calculus" => "mathematics/calculus.md",
+            "Linear Algebra" => "mathematics/linear_algebra.md",
+            "Differential Equations" => "mathematics/differential_equations.md",
+            "Trigonometry" => "mathematics/trigonometry.md",
+        ],
+        "Physics" => [
+            "Mechanics" => "physics/mechanics.md",
+            "Electromagnetism" => "physics/electromagnetism.md",
+        ],
         "Tables.jl Compatibility" => "tables.md",
         "Variable Substitution" => "substitute.md",
         "API Reference" => [

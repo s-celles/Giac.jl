@@ -135,11 +135,28 @@ to_julia(g)  # [10, 20, 30]::Vector{Int64}
 - **[Commands](@ref Giac.Commands)**: All GIAC commands as functions
 - **[TempApi](@ref Giac.TempApi)**: Convenience functions with simple names
 
-## Contents
+## Documentation
 
-```@contents
-Pages = ["install.md", "quickstart.md", "variables.md", "linear_algebra.md", "differential_equations.md", "api/core.md", "api/commands_submodule.md", "api/tempapi.md"]
-```
+### Getting Started
+- [Installation Guide](install.md)
+- [Quick Start](quickstart.md)
+- [Variable Declaration](variables.md)
+
+### Mathematics
+- [Algebra](mathematics/algebra.md) - Factorization, expansion, simplification, solving
+- [Calculus](mathematics/calculus.md) - Differentiation, integration, limits, series
+- [Linear Algebra](mathematics/linear_algebra.md) - Matrices, determinants, eigenvalues
+- [Differential Equations](mathematics/differential_equations.md) - ODE solving with D operator
+- [Trigonometry](mathematics/trigonometry.md) - Identities, simplification, equations
+
+### Physics
+- [Mechanics](physics/mechanics.md) - Kinematics, dynamics, oscillations, energy
+- [Electromagnetism](physics/electromagnetism.md) - Circuits, fields, waves
+
+### API Reference
+- [Core API](api/core.md) - Types, evaluation, and main functions
+- [Commands Submodule](api/commands_submodule.md) - All GIAC commands as functions
+- [TempApi](api/tempapi.md) - Convenience functions with simple names
 
 ## Related Projects
 

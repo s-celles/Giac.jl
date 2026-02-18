@@ -63,6 +63,22 @@ using LinearAlgebra
 
     # Output handling tests (029-output-handling)
     include("test_output_handling.jl")
+
+    # ============================================================================
+    # Domain Documentation Tests (036-domain-docs-tests)
+    # Verifies that all code examples in documentation work correctly
+    # ============================================================================
+
+    # Mathematics domain documentation tests
+    include("test_docs_math_calculus.jl")
+    include("test_docs_math_algebra.jl")
+    include("test_docs_math_linalg.jl")
+    include("test_docs_math_odes.jl")
+    include("test_docs_math_trig.jl")
+
+    # Physics domain documentation tests
+    include("test_docs_physics_mechanics.jl")
+    include("test_docs_physics_em.jl")
 end
 
 # Aqua.jl package quality tests

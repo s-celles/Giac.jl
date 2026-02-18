@@ -60,4 +60,6 @@ invoke_cmd(:factor, giac_eval("x^2 - 1"))  # (x-1)*(x+1)
 # Convert to Julia types
 to_julia(giac_eval("42"))    # 42::Int64
 to_julia(giac_eval("3/4"))   # 3//4::Rational{Int64}
+# or using |> operator
+giac_eval("3/4") |> to_julia
 ```
