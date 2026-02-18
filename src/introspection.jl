@@ -76,8 +76,9 @@ const GIAC_FRAC = 10
 
 """
 Type constant for string values.
+Note: GIAC uses type 12 for strings (not 11 as in some documentation).
 """
-const GIAC_STRNG = 11
+const GIAC_STRNG = 12
 
 """
 Type constant for function references.
