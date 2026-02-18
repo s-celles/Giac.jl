@@ -95,6 +95,16 @@ function _arg_to_giac_string(arg::AbstractVector)::String
     return "[" * join(elements, ",") * "]"
 end
 
+# DerivativeCondition - unevaluated derivative initial conditions (035-derivative-operator)
+function _arg_to_giac_string(arg::DerivativeCondition)::String
+    return arg.condition_str
+end
+
+# DerivativePoint - derivative at a point (035-derivative-operator)
+function _arg_to_giac_string(arg::DerivativePoint)::String
+    return string(arg)
+end
+
 function _arg_to_giac_string(arg)
     throw(ArgumentError("Cannot convert $(typeof(arg)) to GIAC string representation"))
 end

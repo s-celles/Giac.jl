@@ -298,6 +298,308 @@ function (expr::GiacExpr)(args...)
     return giac_eval(call_str)
 end
 
+# ============================================================================
+# Derivative Operator D (035-derivative-operator)
+# ============================================================================
+
+"""
+    _parse_function_expr(expr_str::String) -> Union{Tuple{String, String}, Nothing}
+
+Parse a function expression to extract the function name and first variable.
+
+For expressions like "u(t)" returns ("u", "t").
+For expressions like "f(x,y)" returns ("f", "x").
+For non-function expressions, returns nothing.
+
+# Examples
+```julia
+_parse_function_expr("u(t)")     # ("u", "t")
+_parse_function_expr("f(x,y)")   # ("f", "x")
+_parse_function_expr("x")        # nothing
+```
+"""
+function _parse_function_expr(expr_str::String)
+    m = match(r"^([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]+)\)$", expr_str)
+    if m !== nothing
+        funcname = m.captures[1]
+        args_str = m.captures[2]
+        # Get first variable (strip whitespace)
+        varname = strip(split(args_str, ",")[1])
+        # Exclude GIAC operations
+        giac_operations = Set(["diff", "integrate", "limit", "sum", "product",
+                               "solve", "desolve", "simplify", "factor", "expand",
+                               "sin", "cos", "tan", "exp", "log", "sqrt", "abs"])
+        if funcname ∉ giac_operations
+            return (funcname, String(varname))
+        end
+    end
+    return nothing
+end
+
+"""
+    DerivativeExpr
+
+Represents a derivative expression for use in ODE initial conditions.
+
+This type enables the `D` operator syntax following SciML conventions:
+- `D(u)` represents the first derivative u'
+- `D(D(u))` or `D(u, 2)` represents the second derivative u''
+- `D(u)(0)` produces "u'(0)" for GIAC initial conditions
+
+# Fields
+- `base_expr::GiacExpr`: The original function expression (e.g., u(t))
+- `funcname::String`: The function name (e.g., "u")
+- `varname::String`: The differentiation variable (e.g., "t")
+- `order::Int`: The derivative order (1 for first derivative, 2 for second, etc.)
+
+# Example
+```julia
+@giac_var t u(t)
+
+# Create derivative expressions
+du = D(u)           # First derivative
+d2u = D(D(u))       # Second derivative
+d2u = D(u, 2)       # Alternative syntax
+
+# Use in initial conditions
+D(u)(0) ~ 1         # u'(0) = 1
+D(u, 2)(0) ~ 0      # u''(0) = 0
+
+# Use in ODEs (converts to diff notation)
+ode = D(D(u)) + u ~ 0   # Equivalent to diff(u,t,2) + u = 0
+```
+
+# See also
+- [`D`](@ref): The derivative operator function
+- [`@giac_var`](@ref): For creating function variables
+"""
+struct DerivativeExpr
+    base_expr::GiacExpr
+    funcname::String
+    varname::String
+    order::Int
+end
+
+"""
+    D(expr::GiacExpr) -> DerivativeExpr
+    D(expr::GiacExpr, n::Int) -> DerivativeExpr
+    D(d::DerivativeExpr) -> DerivativeExpr
+
+Derivative operator following SciML/ModelingToolkit conventions.
+
+Creates a `DerivativeExpr` that can be:
+- Used in ODEs: `D(D(u)) + u ~ 0` (converts to diff notation)
+- Called for initial conditions: `D(u)(0) ~ 1` (produces prime notation u'(0)=1)
+
+# Arguments
+- `expr::GiacExpr`: A function expression created with `@giac_var u(t)`
+- `n::Int`: Optional derivative order (default: 1)
+- `d::DerivativeExpr`: A derivative expression to differentiate further
+
+# Examples
+```julia
+using Giac
+using Giac.Commands: desolve
+
+@giac_var t u(t)
+
+# First derivative
+D(u)              # Represents u'
+
+# Second derivative (two ways)
+D(D(u))           # Chain D operators
+D(u, 2)           # Specify order directly
+
+# ODE with initial conditions
+ode = D(D(u)) + u ~ 0       # u'' + u = 0
+u0 = u(0) ~ 1               # u(0) = 1
+du0 = D(u)(0) ~ 0           # u'(0) = 0
+
+desolve([ode, u0, du0], t, u)  # Returns: cos(t)
+
+# Third order example
+@giac_var t y(t)
+ode = D(y, 3) - y ~ 0          # y''' - y = 0
+desolve([ode, y(0) ~ 1, D(y)(0) ~ 1, D(y,2)(0) ~ 1], t, y)
+```
+
+# See also
+- [`DerivativeExpr`](@ref): The derivative expression type
+- [`desolve`](@ref): Solving differential equations
+"""
+function D(expr::GiacExpr)
+    parsed = _parse_function_expr(string(expr))
+    if parsed === nothing
+        throw(ArgumentError("D() requires a function expression like u(t), got: $(string(expr))"))
+    end
+    funcname, varname = parsed
+    return DerivativeExpr(expr, funcname, varname, 1)
+end
+
+function D(expr::GiacExpr, n::Int)
+    if n < 1
+        throw(ArgumentError("Derivative order must be positive, got: $n"))
+    end
+    parsed = _parse_function_expr(string(expr))
+    if parsed === nothing
+        throw(ArgumentError("D() requires a function expression like u(t), got: $(string(expr))"))
+    end
+    funcname, varname = parsed
+    return DerivativeExpr(expr, funcname, varname, n)
+end
+
+function D(d::DerivativeExpr)
+    return DerivativeExpr(d.base_expr, d.funcname, d.varname, d.order + 1)
+end
+
+function D(d::DerivativeExpr, n::Int)
+    if n < 1
+        throw(ArgumentError("Derivative order must be positive, got: $n"))
+    end
+    return DerivativeExpr(d.base_expr, d.funcname, d.varname, d.order + n)
+end
+
+# String conversion - produces diff notation for use in equations
+function Base.string(d::DerivativeExpr)
+    if d.order == 1
+        return "diff($(string(d.base_expr)),$(d.varname))"
+    else
+        return "diff($(string(d.base_expr)),$(d.varname),$(d.order))"
+    end
+end
+
+function Base.show(io::IO, d::DerivativeExpr)
+    primes = repeat("'", d.order)
+    print(io, "D: ", d.funcname, primes, "(", d.varname, ")")
+end
+
+# ============================================================================
+# DerivativePoint - for initial conditions (035-derivative-operator)
+# ============================================================================
+
+"""
+    DerivativePoint
+
+Represents a derivative evaluated at a specific point, for use in ODE initial conditions.
+
+This type is created when calling a `DerivativeExpr` with arguments, e.g., `D(u)(0)`.
+It delays evaluation until used with the `~` operator to create an equation,
+because GIAC interprets prime notation differently in isolation vs. within desolve.
+
+# Fields
+- `funcname::String`: The function name (e.g., "u")
+- `order::Int`: The derivative order
+- `point_args::Vector{String}`: The point arguments as strings
+
+# Example
+```julia
+@giac_var t u(t)
+dp = D(u)(0)          # Returns DerivativePoint, not GiacExpr
+eq = D(u)(0) ~ 1      # Creates equation: "u'(0)=1"
+```
+"""
+struct DerivativePoint
+    funcname::String
+    order::Int
+    point_args::Vector{String}
+end
+
+function Base.string(dp::DerivativePoint)
+    primes = repeat("'", dp.order)
+    return dp.funcname * primes * "(" * join(dp.point_args, ",") * ")"
+end
+
+function Base.show(io::IO, dp::DerivativePoint)
+    print(io, string(dp))
+end
+
+# Callable - produces DerivativePoint for initial conditions
+"""
+    (d::DerivativeExpr)(args...) -> DerivativePoint
+
+Create a derivative point expression for use in ODE initial conditions.
+
+Returns a `DerivativePoint` that produces prime notation (u'(0), u''(0), etc.)
+when used with the `~` operator.
+
+# Example
+```julia
+@giac_var t u(t)
+D(u)(0)           # Returns DerivativePoint representing u'(0)
+D(u)(0) ~ 1       # Creates GiacExpr: "u'(0)=1"
+D(u, 2)(0) ~ 0    # Creates GiacExpr: "u''(0)=0"
+```
+"""
+function (d::DerivativeExpr)(args...)
+    arg_strs = [_arg_to_giac_string(arg) for arg in args]
+    return DerivativePoint(d.funcname, d.order, arg_strs)
+end
+
+"""
+    DerivativeCondition
+
+Represents an unevaluated derivative initial condition for ODEs.
+
+This type holds the string representation of a derivative condition (e.g., "u'(0)=1")
+without evaluating it through GIAC. When passed to `desolve` in an array, it gets
+converted to its string form, which GIAC interprets correctly.
+
+# Example
+```julia
+@giac_var t u(t)
+dc = D(u)(0) ~ 1     # Returns DerivativeCondition: "u'(0)=1"
+
+# Pass to desolve - the string is used directly
+desolve([D(D(u)) + u ~ 0, u(0) ~ 1, D(u)(0) ~ 0], t, u)
+```
+"""
+struct DerivativeCondition
+    condition_str::String
+end
+
+function Base.string(dc::DerivativeCondition)
+    return dc.condition_str
+end
+
+function Base.show(io::IO, dc::DerivativeCondition)
+    print(io, "DerivativeCondition: ", dc.condition_str)
+end
+
+# Equation operator for DerivativePoint - produces DerivativeCondition (unevaluated)
+function Base.:~(dp::DerivativePoint, value)
+    value_str = _arg_to_giac_string(value)
+    eq_str = string(dp) * "=" * value_str
+    return DerivativeCondition(eq_str)
+end
+
+# Convert to GiacExpr for arithmetic operations
+function _to_giac_expr(d::DerivativeExpr)
+    return giac_eval(string(d))
+end
+
+# Arithmetic operators - convert to GiacExpr using diff notation
+Base.:+(d::DerivativeExpr, other) = _to_giac_expr(d) + other
+Base.:+(other, d::DerivativeExpr) = other + _to_giac_expr(d)
+Base.:+(d1::DerivativeExpr, d2::DerivativeExpr) = _to_giac_expr(d1) + _to_giac_expr(d2)
+
+Base.:-(d::DerivativeExpr, other) = _to_giac_expr(d) - other
+Base.:-(other, d::DerivativeExpr) = other - _to_giac_expr(d)
+Base.:-(d1::DerivativeExpr, d2::DerivativeExpr) = _to_giac_expr(d1) - _to_giac_expr(d2)
+Base.:-(d::DerivativeExpr) = -_to_giac_expr(d)
+
+Base.:*(d::DerivativeExpr, other) = _to_giac_expr(d) * other
+Base.:*(other, d::DerivativeExpr) = other * _to_giac_expr(d)
+Base.:*(d1::DerivativeExpr, d2::DerivativeExpr) = _to_giac_expr(d1) * _to_giac_expr(d2)
+
+Base.:/(d::DerivativeExpr, other) = _to_giac_expr(d) / other
+Base.:/(other, d::DerivativeExpr) = other / _to_giac_expr(d)
+Base.:/(d1::DerivativeExpr, d2::DerivativeExpr) = _to_giac_expr(d1) / _to_giac_expr(d2)
+
+Base.:^(d::DerivativeExpr, n) = _to_giac_expr(d) ^ n
+
+# Equation operator ~ for ODEs and initial conditions
+Base.:~(d::DerivativeExpr, other) = _to_giac_expr(d) ~ other
+
 """
     GiacContext
 

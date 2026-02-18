@@ -142,7 +142,8 @@
                 @giac_var u(t)
                 result = u()
                 @test result isa GiacExpr
-                @test string(result) == "u()"
+                # GIAC simplifies u() to just u
+                @test string(result) == "u"
             else
                 @test_broken false  # Skip in stub mode
             end
@@ -328,6 +329,244 @@
             @test endswith(latex_output, "\$\$")
         else
             @test_broken false  # Skipping LaTeX output tests in stub mode
+        end
+    end
+
+    # ========================================================================
+    # Derivative Operator D Tests (035-derivative-operator)
+    # ========================================================================
+
+    @testset "Derivative Operator D - Helper Function" begin
+        # Test _parse_function_expr helper
+        @testset "_parse_function_expr" begin
+            # Simple function expressions
+            @test Giac._parse_function_expr("u(t)") == ("u", "t")
+            @test Giac._parse_function_expr("f(x,y)") == ("f", "x")
+            @test Giac._parse_function_expr("func(a,b,c)") == ("func", "a")
+
+            # Non-function expressions should return nothing
+            @test Giac._parse_function_expr("x") === nothing
+            @test Giac._parse_function_expr("a+b") === nothing
+
+            # GIAC operations should return nothing
+            @test Giac._parse_function_expr("diff(u,t)") === nothing
+            @test Giac._parse_function_expr("sin(x)") === nothing
+        end
+    end
+
+    @testset "Derivative Operator D - Basic Creation" begin
+        @testset "D(u) creates first derivative" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                du = D(u)
+                @test du isa DerivativeExpr
+                @test du.order == 1
+                @test du.funcname == "u"
+                @test du.varname == "t"
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(u, 2) creates second derivative" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                d2u = D(u, 2)
+                @test d2u isa DerivativeExpr
+                @test d2u.order == 2
+                @test d2u.funcname == "u"
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(D(u)) creates second derivative" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                d2u = D(D(u))
+                @test d2u isa DerivativeExpr
+                @test d2u.order == 2
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(u, 3) creates third derivative" begin
+            if !is_stub_mode()
+                @giac_var y(t)
+                d3y = D(y, 3)
+                @test d3y isa DerivativeExpr
+                @test d3y.order == 3
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D on non-function raises error" begin
+            if !is_stub_mode()
+                @giac_var x
+                @test_throws ArgumentError D(x)
+            else
+                @test_broken false
+            end
+        end
+    end
+
+    @testset "Derivative Operator D - Initial Conditions" begin
+        @testset "D(u)(0) returns DerivativePoint" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                result = D(u)(0)
+                @test result isa DerivativePoint
+                @test string(result) == "u'(0)"
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(u, 2)(0) returns DerivativePoint with double prime" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                result = D(u, 2)(0)
+                @test result isa DerivativePoint
+                @test string(result) == "u''(0)"
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(D(u))(0) returns DerivativePoint with double prime" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                result = D(D(u))(0)
+                @test result isa DerivativePoint
+                @test string(result) == "u''(0)"
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(u)(0) ~ 1 creates DerivativeCondition" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                eq = D(u)(0) ~ 1
+                @test eq isa DerivativeCondition
+                @test string(eq) == "u'(0)=1"
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(u, 2)(0) ~ 0 creates DerivativeCondition" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                eq = D(u, 2)(0) ~ 0
+                @test eq isa DerivativeCondition
+                @test string(eq) == "u''(0)=0"
+            else
+                @test_broken false
+            end
+        end
+    end
+
+    @testset "Derivative Operator D - Arithmetic" begin
+        @testset "D(D(u)) + u produces diff notation" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                result = D(D(u)) + u
+                @test result isa GiacExpr
+                # Should contain diff notation
+                result_str = string(result)
+                @test occursin("diff", result_str)
+                @test occursin("u(t)", result_str)
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(D(u)) + u ~ 0 creates ODE" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                ode = D(D(u)) + u ~ 0
+                @test ode isa GiacExpr
+                result_str = string(ode)
+                @test occursin("diff", result_str)
+                @test occursin("=0", result_str)
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "D(u) * 2 arithmetic" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                result = 2 * D(u)
+                @test result isa GiacExpr
+            else
+                @test_broken false
+            end
+        end
+    end
+
+    @testset "Derivative Operator D - Full ODE Solve" begin
+        @testset "2nd order ODE: u'' + u = 0" begin
+            if !is_stub_mode()
+                using Giac.Commands: desolve
+                @giac_var t u(t)
+
+                # Build ODE and initial conditions
+                ode = D(D(u)) + u ~ 0
+                u0 = u(0) ~ 1
+                du0 = D(u)(0) ~ 0
+
+                # Solve - note: desolve requires just the function name :u, not u(t)
+                result = desolve([ode, u0, du0], t, :u)
+                result_str = string(result)
+
+                # Should be cos(t)
+                @test occursin("cos", result_str)
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "3rd order ODE: y''' - y = 0" begin
+            if !is_stub_mode()
+                using Giac.Commands: desolve
+                @giac_var t y(t)
+
+                # Build ODE and initial conditions
+                ode = D(y, 3) - y ~ 0
+                y0 = y(0) ~ 1
+                dy0 = D(y)(0) ~ 1
+                d2y0 = D(y, 2)(0) ~ 1
+
+                # Solve - note: desolve requires just the function name :y, not y(t)
+                result = desolve([ode, y0, dy0, d2y0], t, :y)
+                result_str = string(result)
+
+                # Should be exp(t)
+                @test occursin("exp", result_str)
+            else
+                @test_broken false
+            end
+        end
+    end
+
+    @testset "Derivative Operator D - Display" begin
+        @testset "show method displays primes" begin
+            if !is_stub_mode()
+                @giac_var u(t)
+                io = IOBuffer()
+                show(io, D(u))
+                @test String(take!(io)) == "D: u'(t)"
+
+                io = IOBuffer()
+                show(io, D(u, 2))
+                @test String(take!(io)) == "D: u''(t)"
+            else
+                @test_broken false
+            end
         end
     end
 end

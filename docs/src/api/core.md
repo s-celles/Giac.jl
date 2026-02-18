@@ -92,16 +92,65 @@ initial = u(0) ~ 1
 desolve([ode, initial], u)
 ```
 
-**Derivative initial conditions:**
+**Derivative initial conditions (using D operator):**
 ```julia
+using Giac.Commands: desolve
 @giac_var t u(t)
 
 # First derivative at t=0: u'(0) = 1
-diff(u, t)(0) ~ 1
+D(u)(0) ~ 1
 
 # Second derivative at t=0: u''(0) = 0
-diff(u, t, 2)(0) ~ 0
+D(u, 2)(0) ~ 0
+
+# Full example: solve u'' + u = 0 with u(0)=1, u'(0)=0
+ode = D(D(u)) + u ~ 0
+u0 = u(0) ~ 1
+du0 = D(u)(0) ~ 0
+desolve([ode, u0, du0], t, :u)  # Returns: cos(t)
 ```
+
+### D Operator (Derivative Operator)
+
+The `D` operator follows SciML/ModelingToolkit conventions for expressing derivatives:
+
+```julia
+@giac_var t u(t)
+
+# Create derivative expressions
+D(u)        # First derivative u'
+D(D(u))     # Second derivative u'' (chained)
+D(u, 2)     # Second derivative u'' (direct)
+D(u, 3)     # Third derivative u'''
+
+# Use in ODE equations
+ode = D(D(u)) + u ~ 0    # u'' + u = 0
+
+# Use in initial conditions (produces prime notation for GIAC)
+D(u)(0) ~ 1              # u'(0) = 1
+D(u, 2)(0) ~ 0           # u''(0) = 0
+```
+
+**Complete ODE examples:**
+
+```julia
+using Giac
+using Giac.Commands: desolve
+
+# 2nd order: u'' + u = 0, u(0)=1, u'(0)=0
+@giac_var t u(t)
+result = desolve([D(D(u)) + u ~ 0, u(0) ~ 1, D(u)(0) ~ 0], t, :u)
+# Returns: cos(t)
+
+# 3rd order: y''' - y = 0, y(0)=1, y'(0)=1, y''(0)=1
+@giac_var t y(t)
+result = desolve([D(y,3) - y ~ 0, y(0) ~ 1, D(y)(0) ~ 1, D(y,2)(0) ~ 1], t, :y)
+# Returns: exp(t)
+```
+
+!!! note "desolve function argument"
+    When calling `desolve`, pass the function name as a Symbol (`:u`, `:y`) rather than
+    the function expression (`u`, `y`), since GIAC expects just the name, not `u(t)`.
 
 **Multi-variable function evaluation:**
 ```julia

@@ -90,6 +90,9 @@ include("TempApi.jl")
 # Types
 export GiacExpr, GiacContext, GiacMatrix, GiacError, HelpResult, GiacInput
 
+# Derivative operator (035-derivative-operator)
+export D, DerivativeExpr, DerivativePoint, DerivativeCondition
+
 # Core functions
 export giac_eval, to_julia, is_stub_mode, list_commands, help_count
 
