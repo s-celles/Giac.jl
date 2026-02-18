@@ -1,8 +1,10 @@
 # Tests for output handling (029-output-handling, 030-to-julia-bool-conversion)
 # Type introspection, conversion, and iteration
+# Updated for 041-scoped-type-enum: Uses GenTypes.T enum instead of GIAC_* constants
 
 using Test
 using Giac
+using Giac.GenTypes: T, INT, DOUBLE, ZINT, REAL, CPLX, VECT, SYMB, IDNT, FRAC, STRNG, FUNC
 # Import specific functions to avoid ambiguity with Symbolics.jl
 using Giac: numer, denom, is_integer, is_numeric, is_vector, is_symbolic
 using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_part
@@ -10,26 +12,21 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
 @testset "Output Handling" begin
 
     # ========================================================================
-    # Type Constants
+    # Type Constants (041-scoped-type-enum)
     # ========================================================================
-    @testset "Type Constants Defined" begin
-        # Verify all type constants are exported and have expected values
-        @test GIAC_INT isa Integer
-        @test GIAC_DOUBLE isa Integer
-        @test GIAC_ZINT isa Integer
-        @test GIAC_REAL isa Integer
-        @test GIAC_CPLX isa Integer
-        @test GIAC_VECT isa Integer
-        @test GIAC_SYMB isa Integer
-        @test GIAC_IDNT isa Integer
-        @test GIAC_STRNG isa Integer
-        @test GIAC_FRAC isa Integer
-        @test GIAC_FUNC isa Integer
-
-        # Subtype constants
-        @test GIAC_SEQ_VECT isa Integer
-        @test GIAC_SET_VECT isa Integer
-        @test GIAC_LIST_VECT isa Integer
+    @testset "T Enum Values Defined" begin
+        # Verify all type enum values exist and have correct integer values
+        @test Int(INT) == 0
+        @test Int(DOUBLE) == 1
+        @test Int(ZINT) == 2
+        @test Int(REAL) == 3
+        @test Int(CPLX) == 4
+        @test Int(VECT) == 7
+        @test Int(SYMB) == 8
+        @test Int(IDNT) == 6
+        @test Int(STRNG) == 12
+        @test Int(FRAC) == 10
+        @test Int(FUNC) == 13
     end
 
     # ========================================================================
@@ -37,26 +34,26 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
     # ========================================================================
     @testset "Type Introspection" begin
         if !Giac.is_stub_mode()
-            @testset "giac_type returns correct constants" begin
+            @testset "giac_type returns correct T enum values" begin
                 # Integer
                 g_int = giac_eval("42")
-                @test giac_type(g_int) == GIAC_INT
+                @test giac_type(g_int) == INT
 
                 # Float
                 g_float = giac_eval("3.14")
-                @test giac_type(g_float) == GIAC_DOUBLE
+                @test giac_type(g_float) == DOUBLE
 
                 # Vector
                 g_vec = giac_eval("[1, 2, 3]")
-                @test giac_type(g_vec) == GIAC_VECT
+                @test giac_type(g_vec) == VECT
 
                 # Symbolic
                 g_symb = giac_eval("sin(x)")
-                @test giac_type(g_symb) in [GIAC_SYMB, GIAC_IDNT]
+                @test giac_type(g_symb) in [SYMB, IDNT]
 
                 # Identifier
                 g_idnt = giac_eval("x")
-                @test giac_type(g_idnt) == GIAC_IDNT
+                @test giac_type(g_idnt) == IDNT
             end
 
             @testset "is_integer predicate" begin
@@ -106,21 +103,21 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
     # ========================================================================
     @testset "Type Conversion - to_julia" begin
         if !Giac.is_stub_mode()
-            @testset "to_julia for GIAC_INT returns Int64" begin
+            @testset "to_julia for INT returns Int64" begin
                 g = giac_eval("42")
                 result = to_julia(g)
                 @test result isa Int64
                 @test result == 42
             end
 
-            @testset "to_julia for GIAC_DOUBLE returns Float64" begin
+            @testset "to_julia for DOUBLE returns Float64" begin
                 g = giac_eval("3.14")
                 result = to_julia(g)
                 @test result isa Float64
                 @test result ≈ 3.14
             end
 
-            @testset "to_julia for GIAC_VECT returns Vector" begin
+            @testset "to_julia for VECT returns Vector" begin
                 g = giac_eval("[1, 2, 3]")
                 result = to_julia(g)
                 @test result isa Vector
@@ -516,7 +513,7 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
                 # Test that very large integers are handled correctly
                 large_int_str = "10^100"
                 g = giac_eval(large_int_str)
-                if giac_type(g) == GIAC_ZINT
+                if giac_type(g) == ZINT
                     result = to_julia(g)
                     @test result isa BigInt
                     @test result == big(10)^100

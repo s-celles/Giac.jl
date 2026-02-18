@@ -1,7 +1,14 @@
 # Type introspection for Giac.jl
-# Provides type constants, predicates, and component accessors for Gen/GiacExpr objects
+# Provides type predicates and component accessors for Gen/GiacExpr objects
 #
 # Part of feature 029-output-handling
+# Updated for 041-scoped-type-enum: Uses GenTypes.T enum instead of GIAC_* constants
+
+# ============================================================================
+# Import GenTypes for T enum (041-scoped-type-enum)
+# ============================================================================
+using .GenTypes: T, INT, DOUBLE, ZINT, REAL, CPLX, POLY, IDNT, VECT, SYMB
+using .GenTypes: SPOL1, FRAC, EXT, STRNG, FUNC, ROOT, MOD, USER, MAP, EQW, GROB, POINTER, FLOAT
 
 # ============================================================================
 # Import CxxWrap functions if available to extend them for GiacExpr
@@ -14,119 +21,31 @@
 # The key is to ensure our functions are in the Giac module namespace.
 
 # ============================================================================
-# Type Constants
-# ============================================================================
-# These map to GIAC's internal type enum values
-# Reference: EARS document Annexe A
-
-"""
-Type constant for machine integers (Int64).
-"""
-const GIAC_INT = 0
-
-"""
-Type constant for double-precision floating point (Float64).
-"""
-const GIAC_DOUBLE = 1
-
-"""
-Type constant for arbitrary precision integers (BigInt via GMP).
-"""
-const GIAC_ZINT = 2
-
-"""
-Type constant for extended precision reals.
-"""
-const GIAC_REAL = 3
-
-"""
-Type constant for complex numbers.
-"""
-const GIAC_CPLX = 4
-
-"""
-Type constant for polynomials (internal representation).
-"""
-const GIAC_POLY = 5
-
-"""
-Type constant for identifiers/variables.
-"""
-const GIAC_IDNT = 6
-
-"""
-Type constant for vectors/lists/sequences.
-"""
-const GIAC_VECT = 7
-
-"""
-Type constant for symbolic expressions.
-"""
-const GIAC_SYMB = 8
-
-"""
-Type constant for sparse polynomials.
-"""
-const GIAC_SPOL1 = 9
-
-"""
-Type constant for rational fractions.
-"""
-const GIAC_FRAC = 10
-
-"""
-Type constant for string values.
-Note: GIAC uses type 12 for strings (not 11 as in some documentation).
-"""
-const GIAC_STRNG = 12
-
-"""
-Type constant for function references.
-"""
-const GIAC_FUNC = 13
-
-# ============================================================================
-# Vector Subtype Constants
-# ============================================================================
-
-"""
-Subtype constant for sequences (function arguments).
-"""
-const GIAC_SEQ_VECT = 1
-
-"""
-Subtype constant for sets (unordered collections).
-"""
-const GIAC_SET_VECT = 2
-
-"""
-Subtype constant for lists (ordered collections).
-"""
-const GIAC_LIST_VECT = 3
-
-# ============================================================================
 # Type Introspection Functions
 # ============================================================================
 
 """
-    giac_type(g::GiacExpr) -> Int32
+    giac_type(g::GiacExpr) -> T
 
-Return the GIAC type constant for the expression.
+Return the GIAC type enum value for the expression.
 
-Returns one of: `GIAC_INT`, `GIAC_DOUBLE`, `GIAC_ZINT`, `GIAC_REAL`,
-`GIAC_CPLX`, `GIAC_VECT`, `GIAC_SYMB`, `GIAC_IDNT`, `GIAC_STRNG`,
-`GIAC_FRAC`, `GIAC_FUNC`.
+Returns one of the `T` enum values from `Giac.GenTypes`:
+`INT`, `DOUBLE`, `ZINT`, `REAL`, `CPLX`, `VECT`, `SYMB`, `IDNT`, `STRNG`, `FRAC`, `FUNC`, etc.
 
 # Example
 ```julia
+using Giac.GenTypes: T, INT, VECT
+
 g = giac_eval("42")
-giac_type(g) == GIAC_INT  # true
+giac_type(g) == INT  # true
 
 g = giac_eval("[1, 2, 3]")
-giac_type(g) == GIAC_VECT  # true
+giac_type(g) == VECT  # true
 ```
+
+See also: `Giac.GenTypes` module for type enum values
 """
-function giac_type(g::GiacExpr)::Int32
+function giac_type(g::GiacExpr)::T
     if g.ptr == C_NULL
         throw(GiacError("Cannot get type of null expression", :type))
     end
@@ -137,7 +56,7 @@ function giac_type(g::GiacExpr)::Int32
             expr_str = string(g)
             try
                 gen = GiacCxxBindings.giac_eval(expr_str)
-                return Int32(GiacCxxBindings.type(gen))
+                return T(GiacCxxBindings.type(gen))
             catch e
                 @debug "Failed to get type via CxxWrap: $e"
             end
@@ -153,13 +72,13 @@ end
 
 Return the subtype for vector expressions.
 
-For vectors, returns `GIAC_SEQ_VECT`, `GIAC_SET_VECT`, `GIAC_LIST_VECT`,
+For vectors, returns `1` (sequence), `2` (set), `3` (list),
 or `0` for standard vectors.
 
 # Example
 ```julia
 g = giac_eval("{1, 2, 3}")  # set
-subtype(g) == GIAC_SET_VECT  # true
+subtype(g) == 2  # true (set subtype)
 ```
 """
 function subtype(g::GiacExpr)::Int32
@@ -181,24 +100,24 @@ function subtype(g::GiacExpr)::Int32
     end
 end
 
-# Internal helper to convert symbol to type constant
-function _symbol_to_type_const(sym::Symbol)::Int32
+# Internal helper to convert symbol to type constant (returns T enum)
+function _symbol_to_type_const(sym::Symbol)::T
     if sym == :integer
-        return GIAC_INT
+        return INT
     elseif sym == :float
-        return GIAC_DOUBLE
+        return DOUBLE
     elseif sym == :complex
-        return GIAC_CPLX
+        return CPLX
     elseif sym == :rational
-        return GIAC_FRAC
+        return FRAC
     elseif sym == :vector
-        return GIAC_VECT
+        return VECT
     elseif sym == :matrix
-        return GIAC_VECT  # Matrices are stored as vectors in GIAC
+        return VECT  # Matrices are stored as vectors in GIAC
     elseif sym == :symbolic
-        return GIAC_SYMB
+        return SYMB
     else
-        return GIAC_SYMB  # Default to symbolic
+        return SYMB  # Default to symbolic
     end
 end
 
@@ -219,7 +138,7 @@ end
 """
     is_integer(g::GiacExpr) -> Bool
 
-Return `true` if the expression is an integer (`GIAC_INT` or `GIAC_ZINT`).
+Return `true` if the expression is an integer (`INT` or `ZINT`).
 
 # Example
 ```julia
@@ -230,14 +149,14 @@ is_integer(giac_eval("x"))       # false
 """
 function is_integer(g::GiacExpr)::Bool
     t = giac_type(g)
-    return t == GIAC_INT || t == GIAC_ZINT
+    return t == INT || t == ZINT
 end
 
 """
     is_numeric(g::GiacExpr) -> Bool
 
 Return `true` if the expression is a numeric value
-(`GIAC_INT`, `GIAC_DOUBLE`, `GIAC_ZINT`, or `GIAC_REAL`).
+(`INT`, `DOUBLE`, `ZINT`, or `REAL`).
 
 # Example
 ```julia
@@ -248,13 +167,13 @@ is_numeric(giac_eval("x"))       # false
 """
 function is_numeric(g::GiacExpr)::Bool
     t = giac_type(g)
-    return t == GIAC_INT || t == GIAC_DOUBLE || t == GIAC_ZINT || t == GIAC_REAL
+    return t == INT || t == DOUBLE || t == ZINT || t == REAL
 end
 
 """
     is_vector(g::GiacExpr) -> Bool
 
-Return `true` if the expression is a vector/list/sequence (`GIAC_VECT`).
+Return `true` if the expression is a vector/list/sequence (`VECT`).
 
 # Example
 ```julia
@@ -263,13 +182,13 @@ is_vector(giac_eval("42"))         # false
 ```
 """
 function is_vector(g::GiacExpr)::Bool
-    return giac_type(g) == GIAC_VECT
+    return giac_type(g) == VECT
 end
 
 """
     is_symbolic(g::GiacExpr) -> Bool
 
-Return `true` if the expression is symbolic (`GIAC_SYMB`).
+Return `true` if the expression is symbolic (`SYMB`).
 
 # Example
 ```julia
@@ -279,13 +198,13 @@ is_symbolic(giac_eval("42"))      # false
 ```
 """
 function is_symbolic(g::GiacExpr)::Bool
-    return giac_type(g) == GIAC_SYMB
+    return giac_type(g) == SYMB
 end
 
 """
     is_identifier(g::GiacExpr) -> Bool
 
-Return `true` if the expression is an identifier/variable (`GIAC_IDNT`).
+Return `true` if the expression is an identifier/variable (`IDNT`).
 
 # Example
 ```julia
@@ -294,13 +213,13 @@ is_identifier(giac_eval("x + 1"))   # false
 ```
 """
 function is_identifier(g::GiacExpr)::Bool
-    return giac_type(g) == GIAC_IDNT
+    return giac_type(g) == IDNT
 end
 
 """
     is_fraction(g::GiacExpr) -> Bool
 
-Return `true` if the expression is a rational fraction (`GIAC_FRAC`).
+Return `true` if the expression is a rational fraction (`FRAC`).
 
 # Example
 ```julia
@@ -309,13 +228,13 @@ is_fraction(giac_eval("42"))     # false
 ```
 """
 function is_fraction(g::GiacExpr)::Bool
-    return giac_type(g) == GIAC_FRAC
+    return giac_type(g) == FRAC
 end
 
 """
     is_complex(g::GiacExpr) -> Bool
 
-Return `true` if the expression is a complex number (`GIAC_CPLX`).
+Return `true` if the expression is a complex number (`CPLX`).
 
 # Example
 ```julia
@@ -324,13 +243,13 @@ is_complex(giac_eval("42"))      # false
 ```
 """
 function is_complex(g::GiacExpr)::Bool
-    return giac_type(g) == GIAC_CPLX
+    return giac_type(g) == CPLX
 end
 
 """
     is_string(g::GiacExpr) -> Bool
 
-Return `true` if the expression is a string (`GIAC_STRNG`).
+Return `true` if the expression is a string (`STRNG`).
 
 # Example
 ```julia
@@ -339,7 +258,7 @@ is_string(giac_eval("42"))         # false
 ```
 """
 function is_string(g::GiacExpr)::Bool
-    return giac_type(g) == GIAC_STRNG
+    return giac_type(g) == STRNG
 end
 
 """
@@ -347,7 +266,7 @@ end
 
 Return `true` if the expression represents a boolean value (`true` or `false`).
 
-Note: GIAC represents booleans as integers internally (type `GIAC_INT`), but
+Note: GIAC represents booleans as integers internally (type `INT`), but
 displays them as "true" or "false". This function detects boolean values by
 checking the string representation.
 
@@ -389,9 +308,9 @@ function numer(g::GiacExpr)::GiacExpr
     end
 
     t = giac_type(g)
-    if t == GIAC_INT || t == GIAC_ZINT
+    if t == INT || t == ZINT
         return g  # Integer is its own numerator
-    elseif t == GIAC_FRAC
+    elseif t == FRAC
         # Use existing _giac_rational_num or CxxWrap frac_num
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
@@ -427,9 +346,9 @@ function denom(g::GiacExpr)::GiacExpr
     end
 
     t = giac_type(g)
-    if t == GIAC_INT || t == GIAC_ZINT
+    if t == INT || t == ZINT
         return giac_eval("1")  # Integer has denominator 1
-    elseif t == GIAC_FRAC
+    elseif t == FRAC
         # Use existing _giac_rational_den or CxxWrap frac_den
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
@@ -465,7 +384,7 @@ function real_part(g::GiacExpr)::GiacExpr
     end
 
     t = giac_type(g)
-    if t == GIAC_CPLX
+    if t == CPLX
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
                 gen = _ptr_to_gen(g)
@@ -500,7 +419,7 @@ function imag_part(g::GiacExpr)::GiacExpr
     end
 
     t = giac_type(g)
-    if t == GIAC_CPLX
+    if t == CPLX
         with_giac_lock() do
             if !_stub_mode[] && GiacCxxBindings._have_library
                 gen = _ptr_to_gen(g)
@@ -533,7 +452,7 @@ function symb_funcname(g::GiacExpr)::String
         throw(GiacError("Cannot get function name of null expression", :type))
     end
 
-    if giac_type(g) != GIAC_SYMB
+    if giac_type(g) != SYMB
         throw(GiacError("Gen is not symbolic", :type))
     end
 
@@ -567,7 +486,7 @@ function symb_argument(g::GiacExpr)::GiacExpr
         throw(GiacError("Cannot get argument of null expression", :type))
     end
 
-    if giac_type(g) != GIAC_SYMB
+    if giac_type(g) != SYMB
         throw(GiacError("Gen is not symbolic", :type))
     end
 

@@ -274,29 +274,41 @@ Giac.is_string
 Giac.is_boolean
 ```
 
-### Type Constants
+### Type Enum (GenTypes)
 
-| Constant | Description |
-|----------|-------------|
-| `GIAC_INT` | Machine integer (Int64) |
-| `GIAC_DOUBLE` | Double-precision float (Float64) |
-| `GIAC_ZINT` | Arbitrary-precision integer (BigInt) |
-| `GIAC_REAL` | Extended precision real |
-| `GIAC_CPLX` | Complex number |
-| `GIAC_VECT` | Vector/list/sequence |
-| `GIAC_SYMB` | Symbolic expression |
-| `GIAC_IDNT` | Identifier/variable |
-| `GIAC_STRNG` | String value |
-| `GIAC_FRAC` | Rational fraction |
-| `GIAC_FUNC` | Function reference |
+GIAC expression types are available via the `Giac.GenTypes` module with the `T` enum:
 
-### Vector Subtype Constants
+```julia
+using Giac.GenTypes: T, INT, DOUBLE, VECT, SYMB
 
-| Constant | Description |
-|----------|-------------|
-| `GIAC_SEQ_VECT` | Sequence (function arguments) |
-| `GIAC_SET_VECT` | Set (unordered collection) |
-| `GIAC_LIST_VECT` | List (ordered collection) |
+giac_type(expr) == INT   # Check if expression is an integer
+giac_type(expr) == VECT  # Check if expression is a vector
+```
+
+| Enum Value | Int | Description |
+|------------|-----|-------------|
+| `INT` | 0 | Machine integer (Int64) |
+| `DOUBLE` | 1 | Double-precision float (Float64) |
+| `ZINT` | 2 | Arbitrary-precision integer (BigInt) |
+| `REAL` | 3 | Extended precision real |
+| `CPLX` | 4 | Complex number |
+| `POLY` | 5 | Polynomial |
+| `IDNT` | 6 | Identifier/variable |
+| `VECT` | 7 | Vector/list/sequence |
+| `SYMB` | 8 | Symbolic expression |
+| `SPOL1` | 9 | Sparse polynomial |
+| `FRAC` | 10 | Rational fraction |
+| `EXT` | 11 | Algebraic extension |
+| `STRNG` | 12 | String value |
+| `FUNC` | 13 | Function reference |
+| `ROOT` | 14 | Polynomial root |
+| `MOD` | 15 | Modular arithmetic |
+| `USER` | 16 | User-defined type |
+| `MAP` | 17 | Map/dictionary |
+| `EQW` | 18 | Equation writer data |
+| `GROB` | 19 | Graphic object |
+| `POINTER` | 20 | Raw pointer |
+| `FLOAT` | 21 | Float value |
 
 ## Component Access
 

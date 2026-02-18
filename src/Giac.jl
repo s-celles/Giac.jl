@@ -76,6 +76,9 @@ include("macros.jl")
 include("tables.jl")
 include("substitute.jl")
 
+# GenTypes module - Scoped enum for GIAC types (041-scoped-type-enum)
+include("gen_types.jl")
+
 # Output handling (029-output-handling)
 include("introspection.jl")
 include("conversion.jl")
@@ -116,10 +119,8 @@ export commands_table, clear_commands_cache!, CommandsTable
 # Substitute function (028-substitute-mechanism)
 export substitute
 
-# Type introspection (029-output-handling)
-export GIAC_INT, GIAC_DOUBLE, GIAC_ZINT, GIAC_REAL, GIAC_CPLX, GIAC_VECT
-export GIAC_SYMB, GIAC_IDNT, GIAC_STRNG, GIAC_FRAC, GIAC_FUNC
-export GIAC_SEQ_VECT, GIAC_SET_VECT, GIAC_LIST_VECT
+# Type introspection (029-output-handling, 041-scoped-type-enum)
+# Legacy GIAC_* constants removed - use Giac.GenTypes: T, INT, DOUBLE, etc.
 export giac_type, subtype
 export is_integer, is_numeric, is_vector, is_symbolic, is_identifier
 export is_fraction, is_complex, is_string, is_boolean

@@ -2,6 +2,9 @@
 # Provides extended to_julia functionality with vector/complex/fraction support
 #
 # Part of feature 029-output-handling, 030-to-julia-bool-conversion
+# Updated for 041-scoped-type-enum: Uses GenTypes.T enum instead of GIAC_* constants
+
+using .GenTypes: T, INT, DOUBLE, ZINT, REAL, CPLX, VECT, SYMB, IDNT, FRAC, STRNG, FUNC
 
 # ============================================================================
 # Extended to_julia Conversion
@@ -16,14 +19,14 @@ Recursively convert a GIAC expression to native Julia types.
 | GIAC Type | Julia Return Type |
 |-----------|-------------------|
 | Boolean (`true`/`false`) | `Bool` |
-| `GIAC_INT` | `Int64` |
-| `GIAC_ZINT` | `BigInt` |
-| `GIAC_DOUBLE`, `GIAC_REAL` | `Float64` |
-| `GIAC_FRAC` | `Rational{Int64}` or `Rational{BigInt}` |
-| `GIAC_CPLX` | `Complex{T}` (T promoted from parts) |
-| `GIAC_VECT` | `Vector{T}` (T narrowed from elements) |
-| `GIAC_STRNG` | `String` |
-| `GIAC_SYMB`, `GIAC_IDNT`, `GIAC_FUNC` | `GiacExpr` (unchanged) |
+| `INT` | `Int64` |
+| `ZINT` | `BigInt` |
+| `DOUBLE`, `REAL` | `Float64` |
+| `FRAC` | `Rational{Int64}` or `Rational{BigInt}` |
+| `CPLX` | `Complex{T}` (T promoted from parts) |
+| `VECT` | `Vector{T}` (T narrowed from elements) |
+| `STRNG` | `String` |
+| `SYMB`, `IDNT`, `FUNC` | `GiacExpr` (unchanged) |
 
 Note: GIAC represents booleans as integers internally, but `to_julia` detects them
 via their string representation ("true"/"false") and returns Julia `Bool` values.
@@ -69,27 +72,27 @@ function to_julia(g::GiacExpr)
 end
 
 # Internal dispatcher based on type constant
-function _convert_by_type(g::GiacExpr, t::Int32)
-    if t == GIAC_INT
+function _convert_by_type(g::GiacExpr, t::T)
+    if t == INT
         # Check for boolean before integer conversion (030-to-julia-bool-conversion)
         if is_boolean(g)
             return _convert_to_bool(g)
         end
         return _convert_to_int64(g)
-    elseif t == GIAC_DOUBLE || t == GIAC_REAL
+    elseif t == DOUBLE || t == REAL
         return _convert_to_float64(g)
-    elseif t == GIAC_ZINT
+    elseif t == ZINT
         return _convert_to_bigint(g)
-    elseif t == GIAC_FRAC
+    elseif t == FRAC
         return _convert_to_rational(g)
-    elseif t == GIAC_CPLX
+    elseif t == CPLX
         return _convert_to_complex(g)
-    elseif t == GIAC_VECT
+    elseif t == VECT
         return _convert_to_vector(g)
-    elseif t == GIAC_STRNG
+    elseif t == STRNG
         return _convert_to_string(g)
     else
-        # Symbolic types (GIAC_SYMB, GIAC_IDNT, GIAC_FUNC) - return unchanged
+        # Symbolic types (SYMB, IDNT, FUNC) - return unchanged
         return g
     end
 end
@@ -143,7 +146,7 @@ function _convert_to_rational(g::GiacExpr)
     den_type = giac_type(den_expr)
 
     # Check if either is BigInt (ZINT)
-    if num_type == GIAC_ZINT || den_type == GIAC_ZINT
+    if num_type == ZINT || den_type == ZINT
         num = to_julia(num_expr)::Union{Int64, BigInt}
         den = to_julia(den_expr)::Union{Int64, BigInt}
         return Rational{BigInt}(BigInt(num), BigInt(den))
@@ -210,7 +213,7 @@ Check if a GiacExpr can be fully converted to native Julia types
 """
 function _can_convert_fully(g::GiacExpr)::Bool
     t = giac_type(g)
-    if t == GIAC_VECT
+    if t == VECT
         # For vectors, recursively check all elements
         n = _vector_length(g)
         for i in 1:n
@@ -220,11 +223,11 @@ function _can_convert_fully(g::GiacExpr)::Bool
             end
         end
         return true
-    elseif t in (GIAC_INT, GIAC_DOUBLE, GIAC_REAL, GIAC_ZINT, GIAC_FRAC, GIAC_CPLX, GIAC_STRNG)
+    elseif t in (INT, DOUBLE, REAL, ZINT, FRAC, CPLX, STRNG)
         # Numeric and string types can be fully converted
         return true
     else
-        # GIAC_SYMB, GIAC_IDNT, GIAC_FUNC - symbolic, cannot fully convert
+        # SYMB, IDNT, FUNC - symbolic, cannot fully convert
         return false
     end
 end
@@ -302,9 +305,9 @@ Convert an integer GiacExpr to Int64.
 """
 function Base.convert(::Type{Int64}, g::GiacExpr)::Int64
     t = giac_type(g)
-    if t == GIAC_INT
+    if t == INT
         return _convert_to_int64(g)
-    elseif t == GIAC_ZINT
+    elseif t == ZINT
         big = _convert_to_bigint(g)
         if big > typemax(Int64) || big < typemin(Int64)
             throw(InexactError(:convert, Int64, big))
@@ -322,13 +325,13 @@ Convert a numeric GiacExpr to Float64.
 """
 function Base.convert(::Type{Float64}, g::GiacExpr)::Float64
     t = giac_type(g)
-    if t == GIAC_DOUBLE || t == GIAC_REAL
+    if t == DOUBLE || t == REAL
         return _convert_to_float64(g)
-    elseif t == GIAC_INT
+    elseif t == INT
         return Float64(_convert_to_int64(g))
-    elseif t == GIAC_ZINT
+    elseif t == ZINT
         return Float64(_convert_to_bigint(g))
-    elseif t == GIAC_FRAC
+    elseif t == FRAC
         r = _convert_to_rational(g)
         return Float64(r)
     else
@@ -355,11 +358,11 @@ Convert a fraction or integer GiacExpr to a Rational.
 """
 function Base.convert(::Type{Rational}, g::GiacExpr)::Rational
     t = giac_type(g)
-    if t == GIAC_FRAC
+    if t == FRAC
         return _convert_to_rational(g)
-    elseif t == GIAC_INT
+    elseif t == INT
         return Rational(_convert_to_int64(g))
-    elseif t == GIAC_ZINT
+    elseif t == ZINT
         return Rational(_convert_to_bigint(g))
     else
         throw(MethodError(convert, (Rational, g)))
@@ -373,7 +376,7 @@ Convert a complex GiacExpr to a Julia Complex.
 """
 function Base.convert(::Type{Complex}, g::GiacExpr)::Complex
     t = giac_type(g)
-    if t == GIAC_CPLX
+    if t == CPLX
         return _convert_to_complex(g)
     elseif is_numeric(g)
         # Numeric but not complex - treat as real
@@ -415,7 +418,7 @@ function Base.convert(::Type{Bool}, g::GiacExpr)::Bool
 
     # Allow integer 0/1 to convert to Bool (standard Julia behavior)
     t = giac_type(g)
-    if t == GIAC_INT
+    if t == INT
         val = _convert_to_int64(g)
         if val == 0
             return false

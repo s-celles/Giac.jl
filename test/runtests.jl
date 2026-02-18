@@ -103,6 +103,12 @@ using LinearAlgebra
     # Verifies Laplace transform and inverse Laplace transform functions
     # ============================================================================
     include("test_laplace.jl")
+
+    # ============================================================================
+    # GenTypes Module Tests (041-scoped-type-enum)
+    # Verifies T enum for GIAC expression types
+    # ============================================================================
+    include("test_gen_types.jl")
 end
 
 # Aqua.jl package quality tests

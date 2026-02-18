@@ -119,5 +119,5 @@ invoke_cmd(:ilaplace, 1/(s+a), s, t)
 ## See Also
 
 - [Discrete-Time Transforms](discrete_transforms.md) - Z-transform and inverse Z-transform
-- [Calculus Operations](../math/calculus.md) - Integration, differentiation, and limits
+- [Calculus Operations](../../mathematics/calculus.md) - Integration, differentiation, and limits
 - [GIAC Laplace Documentation](https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/doc/en/cascmd_en/cascmd_en466.html) - Official GIAC documentation
