@@ -23,7 +23,7 @@ graph TB
 | Tier | Mechanism | Performance | Use Case |
 |------|-----------|-------------|----------|
 | **Tier 1** | Direct C++ function call | Fastest (~1-10μs) | Frequently-used mathematical functions |
-| **Tier 2** | Generic `apply_func` dispatch | Medium (~10-100μs) | Functions with C++ wrappers, 1-3 args |
+| **Tier 2** | Generic `apply_funcN` dispatch | Medium (~10-100μs) | Functions with C++ wrappers, any arity |
 | **Tier 3** | String concatenation & eval | Slowest (~100μs-1ms) | All 2200+ GIAC commands (fallback) |
 
 ## Tier 1: Direct C++ Wrappers
@@ -81,35 +81,67 @@ Located in `wrapper.jl`:
 
 ## Tier 2: Generic C++ Dispatch
 
-Tier 2 uses C++ generic dispatch functions (`apply_func`, `apply_func2`, `apply_func3`) to call GIAC functions by name with moderate overhead.
+Tier 2 uses C++ generic dispatch functions (`apply_func0`, `apply_func1`, `apply_func2`, `apply_func3`, `apply_funcN`) to call GIAC functions by name with moderate overhead.
+
+### Available Functions
+
+| Function | Arity | Description |
+|----------|-------|-------------|
+| `apply_func0(name)` | 0 | Zero-argument functions (e.g., `rand()`) |
+| `apply_func1(name, arg)` | 1 | Single-argument functions |
+| `apply_func2(name, arg1, arg2)` | 2 | Two-argument functions |
+| `apply_func3(name, arg1, arg2, arg3)` | 3 | Three-argument functions |
+| `apply_funcN(name, args)` | N | N-argument functions via `StdVector{Gen}` |
 
 ### How It Works
 
 ```julia
-# In wrapper.jl (lines 905-938)
+# In wrapper.jl
 function _apply_func_generic(name::String, args::Vector{String})::Ptr{Cvoid}
     gen_args = [GiacCxxBindings.giac_eval(arg) for arg in args]
 
-    result_gen = if length(gen_args) == 1
-        GiacCxxBindings.apply_func(name, gen_args[1])
+    result_gen = if length(gen_args) == 0
+        GiacCxxBindings.apply_func0(name)
+    elseif length(gen_args) == 1
+        GiacCxxBindings.apply_func1(name, gen_args[1])
     elseif length(gen_args) == 2
         GiacCxxBindings.apply_func2(name, gen_args[1], gen_args[2])
     elseif length(gen_args) == 3
         GiacCxxBindings.apply_func3(name, gen_args[1], gen_args[2], gen_args[3])
     else
-        # Fall back to Tier 3 for 0 or >3 args
-        return _giac_eval_string(cmd_string, C_NULL)
+        # N>3 args: use apply_funcN with StdVector
+        std_vec = GiacCxxBindings.StdVector{GiacCxxBindings.Gen}()
+        for g in gen_args
+            push!(std_vec, g)
+        end
+        GiacCxxBindings.apply_funcN(name, std_vec)
     end
 
     return _make_stub_ptr(GiacCxxBindings.to_string(result_gen))
 end
 ```
 
+### Examples of N-ary Functions (4+ parameters)
+
+```julia
+# series(expr, var, point, order) - 4 params
+giac_eval("series(exp(x),x,0,4)")  # Taylor expansion
+
+# sum(expr, var, start, end) - 4 params
+giac_eval("sum(k,k,1,10)")  # = 55
+
+# product(expr, var, start, end) - 4 params
+giac_eval("product(k,k,1,5)")  # = 120
+
+# seq(expr, var, start, end) - 4 params
+giac_eval("seq(k^2,k,1,5)")  # = [1,4,9,16,25]
+```
+
 ### When Tier 2 Is Used
 
-- Functions with 1-3 arguments that don't have Tier 1 wrappers
+- Functions with any number of arguments that don't have Tier 1 wrappers
 - Automatic fallback when Tier 1 fails
-- When `giac_cmd` is called for supported arities
+- When `giac_cmd` is called
 
 ## Tier 3: String Evaluation
 
@@ -217,11 +249,9 @@ Base.gcd(a::GiacExpr, b::GiacExpr)::GiacExpr =
 flowchart TD
     A[New Function] --> B{Frequently used?}
     B -->|Yes| C{C++ wrapper exists?}
-    B -->|No| D[Use Tier 3: giac_cmd]
+    B -->|No| D[Use Tier 2/3: giac_cmd]
     C -->|Yes| E[Add Tier 1 wrapper]
-    C -->|No| F{1-3 arguments?}
-    F -->|Yes| G[Tier 2 automatic]
-    F -->|No| D
+    C -->|No| F[Tier 2 automatic for any arity]
 ```
 
 ### Performance Comparison
@@ -242,8 +272,8 @@ Tier 1 falls back to Tier 3 when:
 - The library is in stub mode (testing)
 
 Tier 2 falls back to Tier 3 when:
-- More than 3 arguments
 - Generic dispatch fails
+- An exception occurs during evaluation
 
 ## Determining Which Tier Is Used
 
@@ -251,14 +281,14 @@ To predict which tier handles a function call:
 
 1. **Check if it's a Base extension** (sin, cos, sqrt, etc.):
    - If Tier 1 function exists → Tier 1 with fallback
-   - Otherwise → Tier 3
+   - Otherwise → Tier 2/3
 
 2. **Using `giac_cmd` directly**:
-   - 1-3 args with C++ support → Tier 2
-   - Otherwise → Tier 3
+   - Any arity with C++ support → Tier 2
+   - Fallback on error → Tier 3
 
 3. **Using Commands submodule** (`using Giac.Commands: factor`):
-   - Always Tier 3 (goes through `invoke_cmd`)
+   - Goes through `invoke_cmd` → Tier 2/3
 
 ## See Also
 
