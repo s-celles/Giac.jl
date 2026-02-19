@@ -916,18 +916,15 @@ function _apply_func_generic(name::String, args::Vector{String})::Ptr{Cvoid}
 
             # Call appropriate apply_func based on arity
             result_gen = if length(gen_args) == 0
-                # Zero args: fall back to string evaluation
-                cmd_string = name * "()"
-                return _giac_eval_string(cmd_string, C_NULL)
+                GiacCxxBindings.apply_func0(name)
             elseif length(gen_args) == 1
-                GiacCxxBindings.apply_func(name, gen_args[1])
+                GiacCxxBindings.apply_func1(name, gen_args[1])
             elseif length(gen_args) == 2
                 GiacCxxBindings.apply_func2(name, gen_args[1], gen_args[2])
             elseif length(gen_args) == 3
                 GiacCxxBindings.apply_func3(name, gen_args[1], gen_args[2], gen_args[3])
             else
                 # N>3 args: use apply_funcN with StdVector
-                # CxxWrap's STL support provides StdVector{Gen} type
                 std_vec = GiacCxxBindings.StdVector{GiacCxxBindings.Gen}()
                 for g in gen_args
                     push!(std_vec, g)
