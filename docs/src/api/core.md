@@ -310,6 +310,11 @@ giac_type(expr) == VECT  # Check if expression is a vector
 | `POINTER` | 20 | Raw pointer |
 | `FLOAT` | 21 | Float value |
 
+```@docs
+Giac.GenTypes
+Giac.GenTypes.T
+```
+
 ## Component Access
 
 Functions for accessing components of compound types:

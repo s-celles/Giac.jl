@@ -108,7 +108,4 @@ Mathematical constants:
 
 ## API Reference
 
-```@docs
-to_giac
-to_symbolics
-```
+See the [Conversion Functions](../api/core.md#conversion-functions) section in the Core API documentation for the full API reference of `to_giac` and `to_symbolics`.

@@ -39,7 +39,7 @@ The enum values match the C++ `gen_unary_types` enum:
 - Types 0-1 and 20-21 are "immediate" (no memory allocation)
 - Types 2-19 are "pointer" types (require memory allocation)
 
-See also: [`giac_type`](@ref)
+See also: [`Giac.giac_type`](@ref)
 """
 module GenTypes
 
