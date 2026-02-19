@@ -43,7 +43,7 @@ GIAC commands are available through multiple access patterns:
 using Giac
 using Giac.Commands: factor, expand, ifactor
 
-@giac_var
+@giac_var x
 factor(x^2 - 1)
 ```
 
