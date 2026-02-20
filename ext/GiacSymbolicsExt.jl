@@ -67,16 +67,6 @@ const JULIA_TO_GIAC_NAME = Dict{Function, String}(
 # ============================================================================
 
 """
-    _get_held_gen(expr_str::AbstractString)
-
-Get a Gen object for the expression with structure preserved using hold().
-"""
-function _get_held_gen(expr_str::AbstractString)
-    held_str = "hold($expr_str)"
-    return Giac.GiacCxxBindings.giac_eval(held_str)
-end
-
-"""
     _bytes_to_bigint(bytes::Vector{UInt8}, sign::Int32) -> BigInt
 
 Construct a BigInt from raw bytes and sign using direct GMP ccall.
@@ -402,11 +392,10 @@ function Giac.to_symbolics(expr::GiacExpr)
     end
 
     var_cache = Dict{String, Num}()
-    expr_str = string(expr)
-
-    # Use hold() to preserve structure and convert via tree traversal
-    held_gen = _get_held_gen(expr_str)
-    return _gen_tree_to_symbolics(held_gen, var_cache)
+    # Feature 052: Direct pointer conversion without string serialization
+    # Use _ptr_to_gen to get Gen directly from the GiacExpr pointer
+    gen = Giac._ptr_to_gen(expr)
+    return _gen_tree_to_symbolics(gen, var_cache)
 end
 
 # Export conversion functions

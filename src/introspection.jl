@@ -123,10 +123,12 @@ end
 
 # Internal helper to convert GiacExpr to CxxWrap Gen
 # Used for vector operations and other CxxWrap-based conversions
+# Feature 052: Direct pointer conversion without string serialization
 function _ptr_to_gen(g::GiacExpr)
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = string(g)
-        return GiacCxxBindings.giac_eval(expr_str)
+        # Direct conversion via gen_from_heap_ptr (no string serialization)
+        # CxxWrap expects Ptr{Nothing} (void*)
+        return GiacCxxBindings.gen_from_heap_ptr(Ptr{Nothing}(g.ptr))
     end
     return nothing
 end
