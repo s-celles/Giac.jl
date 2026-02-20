@@ -41,6 +41,11 @@ const PRESERVABLE_FUNCTIONS = Dict{String, Function}(
     "tanh" => tanh,
     # Other
     "abs" => abs,
+    # Comparison and rounding - Feature 050
+    "max" => max,
+    "min" => min,
+    "floor" => floor,
+    "sign" => sign,
 )
 
 # ============================================================================
@@ -433,6 +438,16 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
         bytes = Vector{UInt8}(Giac.GiacCxxBindings.zint_to_bytes(gen))
         sign = Int32(Giac.GiacCxxBindings.zint_sign(gen))
         return Num(_bytes_to_bigint(bytes, sign))
+    elseif t == Giac.GenTypes.CPLX
+        # Complex number - Feature 050
+        # Use direct C++ accessors for real and imaginary parts
+        re_gen = Giac.GiacCxxBindings.cplx_re(gen)
+        im_gen = Giac.GiacCxxBindings.cplx_im(gen)
+        # Recursively convert both parts
+        re_sym = _gen_tree_to_symbolics(re_gen, var_cache)
+        im_sym = _gen_tree_to_symbolics(im_gen, var_cache)
+        # Return Complex - don't wrap in Num (causes ambiguity error)
+        return Symbolics.unwrap(re_sym) + Symbolics.unwrap(im_sym) * im
     elseif t == Giac.GenTypes.IDNT
         # Identifier/variable: use dedicated idnt_name accessor
         name = String(Giac.GiacCxxBindings.idnt_name(gen))
@@ -562,7 +577,8 @@ function Giac.to_symbolics(expr::GiacExpr)
             # Use tree-based conversion for most types
             # This ensures consistent Num wrapping
             if held_type in (Giac.GenTypes.INT, Giac.GenTypes.DOUBLE, Giac.GenTypes.IDNT,
-                             Giac.GenTypes.VECT, Giac.GenTypes.SYMB, Giac.GenTypes.FRAC)
+                             Giac.GenTypes.VECT, Giac.GenTypes.SYMB, Giac.GenTypes.FRAC,
+                             Giac.GenTypes.CPLX)  # Feature 050: CPLX direct handling
                 return _gen_tree_to_symbolics(held_gen, var_cache)
             end
         catch e
