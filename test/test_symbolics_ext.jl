@@ -8,43 +8,8 @@ using Symbolics.SymbolicUtils: Term
 
 @testset "Symbolics Extension - Symbolic Preservation" begin
 
-    # ============================================================================
-    # Foundational Helper Tests (Phase 2) - T008
-    # ============================================================================
-    @testset "Foundational Helpers" begin
-        # Access internal functions via the extension module
-        ext = Base.get_extension(Giac, :GiacSymbolicsExt)
-        if ext !== nothing
-            # T008: Tests for _is_function_call
-            @testset "_is_function_call" begin
-                @test ext._is_function_call("sqrt(2)") == true
-                @test ext._is_function_call("sin(x + 1)") == true
-                @test ext._is_function_call("f(a, b, c)") == true
-                @test ext._is_function_call("x + 1") == false
-                @test ext._is_function_call("123") == false
-                @test ext._is_function_call("x") == false
-            end
-
-            # T008: Tests for _extract_function_parts
-            @testset "_extract_function_parts" begin
-                @test ext._extract_function_parts("sqrt(2)") == ("sqrt", "2")
-                @test ext._extract_function_parts("sin(x + 1)") == ("sin", "x + 1")
-                @test ext._extract_function_parts("f(a, b, c)") == ("f", "a, b, c")
-            end
-
-            # T008: Tests for _split_args
-            @testset "_split_args" begin
-                @test ext._split_args("a, b, c") == ["a", "b", "c"]
-                @test ext._split_args("f(x), g(y)") == ["f(x)", "g(y)"]
-                @test ext._split_args("a + b, c * d") == ["a + b", "c * d"]
-                @test ext._split_args("") == String[]
-                @test ext._split_args("single") == ["single"]
-            end
-        else
-            @warn "Skipping helper tests - GiacSymbolicsExt not loaded"
-            @test_broken false
-        end
-    end
+    # Note: String parsing helper functions (_is_function_call, _extract_function_parts,
+    # _split_args) were removed in Feature 050 as stub mode is no longer supported.
 
     # ============================================================================
     # User Story 1: Square Root Preservation (P1 - MVP)
