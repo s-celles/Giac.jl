@@ -672,13 +672,15 @@ mutable struct GiacMatrix
     ptr::Ptr{Cvoid}
     rows::Int
     cols::Int
+    _source::Union{GiacExpr, Nothing}  # Keep reference to prevent GC of source
 
-    function GiacMatrix(ptr::Ptr{Cvoid}, rows::Int, cols::Int)
+    function GiacMatrix(ptr::Ptr{Cvoid}, rows::Int, cols::Int, source::Union{GiacExpr, Nothing}=nothing)
         if rows <= 0 || cols <= 0
             throw(ArgumentError("Matrix dimensions must be positive"))
         end
-        obj = new(ptr, rows, cols)
-        if ptr != C_NULL
+        obj = new(ptr, rows, cols, source)
+        # Only register finalizer if we don't have a source (we own the ptr)
+        if ptr != C_NULL && source === nothing
             finalizer(_finalize_giacmatrix, obj)
         end
         return obj
@@ -735,8 +737,8 @@ function GiacMatrix(expr::GiacExpr)
         throw(ArgumentError("Matrix has no columns"))
     end
 
-    # Use the expression's pointer directly
-    return GiacMatrix(expr.ptr, nrows, ncols)
+    # Use the expression's pointer directly, keeping reference to prevent GC
+    return GiacMatrix(expr.ptr, nrows, ncols, expr)
 end
 
 """
