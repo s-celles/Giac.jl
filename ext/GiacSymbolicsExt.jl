@@ -11,42 +11,42 @@ using Symbolics
 import Symbolics.SymbolicUtils: Sym, symtype
 
 # ============================================================================
-# Preservable Functions Mapping (T004)
-# Maps GIAC function names to Julia Base functions for symbolic term construction
+# GIAC to Julia Name Mapping
+# Only needed for function names that differ between GIAC and Julia
 # ============================================================================
 
 """
-    PRESERVABLE_FUNCTIONS
+    GIAC_NAME_MAPPING
 
-Dictionary mapping GIAC function names to Julia functions.
-These functions will be preserved as symbolic expressions rather than evaluated.
+Dictionary mapping GIAC function names to Julia functions where names differ.
+For functions with identical names, Julia functions are resolved dynamically.
 """
-const PRESERVABLE_FUNCTIONS = Dict{String, Function}(
-    # Square and cube roots (US1, US2)
-    "sqrt" => sqrt,
-    # Exponential and logarithmic (US2)
-    "exp" => exp,
-    "log" => log,
-    "ln" => log,
-    # Trigonometric (US2)
-    "sin" => sin,
-    "cos" => cos,
-    "tan" => tan,
-    "asin" => asin,
-    "acos" => acos,
-    "atan" => atan,
-    # Hyperbolic (US2)
-    "sinh" => sinh,
-    "cosh" => cosh,
-    "tanh" => tanh,
-    # Other
-    "abs" => abs,
-    # Comparison and rounding - Feature 050
-    "max" => max,
-    "min" => min,
-    "floor" => floor,
-    "sign" => sign,
+const GIAC_NAME_MAPPING = Dict{String, Function}(
+    "ln" => log,  # GIAC uses "ln", Julia uses "log" (not to be confused with log10, which is "log10" in both)
 )
+
+"""
+    _get_julia_function(giac_name::String) -> Union{Function, Nothing}
+
+Get the Julia function corresponding to a GIAC function name.
+First checks GIAC_NAME_MAPPING for name differences, then tries to resolve
+from Base using the same name. Returns nothing if not found.
+"""
+function _get_julia_function(giac_name::String)::Union{Function, Nothing}
+    # Check name mapping first (for names that differ)
+    if haskey(GIAC_NAME_MAPPING, giac_name)
+        return GIAC_NAME_MAPPING[giac_name]
+    end
+    # Try to get function from Base with same name
+    sym = Symbol(giac_name)
+    if isdefined(Base, sym)
+        f = getfield(Base, sym)
+        if f isa Function
+            return f
+        end
+    end
+    return nothing
+end
 
 # ============================================================================
 # Symbolic Operators Mapping (T010 - Feature 044)
@@ -235,9 +235,9 @@ function _parse_symbolic_expr(s::AbstractString, var_cache::Dict{String, Num})
     if _is_function_call(s)
         funcname, args_str = _extract_function_parts(s)
 
-        # Check if this is a preservable function
-        if haskey(PRESERVABLE_FUNCTIONS, funcname)
-            julia_func = PRESERVABLE_FUNCTIONS[funcname]
+        # Try to resolve Julia function (handles name mapping + Base lookup)
+        julia_func = _get_julia_function(funcname)
+        if julia_func !== nothing
             args = _split_args(args_str)
 
             # Recursively parse arguments
@@ -293,41 +293,34 @@ function _convert_parsed_expr(expr, var_cache::Dict{String, Num})
         elseif expr.head == :call
             func = expr.args[1]
             args = expr.args[2:end]
-
-            # Check if this function should be preserved
             func_name = String(func)
-            if haskey(PRESERVABLE_FUNCTIONS, func_name)
-                julia_func = PRESERVABLE_FUNCTIONS[func_name]
-                converted_args = [_convert_parsed_expr(a, var_cache) for a in args]
+            converted_args = [_convert_parsed_expr(a, var_cache) for a in args]
+
+            # Handle arithmetic operators directly
+            if func == :+
+                return sum(converted_args)
+            elseif func == :-
+                if length(converted_args) == 1
+                    return -converted_args[1]
+                else
+                    return converted_args[1] - converted_args[2]
+                end
+            elseif func == :*
+                return prod(converted_args)
+            elseif func == :/
+                return converted_args[1] / converted_args[2]
+            elseif func == :^
+                return converted_args[1] ^ converted_args[2]
+            end
+
+            # Try to resolve as a symbolic function
+            julia_func = _get_julia_function(func_name)
+            if julia_func !== nothing
                 # Create symbolic term for preservation (cross-version compatible)
                 return Num(Symbolics.term(julia_func, [Symbolics.unwrap(a) for a in converted_args]...))
             else
-                # Standard function call - evaluate normally
-                converted_args = [_convert_parsed_expr(a, var_cache) for a in args]
-                if func == :+
-                    return sum(converted_args)
-                elseif func == :-
-                    if length(converted_args) == 1
-                        return -converted_args[1]
-                    else
-                        return converted_args[1] - converted_args[2]
-                    end
-                elseif func == :*
-                    return prod(converted_args)
-                elseif func == :/
-                    return converted_args[1] / converted_args[2]
-                elseif func == :^
-                    return converted_args[1] ^ converted_args[2]
-                else
-                    # Unknown function - try to evaluate
-                    try
-                        f = getfield(Base, func)
-                        return f(converted_args...)
-                    catch
-                        # Fall back to creating a symbolic call
-                        return Symbolics.parse_expr_to_symbolic(expr, @__MODULE__)
-                    end
-                end
+                # Fall back to creating a symbolic call
+                return Symbolics.parse_expr_to_symbolic(expr, @__MODULE__)
             end
         else
             # Other expression types - fall back
@@ -496,15 +489,18 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
             end
         elseif op == "/"
             return converted_args[1] / converted_args[2]
-        elseif haskey(PRESERVABLE_FUNCTIONS, op)
-            # Preservable function (sqrt, sin, exp, etc.) - cross-version compatible
-            julia_func = PRESERVABLE_FUNCTIONS[op]
-            unwrapped = [Symbolics.unwrap(a) for a in converted_args]
-            return Num(Symbolics.term(julia_func, unwrapped...))
         else
-            # Unknown operator: fall back to string parsing
-            gen_str = String(Giac.GiacCxxBindings.to_string(gen))
-            return _parse_symbolic_expr(gen_str, var_cache)
+            # Try to resolve as a Julia function
+            julia_func = _get_julia_function(op)
+            if julia_func !== nothing
+                # Create symbolic term (cross-version compatible)
+                unwrapped = [Symbolics.unwrap(a) for a in converted_args]
+                return Num(Symbolics.term(julia_func, unwrapped...))
+            else
+                # Unknown operator: fall back to string parsing
+                gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+                return _parse_symbolic_expr(gen_str, var_cache)
+            end
         end
     elseif t == Giac.GenTypes.VECT
         # Vector: convert each element
@@ -589,8 +585,8 @@ function Giac.to_symbolics(expr::GiacExpr)
     # For other expressions or when CxxWrap isn't available,
     # use the string-based parser and wrap in Num for consistency
     result = _parse_symbolic_expr(expr_str, var_cache)
-    # Ensure we return Num for consistency
-    if result isa Number && !(result isa Num)
+    # Ensure we return Num for consistency (but not Complex, which can't be wrapped)
+    if result isa Number && !(result isa Num) && !(result isa Complex)
         return Num(result)
     end
     return result
