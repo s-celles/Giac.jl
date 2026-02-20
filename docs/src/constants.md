@@ -131,3 +131,12 @@ sym_pi = to_symbolics(pi_expr)  # Returns Symbolics.pi
 @variables x
 expr = 2 * sym_pi * x  # Symbolics expression with π
 ```
+
+## API Reference
+
+```@docs
+Giac.Constants
+Giac.Constants.pi
+Giac.Constants.e
+Giac.Constants.i
+```

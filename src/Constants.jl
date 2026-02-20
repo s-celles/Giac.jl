@@ -1,6 +1,8 @@
 # Symbolic mathematical constants for GIAC (053-symbolic-pi-constant)
 # Provides pi, e, i as GiacExpr values instead of Julia's native constants
 
+module Constants
+
 """
     Giac.Constants
 
@@ -58,7 +60,7 @@ using Giac.Constants: pi, e, i
 using Giac.Constants
 ```
 """
-module Constants
+Constants
 
 using ..Giac: GiacExpr, giac_eval
 
