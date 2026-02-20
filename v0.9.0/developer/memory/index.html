@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Memory Management · Giac.jl</title><meta name="title" content="Memory Management · Giac.jl"/><meta property="og:title" content="Memory Management · Giac.jl"/><meta property="twitter:title" content="Memory Management · Giac.jl"/><meta name="description" content="Documentation for Giac.jl."/><meta property="og:description" content="Documentation for Giac.jl."/><meta property="twitter:description" content="Documentation for Giac.jl."/><meta property="og:url" content="https://s-celles.github.io/Giac.jl/developer/memory/"/><meta property="twitter:url" content="https://s-celles.github.io/Giac.jl/developer/memory/"/><link rel="canonical" href="https://s-celles.github.io/Giac.jl/developer/memory/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Giac.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../install/">Installation</a></li><li><a class="tocitem" href="../../quickstart/">Quick Start</a></li><li><a class="tocitem" href="../../variables/">Variable Declaration</a></li><li><a class="tocitem" href="../../constants/">Constants</a></li><li><a class="tocitem" href="../../command_discovery_help/">Command discovery and help</a></li><li><a class="tocitem" href="../../substitute/">Variable Substitution</a></li><li><a class="tocitem" href="../../pluto/">Using with Pluto reactive notebooks</a></li><li><span class="tocitem">Mathematics</span><ul><li><a class="tocitem" href="../../mathematics/algebra/">Algebra</a></li><li><a class="tocitem" href="../../mathematics/calculus/">Calculus</a></li><li><a class="tocitem" href="../../mathematics/linear_algebra/">Linear Algebra</a></li><li><a class="tocitem" href="../../mathematics/differential_equations/">Differential Equations</a></li><li><a class="tocitem" href="../../mathematics/trigonometry/">Trigonometry</a></li></ul></li><li><span class="tocitem">Physics</span><ul><li><a class="tocitem" href="../../physics/mechanics/">Mechanics</a></li><li><a class="tocitem" href="../../physics/electromagnetism/">Electromagnetism</a></li></ul></li><li><span class="tocitem">Signal Processing</span><ul><li><a class="tocitem" href="../../domains/signal/discrete_transforms/">Discrete-Time Transforms</a></li><li><a class="tocitem" href="../../domains/signal/continuous_transforms/">Continuous-Time Transforms</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/core/">Core API</a></li><li><a class="tocitem" href="../../api/giac_commands/">GIAC Commands</a></li><li><a class="tocitem" href="../../api/commands_submodule/">Commands submodule</a></li><li><a class="tocitem" href="../../api/tempapi/">TempApi</a></li></ul></li><li><a class="tocitem" href="../../tables/">Tables.jl Compatibility</a></li><li><span class="tocitem">Extensions</span><ul><li><a class="tocitem" href="../../extensions/symbolics/">Symbolics.jl</a></li></ul></li><li><span class="tocitem">Developer Guide</span><ul><li><a class="tocitem" href="../">Overview</a></li><li><a class="tocitem" href="../architecture/">Package Architecture</a></li><li><a class="tocitem" href="../tier-system/">Performance Tiers</a></li><li><a class="tocitem" href="../contributing/">Adding Functions</a></li><li class="is-active"><a class="tocitem" href>Memory Management</a><ul class="internal"><li><a class="tocitem" href="#Overview"><span>Overview</span></a></li><li><a class="tocitem" href="#GiacExpr-Lifecycle"><span>GiacExpr Lifecycle</span></a></li><li><a class="tocitem" href="#Finalizer-Functions"><span>Finalizer Functions</span></a></li><li><a class="tocitem" href="#Thread-Safety"><span>Thread Safety</span></a></li><li><a class="tocitem" href="#Best-Practices"><span>Best Practices</span></a></li><li><a class="tocitem" href="#Common-Pitfalls"><span>Common Pitfalls</span></a></li><li><a class="tocitem" href="#Debugging-Memory-Issues"><span>Debugging Memory Issues</span></a></li><li><a class="tocitem" href="#See-Also"><span>See Also</span></a></li></ul></li><li><a class="tocitem" href="../troubleshooting/">Troubleshooting</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Developer Guide</a></li><li class="is-active"><a href>Memory Management</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Memory Management</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/s-celles/Giac.jl/blob/main/docs/src/developer/memory.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Memory-Management"><a class="docs-heading-anchor" href="#Memory-Management">Memory Management</a><a id="Memory-Management-1"></a><a class="docs-heading-anchor-permalink" href="#Memory-Management" title="Permalink"></a></h1><p>This guide explains how Giac.jl manages memory for C++ objects, ensuring safe interoperation between Julia&#39;s garbage collector and GIAC&#39;s memory model.</p><h2 id="Overview"><a class="docs-heading-anchor" href="#Overview">Overview</a><a id="Overview-1"></a><a class="docs-heading-anchor-permalink" href="#Overview" title="Permalink"></a></h2><p>Giac.jl wraps C++ objects from the GIAC library. Since Julia&#39;s garbage collector doesn&#39;t know about C++ memory, we use Julia&#39;s finalizer mechanism to ensure proper cleanup.</p><div class="mermaid">graph LR
+    subgraph &quot;Julia&quot;
+        A[GiacExpr]
+        B[Julia GC]
+    end
+
+    subgraph &quot;C++&quot;
+        C[giac::gen]
+        D[libgiac memory]
+    end
+
+    A --&gt;|ptr| C
+    B --&gt;|finalizer| A
+    A -.-&gt;|cleanup| C
+    C --&gt; D</div><h3 id="Key-Principles"><a class="docs-heading-anchor" href="#Key-Principles">Key Principles</a><a id="Key-Principles-1"></a><a class="docs-heading-anchor-permalink" href="#Key-Principles" title="Permalink"></a></h3><ol><li><strong>Every C++ allocation has a corresponding deallocation</strong></li><li><strong>Finalizers ensure cleanup when Julia objects are garbage collected</strong></li><li><strong>Raw pointers are never exposed in the public API</strong></li><li><strong>Thread safety is ensured via locks</strong></li></ol><h2 id="GiacExpr-Lifecycle"><a class="docs-heading-anchor" href="#GiacExpr-Lifecycle">GiacExpr Lifecycle</a><a id="GiacExpr-Lifecycle-1"></a><a class="docs-heading-anchor-permalink" href="#GiacExpr-Lifecycle" title="Permalink"></a></h2><p>Understanding the lifecycle of a <code>GiacExpr</code> is essential for safe development.</p><div class="mermaid">sequenceDiagram
+    participant User
+    participant GiacExpr
+    participant Finalizer
+    participant C++
+
+    User-&gt;&gt;C++: giac_eval(&quot;x^2&quot;)
+    C++--&gt;&gt;GiacExpr: Create with ptr
+    Note over GiacExpr: Register finalizer
+
+    User-&gt;&gt;GiacExpr: Use expression
+    GiacExpr-&gt;&gt;C++: Operations via ptr
+
+    Note over User: GiacExpr goes out of scope
+    User-&gt;&gt;GiacExpr: (unreachable)
+
+    Note over GiacExpr: Julia GC runs
+    GiacExpr-&gt;&gt;Finalizer: Trigger finalizer
+    Finalizer-&gt;&gt;C++: _giac_free_expr(ptr)
+    C++--&gt;&gt;Finalizer: Memory freed</div><h3 id="Creation"><a class="docs-heading-anchor" href="#Creation">Creation</a><a id="Creation-1"></a><a class="docs-heading-anchor-permalink" href="#Creation" title="Permalink"></a></h3><p>When a <code>GiacExpr</code> is created, a finalizer is automatically registered:</p><pre><code class="language-julia hljs"># In types.jl
+mutable struct GiacExpr
+    ptr::Ptr{Cvoid}
+
+    function GiacExpr(ptr::Ptr{Cvoid})
+        expr = new(ptr)
+        finalizer(_finalize_giacexpr, expr)  # Register cleanup
+        return expr
+    end
+end</code></pre><h3 id="Usage"><a class="docs-heading-anchor" href="#Usage">Usage</a><a id="Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Usage" title="Permalink"></a></h3><p>During its lifetime, the <code>GiacExpr</code> can be used normally:</p><pre><code class="language-julia hljs">x = giac_eval(&quot;x&quot;)
+y = sin(x) + cos(x)  # Creates new GiacExpr objects
+result = y.simplify()  # Method-style syntax also works</code></pre><h3 id="Finalization"><a class="docs-heading-anchor" href="#Finalization">Finalization</a><a id="Finalization-1"></a><a class="docs-heading-anchor-permalink" href="#Finalization" title="Permalink"></a></h3><p>When the Julia GC determines the object is unreachable, the finalizer runs:</p><pre><code class="language-julia hljs">function _finalize_giacexpr(expr::GiacExpr)
+    if expr.ptr != C_NULL
+        _giac_free_expr(expr.ptr)  # Call C++ destructor
+        expr.ptr = C_NULL  # Prevent double-free
+    end
+end</code></pre><h2 id="Finalizer-Functions"><a class="docs-heading-anchor" href="#Finalizer-Functions">Finalizer Functions</a><a id="Finalizer-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Finalizer-Functions" title="Permalink"></a></h2><p>Giac.jl defines three finalizer functions for its wrapped types.</p><h3 id="_finalize_giacexpr"><a class="docs-heading-anchor" href="#_finalize_giacexpr"><code>_finalize_giacexpr</code></a><a id="_finalize_giacexpr-1"></a><a class="docs-heading-anchor-permalink" href="#_finalize_giacexpr" title="Permalink"></a></h3><p>Cleans up GIAC expression objects.</p><pre><code class="language-julia hljs">function _finalize_giacexpr(expr::GiacExpr)
+    if expr.ptr != C_NULL
+        _giac_free_expr(expr.ptr)
+        expr.ptr = C_NULL
+    end
+end</code></pre><p><strong>Called when</strong>: A <code>GiacExpr</code> object is garbage collected.</p><h3 id="_finalize_giaccontext"><a class="docs-heading-anchor" href="#_finalize_giaccontext"><code>_finalize_giaccontext</code></a><a id="_finalize_giaccontext-1"></a><a class="docs-heading-anchor-permalink" href="#_finalize_giaccontext" title="Permalink"></a></h3><p>Cleans up GIAC context objects.</p><pre><code class="language-julia hljs">function _finalize_giaccontext(ctx::GiacContext)
+    if ctx.ptr != C_NULL
+        _giac_free_context(ctx.ptr)
+        ctx.ptr = C_NULL
+    end
+end</code></pre><p><strong>Called when</strong>: A <code>GiacContext</code> object is garbage collected.</p><p><strong>Note</strong>: The <code>DEFAULT_CONTEXT</code> is never garbage collected during normal operation since it&#39;s referenced by the module.</p><h3 id="_finalize_giacmatrix"><a class="docs-heading-anchor" href="#_finalize_giacmatrix"><code>_finalize_giacmatrix</code></a><a id="_finalize_giacmatrix-1"></a><a class="docs-heading-anchor-permalink" href="#_finalize_giacmatrix" title="Permalink"></a></h3><p>Cleans up GIAC matrix objects.</p><pre><code class="language-julia hljs">function _finalize_giacmatrix(m::GiacMatrix)
+    if m.ptr != C_NULL
+        _giac_free_matrix(m.ptr)
+        m.ptr = C_NULL
+    end
+end</code></pre><p><strong>Called when</strong>: A <code>GiacMatrix</code> object is garbage collected.</p><h2 id="Thread-Safety"><a class="docs-heading-anchor" href="#Thread-Safety">Thread Safety</a><a id="Thread-Safety-1"></a><a class="docs-heading-anchor-permalink" href="#Thread-Safety" title="Permalink"></a></h2><p>GIAC is not inherently thread-safe, so Giac.jl uses locks to prevent concurrent access.</p><h3 id="The-with_giac_lock-Pattern"><a class="docs-heading-anchor" href="#The-with_giac_lock-Pattern">The <code>with_giac_lock</code> Pattern</a><a id="The-with_giac_lock-Pattern-1"></a><a class="docs-heading-anchor-permalink" href="#The-with_giac_lock-Pattern" title="Permalink"></a></h3><p>All evaluation operations use <code>with_giac_lock</code>:</p><pre><code class="language-julia hljs">function with_giac_lock(f::Function, ctx::GiacContext=DEFAULT_CONTEXT)
+    lock(ctx.lock)
+    try
+        return f()
+    finally
+        unlock(ctx.lock)
+    end
+end</code></pre><h3 id="Usage-in-Code"><a class="docs-heading-anchor" href="#Usage-in-Code">Usage in Code</a><a id="Usage-in-Code-1"></a><a class="docs-heading-anchor-permalink" href="#Usage-in-Code" title="Permalink"></a></h3><pre><code class="language-julia hljs"># In command_utils.jl
+function giac_cmd(cmd::Symbol, args...)::GiacExpr
+    # ... argument processing ...
+
+    return with_giac_lock() do
+        giac_eval(cmd_string)
+    end
+end</code></pre><h3 id="GiacContext-Lock"><a class="docs-heading-anchor" href="#GiacContext-Lock">GiacContext Lock</a><a id="GiacContext-Lock-1"></a><a class="docs-heading-anchor-permalink" href="#GiacContext-Lock" title="Permalink"></a></h3><p>Each <code>GiacContext</code> contains a <code>ReentrantLock</code>:</p><pre><code class="language-julia hljs">mutable struct GiacContext
+    ptr::Ptr{Cvoid}
+    lock::ReentrantLock  # For thread safety
+
+    function GiacContext(ptr::Ptr{Cvoid})
+        ctx = new(ptr, ReentrantLock())
+        finalizer(_finalize_giaccontext, ctx)
+        return ctx
+    end
+end</code></pre><p><strong>Why ReentrantLock?</strong>: Allows the same thread to acquire the lock multiple times (nested calls), which is necessary for complex expression evaluation.</p><h2 id="Best-Practices"><a class="docs-heading-anchor" href="#Best-Practices">Best Practices</a><a id="Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Best-Practices" title="Permalink"></a></h2><h3 id="Do:-Use-Finalizers-for-New-Types"><a class="docs-heading-anchor" href="#Do:-Use-Finalizers-for-New-Types">Do: Use Finalizers for New Types</a><a id="Do:-Use-Finalizers-for-New-Types-1"></a><a class="docs-heading-anchor-permalink" href="#Do:-Use-Finalizers-for-New-Types" title="Permalink"></a></h3><p>If you create a new type that wraps C++ memory:</p><pre><code class="language-julia hljs">mutable struct MyNewType
+    ptr::Ptr{Cvoid}
+
+    function MyNewType(ptr::Ptr{Cvoid})
+        obj = new(ptr)
+        finalizer(_finalize_mynewtype, obj)  # Always register!
+        return obj
+    end
+end
+
+function _finalize_mynewtype(obj::MyNewType)
+    if obj.ptr != C_NULL
+        _my_free_function(obj.ptr)
+        obj.ptr = C_NULL
+    end
+end</code></pre><h3 id="Do:-Check-for-Null-Pointers"><a class="docs-heading-anchor" href="#Do:-Check-for-Null-Pointers">Do: Check for Null Pointers</a><a id="Do:-Check-for-Null-Pointers-1"></a><a class="docs-heading-anchor-permalink" href="#Do:-Check-for-Null-Pointers" title="Permalink"></a></h3><p>Always check before using pointers:</p><pre><code class="language-julia hljs">function safe_operation(expr::GiacExpr)
+    if expr.ptr == C_NULL
+        throw(GiacError(&quot;Expression has been freed&quot;, :memory))
+    end
+    # ... proceed with operation
+end</code></pre><h3 id="Do:-Use-the-Lock-for-Evaluation"><a class="docs-heading-anchor" href="#Do:-Use-the-Lock-for-Evaluation">Do: Use the Lock for Evaluation</a><a id="Do:-Use-the-Lock-for-Evaluation-1"></a><a class="docs-heading-anchor-permalink" href="#Do:-Use-the-Lock-for-Evaluation" title="Permalink"></a></h3><p>Always use <code>with_giac_lock</code> when calling GIAC:</p><pre><code class="language-julia hljs">function my_custom_eval(expr::GiacExpr)
+    return with_giac_lock() do
+        # All GIAC calls inside the lock
+        result = giac_eval(string(expr))
+        return result
+    end
+end</code></pre><h3 id="Don&#39;t:-Expose-Raw-Pointers"><a class="docs-heading-anchor" href="#Don&#39;t:-Expose-Raw-Pointers">Don&#39;t: Expose Raw Pointers</a><a id="Don&#39;t:-Expose-Raw-Pointers-1"></a><a class="docs-heading-anchor-permalink" href="#Don&#39;t:-Expose-Raw-Pointers" title="Permalink"></a></h3><p>Never expose <code>Ptr{Cvoid}</code> in public API:</p><pre><code class="language-julia hljs"># Bad: Exposes internal pointer
+function get_ptr(expr::GiacExpr)
+    return expr.ptr  # Don&#39;t do this!
+end
+
+# Good: Return wrapped type or Julia value
+function get_value(expr::GiacExpr)
+    return to_julia(expr)  # Returns proper Julia type
+end</code></pre><h3 id="Don&#39;t:-Hold-References-Across-Threads"><a class="docs-heading-anchor" href="#Don&#39;t:-Hold-References-Across-Threads">Don&#39;t: Hold References Across Threads</a><a id="Don&#39;t:-Hold-References-Across-Threads-1"></a><a class="docs-heading-anchor-permalink" href="#Don&#39;t:-Hold-References-Across-Threads" title="Permalink"></a></h3><p>Avoid sharing <code>GiacExpr</code> between threads without proper synchronization:</p><pre><code class="language-julia hljs"># Risky: expr shared across threads
+@threads for i in 1:10
+    result = sin(expr)  # Race condition!
+end
+
+# Better: Create local copies or use proper synchronization
+results = Vector{GiacExpr}(undef, 10)
+@threads for i in 1:10
+    local_expr = giac_eval(string(expr))  # Local copy
+    results[i] = sin(local_expr)
+end</code></pre><h3 id="Don&#39;t:-Manually-Free-Memory"><a class="docs-heading-anchor" href="#Don&#39;t:-Manually-Free-Memory">Don&#39;t: Manually Free Memory</a><a id="Don&#39;t:-Manually-Free-Memory-1"></a><a class="docs-heading-anchor-permalink" href="#Don&#39;t:-Manually-Free-Memory" title="Permalink"></a></h3><p>Let finalizers handle cleanup:</p><pre><code class="language-julia hljs"># Bad: Manual memory management
+expr = giac_eval(&quot;x&quot;)
+_giac_free_expr(expr.ptr)  # Don&#39;t do this!
+expr.ptr = C_NULL
+
+# Good: Let Julia GC handle it
+expr = giac_eval(&quot;x&quot;)
+# Just let it go out of scope</code></pre><h2 id="Common-Pitfalls"><a class="docs-heading-anchor" href="#Common-Pitfalls">Common Pitfalls</a><a id="Common-Pitfalls-1"></a><a class="docs-heading-anchor-permalink" href="#Common-Pitfalls" title="Permalink"></a></h2><h3 id="Memory-Leaks"><a class="docs-heading-anchor" href="#Memory-Leaks">Memory Leaks</a><a id="Memory-Leaks-1"></a><a class="docs-heading-anchor-permalink" href="#Memory-Leaks" title="Permalink"></a></h3><p><strong>Symptom</strong>: Memory usage grows over time without bound.</p><p><strong>Cause</strong>: Finalizers not registered, or C++ objects created without wrapping.</p><p><strong>Fix</strong>: Ensure every <code>Ptr{Cvoid}</code> from C++ is wrapped in a Julia type with a finalizer.</p><h3 id="Dangling-Pointers"><a class="docs-heading-anchor" href="#Dangling-Pointers">Dangling Pointers</a><a id="Dangling-Pointers-1"></a><a class="docs-heading-anchor-permalink" href="#Dangling-Pointers" title="Permalink"></a></h3><p><strong>Symptom</strong>: Segmentation fault or garbage values.</p><p><strong>Cause</strong>: Using a pointer after its memory has been freed.</p><p><strong>Fix</strong>: Always check for <code>C_NULL</code> before using pointers; don&#39;t manually free memory.</p><h3 id="Race-Conditions"><a class="docs-heading-anchor" href="#Race-Conditions">Race Conditions</a><a id="Race-Conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Race-Conditions" title="Permalink"></a></h3><p><strong>Symptom</strong>: Intermittent crashes or wrong results with multithreading.</p><p><strong>Cause</strong>: Multiple threads accessing GIAC without synchronization.</p><p><strong>Fix</strong>: Use <code>with_giac_lock</code> for all GIAC operations.</p><h3 id="Double-Free"><a class="docs-heading-anchor" href="#Double-Free">Double Free</a><a id="Double-Free-1"></a><a class="docs-heading-anchor-permalink" href="#Double-Free" title="Permalink"></a></h3><p><strong>Symptom</strong>: Crash with &quot;double free or corruption&quot; error.</p><p><strong>Cause</strong>: Memory freed twice, often from manual <code>_giac_free_*</code> calls.</p><p><strong>Fix</strong>: Never call free functions manually; let finalizers handle it. Set pointer to <code>C_NULL</code> in finalizer to prevent double-free.</p><h2 id="Debugging-Memory-Issues"><a class="docs-heading-anchor" href="#Debugging-Memory-Issues">Debugging Memory Issues</a><a id="Debugging-Memory-Issues-1"></a><a class="docs-heading-anchor-permalink" href="#Debugging-Memory-Issues" title="Permalink"></a></h2><h3 id="Using-Julia&#39;s-GC"><a class="docs-heading-anchor" href="#Using-Julia&#39;s-GC">Using Julia&#39;s GC</a><a id="Using-Julia&#39;s-GC-1"></a><a class="docs-heading-anchor-permalink" href="#Using-Julia&#39;s-GC" title="Permalink"></a></h3><p>Force garbage collection to trigger finalizers:</p><pre><code class="language-julia hljs">GC.gc()  # Run garbage collector</code></pre><h3 id="Checking-for-Leaks"><a class="docs-heading-anchor" href="#Checking-for-Leaks">Checking for Leaks</a><a id="Checking-for-Leaks-1"></a><a class="docs-heading-anchor-permalink" href="#Checking-for-Leaks" title="Permalink"></a></h3><p>Monitor memory usage:</p><pre><code class="language-julia hljs">function memory_test()
+    initial = Sys.maxrss()
+    for i in 1:10000
+        x = giac_eval(&quot;x^$i&quot;)
+    end
+    GC.gc()
+    final = Sys.maxrss()
+    println(&quot;Memory change: $(final - initial) bytes&quot;)
+end</code></pre><h3 id="Pointer-Validation"><a class="docs-heading-anchor" href="#Pointer-Validation">Pointer Validation</a><a id="Pointer-Validation-1"></a><a class="docs-heading-anchor-permalink" href="#Pointer-Validation" title="Permalink"></a></h3><p>Check if a pointer is valid:</p><pre><code class="language-julia hljs">function is_valid(expr::GiacExpr)
+    return expr.ptr != C_NULL
+end</code></pre><h2 id="See-Also"><a class="docs-heading-anchor" href="#See-Also">See Also</a><a id="See-Also-1"></a><a class="docs-heading-anchor-permalink" href="#See-Also" title="Permalink"></a></h2><ul><li><a href="../architecture/">Package Architecture</a> - Type definitions in types.jl</li><li><a href="../troubleshooting/">Troubleshooting</a> - Debugging memory-related errors</li><li><a href="../tier-system/">Performance Tiers</a> - How tier wrappers handle pointers</li></ul><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral"
+});
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../contributing/">« Adding Functions</a><a class="docs-footer-nextpage" href="../troubleshooting/">Troubleshooting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 20 February 2026 21:39">Friday 20 February 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
