@@ -17,6 +17,26 @@ sym_result = to_symbolics(factored)  # Num: (1+x)^2
 
 As of version 0.8.1, `to_symbolics` preserves symbolic mathematical functions instead of evaluating them to floating-point approximations.
 
+### Factorization Preservation (Feature 044)
+
+As of version 0.8.2, `to_symbolics` also preserves factorized expression structure from GIAC:
+
+```julia
+using Giac, Symbolics
+using Giac.Commands: ifactor, factor
+
+# Integer factorization is preserved
+result = ifactor(1000000)
+sym = to_symbolics(result)
+# Result: (2^6)*(5^6), NOT 1000000
+
+# Polynomial factorization is preserved
+x = giac_eval("x")
+result = factor(x^2 - 1)
+sym = to_symbolics(result)
+# Result: (-1 + x)*(1 + x), NOT x^2 - 1
+```
+
 ### Square Roots and Other Roots
 
 ```julia

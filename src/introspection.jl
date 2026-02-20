@@ -459,9 +459,9 @@ function symb_funcname(g::GiacExpr)::String
     with_giac_lock() do
         if !_stub_mode[] && GiacCxxBindings._have_library
             gen = _ptr_to_gen(g)
-            ctx = _get_cxxwrap_context()
-            if gen !== nothing && ctx !== nothing
-                return GiacCxxBindings.symb_funcname(gen, ctx)
+            if gen !== nothing
+                # Use symb_sommet_name (the actual C++ binding name)
+                return GiacCxxBindings.symb_sommet_name(gen)
             end
         end
         # Fallback: parse from string representation
@@ -494,7 +494,8 @@ function symb_argument(g::GiacExpr)::GiacExpr
         if !_stub_mode[] && GiacCxxBindings._have_library
             gen = _ptr_to_gen(g)
             if gen !== nothing
-                arg_gen = GiacCxxBindings.symb_argument(gen)
+                # Use symb_feuille (the actual C++ binding name)
+                arg_gen = GiacCxxBindings.symb_feuille(gen)
                 return _gen_to_giacexpr(arg_gen)
             end
         end

@@ -43,6 +43,26 @@ const PRESERVABLE_FUNCTIONS = Dict{String, Function}(
 )
 
 # ============================================================================
+# Symbolic Operators Mapping (T010 - Feature 044)
+# Maps GIAC operator names to Julia functions for Term construction
+# These operators preserve factored structure when used with Term()
+# ============================================================================
+
+"""
+    SYMBOLIC_OPS
+
+Dictionary mapping GIAC operator names to Julia functions.
+Used for preserving factorized expression structure (e.g., 2^6*5^6).
+"""
+const SYMBOLIC_OPS = Dict{String, Function}(
+    "*" => *,
+    "^" => ^,
+    "+" => +,
+    "-" => -,
+    "/" => /,
+)
+
+# ============================================================================
 # Foundational Helper Functions (T005-T007)
 # ============================================================================
 
@@ -321,6 +341,120 @@ function Giac.to_giac(expr::Num)::GiacExpr
 end
 
 """
+    _is_factored_expression(s::AbstractString) -> Bool
+
+Check if a string looks like a factored expression (contains operators that should be preserved).
+"""
+function _is_factored_expression(s::AbstractString)::Bool
+    # Check for operators that indicate factored structure
+    return occursin("^", s) && (occursin("*", s) || occursin(r"^\d+\^\d+$", s))
+end
+
+"""
+    _get_held_gen(expr_str::AbstractString)
+
+Get a Gen object for the expression with structure preserved using hold().
+"""
+function _get_held_gen(expr_str::AbstractString)
+    # Use hold() to prevent evaluation
+    held_str = "hold($expr_str)"
+    return Giac.GiacCxxBindings.giac_eval(held_str)
+end
+
+"""
+    _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num}) -> Any
+
+Recursively convert a CxxWrap Gen object tree to Symbolics.jl expression.
+Uses Term objects for multiplication and exponentiation to preserve factored structure.
+"""
+function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
+    t = Giac.GiacCxxBindings.type(gen)
+
+    if t == 0  # INT
+        # Integer: extract value directly and wrap in Num for consistency
+        gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+        return Num(parse(Int64, gen_str))
+    elseif t == 1  # DOUBLE
+        # Float: parse from string and wrap in Num for consistency
+        gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+        return Num(parse(Float64, gen_str))
+    elseif t == 6  # IDNT
+        # Identifier/variable
+        name = String(Giac.GiacCxxBindings.to_string(gen))
+        # Handle special constants
+        if name == "pi" || name == "π"
+            return Symbolics.pi
+        elseif name == "i"
+            return im
+        end
+        # Create or retrieve symbolic variable
+        if !haskey(var_cache, name)
+            var_cache[name] = Symbolics.variable(Symbol(name))
+        end
+        return var_cache[name]
+    elseif t == 8  # SYMB
+        # Symbolic expression: traverse tree
+        op = Giac.GiacCxxBindings.symb_sommet_name(gen)
+        feuille = Giac.GiacCxxBindings.symb_feuille(gen)
+        feuille_type = Giac.GiacCxxBindings.type(feuille)
+
+        # Get arguments
+        args = if feuille_type == 7  # VECT
+            n = Giac.GiacCxxBindings.vect_size(feuille)
+            [Giac.GiacCxxBindings.vect_at(feuille, i-1) for i in 1:n]
+        else
+            [feuille]
+        end
+
+        # Recursively convert arguments
+        converted_args = [_gen_tree_to_symbolics(a, var_cache) for a in args]
+
+        # Handle operators that should preserve structure (factorization)
+        if op == "*" || op == "^"
+            # Use Term to preserve factored structure without evaluation
+            julia_op = SYMBOLIC_OPS[op]
+            unwrapped = [Symbolics.unwrap(a) for a in converted_args]
+            return Num(Term(julia_op, unwrapped))
+        elseif op == "+"
+            # Sum can be evaluated without losing structure
+            return sum(converted_args)
+        elseif op == "-"
+            if length(converted_args) == 1
+                return -converted_args[1]
+            else
+                return converted_args[1] - converted_args[2]
+            end
+        elseif op == "/"
+            return converted_args[1] / converted_args[2]
+        elseif haskey(PRESERVABLE_FUNCTIONS, op)
+            # Preservable function (sqrt, sin, exp, etc.)
+            julia_func = PRESERVABLE_FUNCTIONS[op]
+            unwrapped = [Symbolics.unwrap(a) for a in converted_args]
+            return Num(Term(julia_func, unwrapped))
+        else
+            # Unknown operator: fall back to string parsing
+            gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+            return _parse_symbolic_expr(gen_str, var_cache)
+        end
+    elseif t == 7  # VECT
+        # Vector: convert each element
+        n = Giac.GiacCxxBindings.vect_size(gen)
+        return [_gen_tree_to_symbolics(Giac.GiacCxxBindings.vect_at(gen, i-1), var_cache) for i in 1:n]
+    elseif t == 10  # FRAC
+        # Fraction: convert numerator and denominator
+        num = Giac.GiacCxxBindings.frac_num(gen)
+        den = Giac.GiacCxxBindings.frac_den(gen)
+        num_sym = _gen_tree_to_symbolics(num, var_cache)
+        den_sym = _gen_tree_to_symbolics(den, var_cache)
+        return num_sym // den_sym
+    else
+        # Fallback: use string parsing for unknown types
+        gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+        return _parse_symbolic_expr(gen_str, var_cache)
+    end
+end
+
+"""
     to_symbolics(expr::GiacExpr)
 
 Convert a GiacExpr to a Symbolics.jl Num expression.
@@ -328,17 +462,27 @@ Convert a GiacExpr to a Symbolics.jl Num expression.
 Preserves symbolic mathematical functions like sqrt, exp, log, sin, cos, etc.
 instead of evaluating them to floating-point approximations.
 
+Also preserves factorized expression structure (Feature 044):
+- `ifactor(n) |> to_symbolics` returns factored form (e.g., `2^6*5^6`)
+- `factor(poly) |> to_symbolics` returns factored polynomial form
+
 # Examples
 ```julia
 using Giac, Symbolics
+using Giac.Commands: ifactor, factor
 
 # sqrt(2) is preserved symbolically
 result = giac_eval("sqrt(2)")
 sym_expr = to_symbolics(result)  # sqrt(2), not 1.414...
 
-# Complex expressions work too
-result = giac_eval("factor(x^8-1)")
-sym_expr = to_symbolics(result)  # Contains sqrt(2) symbolically
+# Integer factorization is preserved
+result = ifactor(1000000)
+sym_expr = to_symbolics(result)  # 2^6*5^6, not 1000000
+
+# Polynomial factorization is preserved
+x = giac_eval("x")
+result = factor(x^2 - 1)
+sym_expr = to_symbolics(result)  # (x-1)*(x+1)
 
 # Variables are preserved
 result = giac_eval("x^2 + y")
@@ -346,14 +490,38 @@ sym_expr = to_symbolics(result)
 ```
 """
 function Giac.to_symbolics(expr::GiacExpr)
-    # Convert GIAC expression to string
-    expr_str = string(expr)
-
     # Create variable cache for consistent variable handling
     var_cache = Dict{String, Num}()
 
-    # Use symbolic-preserving parser
-    return _parse_symbolic_expr(expr_str, var_cache)
+    # Get the string representation
+    expr_str = string(expr)
+
+    # Check if this looks like a factored expression that needs tree traversal
+    # to preserve structure (e.g., "2^6*5^6" from ifactor)
+    if !Giac.is_stub_mode() && Giac.GiacCxxBindings._have_library
+        # Use hold() to preserve structure and get the proper SYMB type
+        try
+            held_gen = _get_held_gen(expr_str)
+            held_type = Giac.GiacCxxBindings.type(held_gen)
+
+            # Use tree-based conversion for most types
+            # This ensures consistent Num wrapping
+            if held_type in (0, 1, 6, 7, 8, 10)  # INT, DOUBLE, IDNT, VECT, SYMB, FRAC
+                return _gen_tree_to_symbolics(held_gen, var_cache)
+            end
+        catch e
+            @debug "Failed to use held conversion, falling back to string parsing" exception=e
+        end
+    end
+
+    # For other expressions or when CxxWrap isn't available,
+    # use the string-based parser and wrap in Num for consistency
+    result = _parse_symbolic_expr(expr_str, var_cache)
+    # Ensure we return Num for consistency
+    if result isa Number && !(result isa Num)
+        return Num(result)
+    end
+    return result
 end
 
 # Export conversion functions
