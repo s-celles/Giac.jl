@@ -386,20 +386,19 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
     t = Giac.GiacCxxBindings.type(gen)
 
     if t == 0  # INT
-        # Integer: extract value directly and wrap in Num for consistency
-        gen_str = String(Giac.GiacCxxBindings.to_string(gen))
-        return Num(parse(Int64, gen_str))
+        # Integer: use direct accessor for efficiency
+        return Num(Giac.GiacCxxBindings.to_int64(gen))
     elseif t == 1  # DOUBLE
-        # Float: parse from string and wrap in Num for consistency
-        gen_str = String(Giac.GiacCxxBindings.to_string(gen))
-        return Num(parse(Float64, gen_str))
+        # Float: use direct accessor for efficiency
+        return Num(Giac.GiacCxxBindings.to_double(gen))
     elseif t == 2  # ZINT (arbitrary precision integer - GMP)
         # Feature 045: Handle large integers that don't fit in Int64
-        gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+        # Use dedicated zint_to_string accessor for GMP integers
+        gen_str = String(Giac.GiacCxxBindings.zint_to_string(gen))
         return Num(parse(BigInt, gen_str))
     elseif t == 6  # IDNT
-        # Identifier/variable
-        name = String(Giac.GiacCxxBindings.to_string(gen))
+        # Identifier/variable: use dedicated idnt_name accessor
+        name = String(Giac.GiacCxxBindings.idnt_name(gen))
         # Handle special constants
         if name == "pi" || name == "π"
             return Symbolics.pi
