@@ -377,6 +377,41 @@ function _get_held_gen(expr_str::AbstractString)
 end
 
 """
+    _bytes_to_bigint(bytes::Vector{UInt8}, sign::Int32) -> BigInt
+
+Construct a BigInt from raw bytes and sign using direct GMP ccall.
+This avoids string parsing for better performance with large integers.
+
+# Arguments
+- `bytes`: Big-endian byte representation of the absolute value
+- `sign`: -1 (negative), 0 (zero), or 1 (positive)
+
+# Returns
+BigInt with correct value and sign
+"""
+function _bytes_to_bigint(bytes::Vector{UInt8}, sign::Int32)::BigInt
+    # Handle zero case
+    if isempty(bytes) || sign == 0
+        return BigInt(0)
+    end
+
+    result = BigInt()
+
+    # mpz_import(rop, count, order=1 (MSB first), size=1 (byte), endian=1 (big), nails=0, data)
+    ccall((:__gmpz_import, :libgmp), Cvoid,
+          (Ref{BigInt}, Csize_t, Cint, Csize_t, Cint, Csize_t, Ptr{UInt8}),
+          result, length(bytes), 1, 1, 1, 0, bytes)
+
+    # Apply sign if negative
+    if sign < 0
+        ccall((:__gmpz_neg, :libgmp), Cvoid,
+              (Ref{BigInt}, Ref{BigInt}), result, result)
+    end
+
+    return result
+end
+
+"""
     _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num}) -> Any
 
 Recursively convert a CxxWrap Gen object tree to Symbolics.jl expression.
@@ -392,10 +427,12 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
         # Float: use direct accessor for efficiency
         return Num(Giac.GiacCxxBindings.to_double(gen))
     elseif t == Giac.GenTypes.ZINT
-        # Arbitrary precision integer (GMP) - Feature 045
-        # Use dedicated zint_to_string accessor for GMP integers
-        gen_str = String(Giac.GiacCxxBindings.zint_to_string(gen))
-        return Num(parse(BigInt, gen_str))
+        # Arbitrary precision integer (GMP) - Feature 049
+        # Direct binary transfer: export bytes + sign, import via GMP ccall
+        # This avoids string parsing for cleaner and faster conversion
+        bytes = Vector{UInt8}(Giac.GiacCxxBindings.zint_to_bytes(gen))
+        sign = Int32(Giac.GiacCxxBindings.zint_sign(gen))
+        return Num(_bytes_to_bigint(bytes, sign))
     elseif t == Giac.GenTypes.IDNT
         # Identifier/variable: use dedicated idnt_name accessor
         name = String(Giac.GiacCxxBindings.idnt_name(gen))
