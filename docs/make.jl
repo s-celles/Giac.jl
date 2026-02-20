@@ -20,6 +20,7 @@ makedocs(
         "Installation" => "install.md",
         "Quick Start" => "quickstart.md",
         "Variable Declaration" => "variables.md",
+        "Constants" => "constants.md",
         "Command discovery and help" => "command_discovery_help.md",
         "Variable Substitution" => "substitute.md",
         "Using with Pluto reactive notebooks" => "pluto.md",
