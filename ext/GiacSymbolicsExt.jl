@@ -48,36 +48,18 @@ function _get_julia_function(giac_name::String)::Union{Function, Nothing}
 end
 
 # ============================================================================
-# Julia to GIAC Operator/Function Mapping
+# Julia to GIAC Name Mapping (reverse of GIAC_NAME_MAPPING)
 # ============================================================================
 
 """
-    JULIA_TO_GIAC_OP
+    JULIA_TO_GIAC_NAME
 
-Dictionary mapping Julia function references to GIAC operator/function names.
-Used by _convert_to_gen to build GIAC symbolic expressions.
+Dictionary mapping Julia functions to GIAC names where they differ.
+Built from the reverse of GIAC_NAME_MAPPING. For functions with identical
+names, the function name is used directly via nameof().
 """
-const JULIA_TO_GIAC_OP = Dict{Any, String}(
-    # Arithmetic operators
-    (+) => "+",
-    (-) => "-",
-    (*) => "*",
-    (/) => "/",
-    (^) => "^",
-    # Mathematical functions
-    Base.sqrt => "sqrt",
-    Base.exp => "exp",
-    Base.log => "ln",      # Julia log -> GIAC ln
-    Base.sin => "sin",
-    Base.cos => "cos",
-    Base.tan => "tan",
-    Base.asin => "asin",
-    Base.acos => "acos",
-    Base.atan => "atan",
-    Base.sinh => "sinh",
-    Base.cosh => "cosh",
-    Base.tanh => "tanh",
-    Base.abs => "abs",
+const JULIA_TO_GIAC_NAME = Dict{Function, String}(
+    v => k for (k, v) in GIAC_NAME_MAPPING
 )
 
 # ============================================================================
@@ -160,13 +142,18 @@ function _bigint_to_gen(n::BigInt)
 end
 
 """
-    _julia_to_giac_op(op) -> Union{String, Nothing}
+    _julia_to_giac_op(op) -> String
 
 Get the GIAC operator/function name for a Julia function.
-Returns nothing if the function is not mapped.
+First checks JULIA_TO_GIAC_NAME for names that differ, then uses nameof().
 """
-function _julia_to_giac_op(op)::Union{String, Nothing}
-    return get(JULIA_TO_GIAC_OP, op, nothing)
+function _julia_to_giac_op(op)::String
+    # Check if this function has a different name in GIAC
+    if haskey(JULIA_TO_GIAC_NAME, op)
+        return JULIA_TO_GIAC_NAME[op]
+    end
+    # Use the function name directly (works for operators like +, -, *, / and same-name functions)
+    return string(nameof(op))
 end
 
 # ============================================================================
@@ -221,25 +208,12 @@ function _convert_to_gen(expr)
         # Convert all arguments recursively
         gen_args = [_convert_to_gen(a) for a in args]
 
-        # Look up GIAC operator name
+        # Get GIAC operator/function name (handles log->ln mapping automatically)
         giac_op = _julia_to_giac_op(op)
 
-        if giac_op !== nothing
-            # Use make_symbolic_unevaluated to build expression without evaluation
-            args_vec = StdVector{Giac.GiacCxxBindings.Gen}(gen_args)
-            return Giac.GiacCxxBindings.make_symbolic_unevaluated(giac_op, args_vec)
-        else
-            # Try to get function name as string
-            op_name = string(nameof(op))
-            # Check if it's in the reverse mapping (GIAC_NAME_MAPPING)
-            if haskey(GIAC_NAME_MAPPING, op_name)
-                # This function has same name in Julia and GIAC
-                args_vec = StdVector{Giac.GiacCxxBindings.Gen}(gen_args)
-                return Giac.GiacCxxBindings.make_symbolic_unevaluated(op_name, args_vec)
-            else
-                error("Unsupported Julia operation '$op_name' in to_giac conversion")
-            end
-        end
+        # Use make_symbolic_unevaluated to build expression without evaluation
+        args_vec = StdVector{Giac.GiacCxxBindings.Gen}(gen_args)
+        return Giac.GiacCxxBindings.make_symbolic_unevaluated(giac_op, args_vec)
     end
 
     # Handle special constants
