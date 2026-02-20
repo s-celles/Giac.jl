@@ -11,6 +11,8 @@ begin
 	Pkg.develop(PackageSpec(path=".."))
 
 	using Giac
+	using Giac.Commands
+	using LinearAlgebra
 end
 
 # ╔═╡ a1b2c3d4-e5f6-7890-abcd-ef1234567890
@@ -29,8 +31,11 @@ md"""
 Let's define the expression ``\frac{2}{1-x}`` using GIAC's `giac_eval` function.
 """
 
-# ╔═╡ d4e5f6a7-b8c9-0123-defa-234567890123
-f = giac_eval("2/(1-x)")
+# ╔═╡ 1215212c-c55f-4e1c-9b54-ac2141fd7577
+@giac_var x
+
+# ╔═╡ 92f3eda7-781f-4dff-9698-47a375e22139
+f = 2 / (1 - x)
 
 # ╔═╡ e5f6a7b8-c9d0-1234-efab-345678901234
 md"""
@@ -46,11 +51,8 @@ md"""
 GIAC can compute symbolic derivatives using `giac_diff`. Let's find the derivative with respect to ``x``.
 """
 
-# ╔═╡ d0e1f2a3-b4c5-6789-defa-890123456789
-@giac_var x
-
 # ╔═╡ e1f2a3b4-c5d6-7890-efab-901234567890
-df = giac_diff(f, x)
+df = diff(f, x)
 
 # ╔═╡ f2a3b4c5-d6e7-8901-fabc-012345678901
 md"""
@@ -69,6 +71,9 @@ GiacMatrix also renders as LaTeX:
 
 # ╔═╡ c5d6e7f8-a9b0-1234-cdef-345678901234
 M = GiacMatrix([[a, b], [c, d]])
+
+# ╔═╡ 54a28ee1-cf11-456c-91c5-def28da697f2
+det(M)
 
 # ╔═╡ d6e7f8a9-b0c1-2345-defa-456789012345
 md"""
@@ -98,7 +103,7 @@ md"""
 With Giac.jl, mathematical expressions render automatically in Pluto:
 
 1. **Create expressions** with `giac_eval("...")` → displays as LaTeX
-2. **Compute derivatives** with `giac_diff(expr, var)` → displays as LaTeX
+2. **Compute derivatives** with `diff(expr, var)` → displays as LaTeX
 3. **Create matrices** with `GiacMatrix(...)` → displays as LaTeX
 
 No manual LaTeX conversion needed!
@@ -113,15 +118,16 @@ md"""
 # ╟─a1b2c3d4-e5f6-7890-abcd-ef1234567890
 # ╠═b2c3d4e5-f6a7-8901-bcde-f12345678901
 # ╟─c3d4e5f6-a7b8-9012-cdef-123456789012
-# ╠═d4e5f6a7-b8c9-0123-defa-234567890123
+# ╠═1215212c-c55f-4e1c-9b54-ac2141fd7577
+# ╠═92f3eda7-781f-4dff-9698-47a375e22139
 # ╟─e5f6a7b8-c9d0-1234-efab-345678901234
 # ╟─c9d0e1f2-a3b4-5678-cdef-789012345678
-# ╠═d0e1f2a3-b4c5-6789-defa-890123456789
 # ╠═e1f2a3b4-c5d6-7890-efab-901234567890
 # ╟─f2a3b4c5-d6e7-8901-fabc-012345678901
 # ╟─a3b4c5d6-e7f8-9012-abcd-123456789012
 # ╠═b4c5d6e7-f8a9-0123-bcde-234567890123
 # ╠═c5d6e7f8-a9b0-1234-cdef-345678901234
+# ╠═54a28ee1-cf11-456c-91c5-def28da697f2
 # ╟─d6e7f8a9-b0c1-2345-defa-456789012345
 # ╠═e7f8a9b0-c1d2-3456-efab-567890123456
 # ╟─f8a9b0c1-d2e3-4567-fabc-678901234567
