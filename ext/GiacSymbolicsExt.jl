@@ -287,7 +287,7 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
         if op == "*" || op == "^"
             julia_op = _get_julia_function(op)
             unwrapped = [Symbolics.unwrap(a) for a in converted_args]
-            return Num(Symbolics.term(julia_op, unwrapped...))
+            return Symbolics.wrap(Symbolics.term(julia_op, unwrapped...))
         elseif op == "+"
             return sum(converted_args)
         elseif op == "-"
@@ -303,7 +303,7 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
             julia_func = _get_julia_function(op)
             if julia_func !== nothing
                 unwrapped = [Symbolics.unwrap(a) for a in converted_args]
-                return Num(Symbolics.term(julia_func, unwrapped...))
+                return Symbolics.wrap(Symbolics.term(julia_func, unwrapped...))
             else
                 error("Unsupported GIAC operator '$op' in to_symbolics conversion")
             end
