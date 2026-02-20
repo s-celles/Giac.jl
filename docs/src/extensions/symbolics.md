@@ -126,6 +126,67 @@ Mathematical constants:
 - `pi` → `Symbolics.pi` (π)
 - `i` → `im` (Julia imaginary unit)
 
+## Direct Conversion (Feature 051)
+
+As of version 0.9.0, `to_giac` uses direct tree traversal and C++ Gen construction functions for efficient conversion without string serialization. This provides:
+
+- **Better performance**: Expression trees are built directly using the C++ wrapper's Gen construction functions (`make_identifier`, `make_symbolic_unevaluated`, etc.)
+- **Type preservation**: Integers are preserved as GIAC integers (not converted to floats)
+- **BigInt support**: Arbitrary precision integers are transferred using direct GMP binary transfer
+
+### Supported Types
+
+The direct conversion handles all standard Symbolics.jl constructs:
+
+| Julia/Symbolics Type | GIAC Type |
+|---------------------|-----------|
+| `Int32`, `Int64` (small) | `_INT_` (GIAC integer) |
+| `BigInt` | `_ZINT` (GIAC big integer) |
+| `Float64` | `_DOUBLE_` |
+| `Rational` | `_FRAC` |
+| `Complex` | `_CPLX` |
+| Symbolic variable | `_IDNT` (identifier) |
+| Expression (`+`, `-`, `*`, `/`, `^`) | `_SYMB` (symbolic) |
+| Function call (`sin`, `cos`, etc.) | `_SYMB` (symbolic) |
+
+### Example: Direct Integer Preservation
+
+```julia
+using Giac, Symbolics
+
+# Integers are preserved as GIAC integers
+result = to_giac(Num(42))
+# Result: "42" (not "42.0")
+
+# BigInt works directly
+big = BigInt(2)^100
+result = to_giac(Num(big))
+# Result: "1267650600228229401496703205376"
+```
+
+### Example: Expression Tree Conversion
+
+```julia
+using Giac, Symbolics
+
+@variables x y
+
+# Expressions are converted via tree traversal
+poly = x^2 + 2*x + 1
+giac_poly = to_giac(poly)
+# Result: "1+x^2+2*x"
+
+# Mathematical functions are mapped correctly
+expr = sin(x) + cos(y)
+giac_expr = to_giac(expr)
+# Result: "sin(x)+cos(y)"
+
+# log maps to ln (GIAC naming)
+expr = log(x)
+giac_expr = to_giac(expr)
+# Result: "ln(x)"
+```
+
 ## API Reference
 
 See the [Conversion Functions](../api/core.md#conversion-functions) section in the Core API documentation for the full API reference of `to_giac` and `to_symbolics`.

@@ -6,7 +6,8 @@ module GiacSymbolicsExt
 
 using Giac
 using Symbolics
-import Symbolics.SymbolicUtils: Sym, symtype
+using CxxWrap: StdVector
+import Symbolics.SymbolicUtils: Sym, symtype, issym, iscall, operation, arguments
 
 # ============================================================================
 # GIAC to Julia Name Mapping
@@ -47,6 +48,39 @@ function _get_julia_function(giac_name::String)::Union{Function, Nothing}
 end
 
 # ============================================================================
+# Julia to GIAC Operator/Function Mapping
+# ============================================================================
+
+"""
+    JULIA_TO_GIAC_OP
+
+Dictionary mapping Julia function references to GIAC operator/function names.
+Used by _convert_to_gen to build GIAC symbolic expressions.
+"""
+const JULIA_TO_GIAC_OP = Dict{Any, String}(
+    # Arithmetic operators
+    (+) => "+",
+    (-) => "-",
+    (*) => "*",
+    (/) => "/",
+    (^) => "^",
+    # Mathematical functions
+    Base.sqrt => "sqrt",
+    Base.exp => "exp",
+    Base.log => "ln",      # Julia log -> GIAC ln
+    Base.sin => "sin",
+    Base.cos => "cos",
+    Base.tan => "tan",
+    Base.asin => "asin",
+    Base.acos => "acos",
+    Base.atan => "atan",
+    Base.sinh => "sinh",
+    Base.cosh => "cosh",
+    Base.tanh => "tanh",
+    Base.abs => "abs",
+)
+
+# ============================================================================
 # Helper Functions
 # ============================================================================
 
@@ -81,6 +115,144 @@ function _bytes_to_bigint(bytes::Vector{UInt8}, sign::Int32)::BigInt
     end
 
     return result
+end
+
+"""
+    _bigint_to_gen(n::BigInt) -> Gen
+
+Convert a Julia BigInt to a GIAC Gen using direct GMP binary transfer.
+Uses make_zint_from_bytes for arbitrary precision integers.
+"""
+function _bigint_to_gen(n::BigInt)
+    if n == 0
+        return Giac.GiacCxxBindings.Gen(Int32(0))
+    end
+
+    # Get sign (-1, 0, or 1)
+    n_sign = Int32(Base.sign(n))
+
+    # Export absolute value to bytes using GMP
+    abs_n = abs(n)
+
+    # Calculate number of bytes needed
+    # GMP stores in limbs, we need to figure out byte count
+    # Using mpz_sizeinbase gives bit count, convert to bytes
+    bit_count = ccall((:__gmpz_sizeinbase, :libgmp), Csize_t,
+                      (Ref{BigInt}, Cint), abs_n, 2)
+    byte_count = div(bit_count + 7, 8)
+
+    # Allocate buffer and export
+    bytes = Vector{UInt8}(undef, byte_count)
+    actual_count = Ref{Csize_t}(0)
+    ccall((:__gmpz_export, :libgmp), Ptr{Cvoid},
+          (Ptr{UInt8}, Ref{Csize_t}, Cint, Csize_t, Cint, Csize_t, Ref{BigInt}),
+          bytes, actual_count, 1, 1, 1, 0, abs_n)
+
+    # Resize if needed (GMP may use fewer bytes)
+    if actual_count[] < byte_count
+        resize!(bytes, actual_count[])
+    end
+
+    # Convert to StdVector for C++ wrapper
+    std_bytes = StdVector{UInt8}(bytes)
+
+    return Giac.GiacCxxBindings.make_zint_from_bytes(std_bytes, n_sign)
+end
+
+"""
+    _julia_to_giac_op(op) -> Union{String, Nothing}
+
+Get the GIAC operator/function name for a Julia function.
+Returns nothing if the function is not mapped.
+"""
+function _julia_to_giac_op(op)::Union{String, Nothing}
+    return get(JULIA_TO_GIAC_OP, op, nothing)
+end
+
+# ============================================================================
+# Direct Symbolics to Gen Conversion
+# ============================================================================
+
+"""
+    _convert_to_gen(expr) -> Gen
+
+Recursively convert a Symbolics.jl expression tree to a GIAC Gen object.
+This is the core function for direct to_giac conversion without string serialization.
+"""
+function _convert_to_gen(expr)
+    # Unwrap Num if needed
+    unwrapped = expr isa Num ? Symbolics.unwrap(expr) : expr
+
+    # Handle numeric literals
+    if unwrapped isa Integer
+        if unwrapped isa BigInt
+            return _bigint_to_gen(unwrapped)
+        elseif typemin(Int32) <= unwrapped <= typemax(Int32)
+            # Small integer - use Gen(Int32) constructor to preserve _INT_ type
+            # Note: CxxWrap bundles Int64 with Float64, so we must use Int32
+            return Giac.GiacCxxBindings.Gen(Int32(unwrapped))
+        else
+            # Medium-size integer that doesn't fit Int32 - use string constructor
+            return Giac.GiacCxxBindings.Gen(string(unwrapped))
+        end
+    elseif unwrapped isa AbstractFloat
+        return Giac.GiacCxxBindings.Gen(Float64(unwrapped))
+    elseif unwrapped isa Rational
+        num_gen = _convert_to_gen(numerator(unwrapped))
+        den_gen = _convert_to_gen(denominator(unwrapped))
+        return Giac.GiacCxxBindings.make_fraction(num_gen, den_gen)
+    elseif unwrapped isa Complex
+        re_gen = _convert_to_gen(real(unwrapped))
+        im_gen = _convert_to_gen(imag(unwrapped))
+        return Giac.GiacCxxBindings.make_complex(re_gen, im_gen)
+    end
+
+    # Handle symbolic variables (identifiers)
+    if issym(unwrapped)
+        name = String(Symbolics.tosymbol(unwrapped))
+        return Giac.GiacCxxBindings.make_identifier(name)
+    end
+
+    # Handle function calls / compound expressions
+    if iscall(unwrapped)
+        op = operation(unwrapped)
+        args = arguments(unwrapped)
+
+        # Convert all arguments recursively
+        gen_args = [_convert_to_gen(a) for a in args]
+
+        # Look up GIAC operator name
+        giac_op = _julia_to_giac_op(op)
+
+        if giac_op !== nothing
+            # Use make_symbolic_unevaluated to build expression without evaluation
+            args_vec = StdVector{Giac.GiacCxxBindings.Gen}(gen_args)
+            return Giac.GiacCxxBindings.make_symbolic_unevaluated(giac_op, args_vec)
+        else
+            # Try to get function name as string
+            op_name = string(nameof(op))
+            # Check if it's in the reverse mapping (GIAC_NAME_MAPPING)
+            if haskey(GIAC_NAME_MAPPING, op_name)
+                # This function has same name in Julia and GIAC
+                args_vec = StdVector{Giac.GiacCxxBindings.Gen}(gen_args)
+                return Giac.GiacCxxBindings.make_symbolic_unevaluated(op_name, args_vec)
+            else
+                error("Unsupported Julia operation '$op_name' in to_giac conversion")
+            end
+        end
+    end
+
+    # Handle special constants
+    if unwrapped === π || unwrapped == Base.MathConstants.pi
+        return Giac.GiacCxxBindings.make_identifier("pi")
+    elseif unwrapped === ℯ || unwrapped == Base.MathConstants.e
+        return Giac.GiacCxxBindings.make_identifier("e")
+    elseif unwrapped === im
+        return Giac.GiacCxxBindings.make_identifier("i")
+    end
+
+    # Fallback error
+    error("Cannot convert expression of type $(typeof(unwrapped)) to GIAC Gen")
 end
 
 # ============================================================================
@@ -198,6 +370,9 @@ end
 
 Convert a Symbolics.jl expression to a GiacExpr.
 
+Uses direct tree traversal and C++ Gen construction functions for efficient
+conversion without string serialization.
+
 # Example
 ```julia
 using Giac, Symbolics
@@ -209,8 +384,12 @@ function Giac.to_giac(expr::Num)::GiacExpr
     if Giac.is_stub_mode()
         error("to_giac requires the GIAC C++ wrapper library (stub mode not supported)")
     end
-    expr_str = string(Symbolics.unwrap(expr))
-    return giac_eval(expr_str)
+    # Use direct conversion via tree traversal to build Gen
+    gen = _convert_to_gen(expr)
+    # Convert Gen to GiacExpr via string (Gen was built directly, not parsed)
+    # This preserves the structure built by make_symbolic_unevaluated
+    gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+    return giac_eval(gen_str)
 end
 
 """
