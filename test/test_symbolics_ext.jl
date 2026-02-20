@@ -299,6 +299,92 @@ using Symbolics.SymbolicUtils: Term
     end
 
     # ============================================================================
+    # Feature 045: Large Integer Factorization (ZINT handling)
+    # ============================================================================
+    @testset "Feature 045: Large Integer Factorization" begin
+        if !Giac.is_stub_mode()
+            using Giac.Commands: ifactor
+
+            # T004: Specific failing case from bug report
+            @testset "T004: ifactor with very large number (specific failing case)" begin
+                big_num = "632459103267572196107100983820469021721602147490918660274601"
+                result = ifactor(giac_eval(big_num))
+                # Should not throw an exception
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+                # Verify it's a product (factored form)
+                sym_str = string(sym)
+                @test occursin("*", sym_str)
+            end
+
+            # T005: Int128-range factors
+            @testset "T005: ifactor with Int128-range result" begin
+                # A number that factors into Int128-range primes
+                # 2^100 is larger than Int64 but results should convert
+                result = ifactor(giac_eval("2^63 * 3"))  # 2^63 is just beyond Int64
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+            end
+
+            # T006: BigInt-range factors
+            @testset "T006: ifactor with BigInt-range result" begin
+                # Product of two very large primes
+                result = ifactor(giac_eval("170141183460469231731687303715884105727"))  # 2^127 - 1 (Mersenne prime)
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+            end
+
+            # T007: Mixed small and large factors
+            @testset "T007: ifactor with mixed small and large factors" begin
+                # 2 * large_prime
+                result = ifactor(giac_eval("2 * 650655447295098801102272374367"))
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+                sym_str = string(sym)
+                @test occursin("2", sym_str)
+                @test occursin("*", sym_str)
+            end
+
+            # Regression tests for backward compatibility
+            @testset "Regression: ifactor(1000000) still works" begin
+                result = ifactor(1000000)
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+            end
+
+            @testset "Regression: ifactor(17) prime still works" begin
+                result = ifactor(17)
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+            end
+
+            @testset "Regression: ifactor(-24) negative still works" begin
+                result = ifactor(-24)
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+            end
+
+            # Edge cases
+            @testset "T019: Int64/Int128 boundary" begin
+                # Max Int64 = 9223372036854775807
+                # Test a number just beyond Int64 max
+                result = ifactor(giac_eval("9223372036854775808"))  # Int64 max + 1
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+            end
+
+            @testset "T020: Large exponents (2^100)" begin
+                result = giac_eval("2^100")
+                sym = @test_nowarn to_symbolics(result)
+                @test sym isa Num
+            end
+        else
+            @warn "Skipping Feature 045 tests - GIAC library not available (stub mode)"
+            @test_broken false
+        end
+    end
+
+    # ============================================================================
     # Edge Cases and Backward Compatibility (Phase 6)
     # ============================================================================
     @testset "Edge Cases and Backward Compatibility" begin

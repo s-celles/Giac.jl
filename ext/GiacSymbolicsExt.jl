@@ -197,6 +197,16 @@ function _parse_symbolic_expr(s::AbstractString, var_cache::Dict{String, Num})
     end
 
     # Try to parse as a number first
+    # Feature 045: Try BigInt first for integer-looking strings to handle large numbers
+    if match(r"^-?\d+$", s) !== nothing
+        # It's an integer literal - use BigInt to handle any size
+        big_val = parse(BigInt, s)
+        # For small integers, convert to Int for better compatibility
+        if typemin(Int64) <= big_val <= typemax(Int64)
+            return Int64(big_val)
+        end
+        return big_val
+    end
     num = tryparse(Float64, s)
     if num !== nothing
         # Check if it's actually an integer
@@ -270,7 +280,11 @@ function _convert_parsed_expr(expr, var_cache::Dict{String, Num})
         end
         return var_cache[name]
     elseif expr isa Expr
-        if expr.head == :call
+        if expr.head == :macrocall
+            # Feature 045: Handle large integer literals (e.g., @int128_str, @big_str)
+            # These are created by Meta.parse for integers larger than Int64
+            return Core.eval(Main, expr)
+        elseif expr.head == :call
             func = expr.args[1]
             args = expr.args[2:end]
 
@@ -378,6 +392,10 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
         # Float: parse from string and wrap in Num for consistency
         gen_str = String(Giac.GiacCxxBindings.to_string(gen))
         return Num(parse(Float64, gen_str))
+    elseif t == 2  # ZINT (arbitrary precision integer - GMP)
+        # Feature 045: Handle large integers that don't fit in Int64
+        gen_str = String(Giac.GiacCxxBindings.to_string(gen))
+        return Num(parse(BigInt, gen_str))
     elseif t == 6  # IDNT
         # Identifier/variable
         name = String(Giac.GiacCxxBindings.to_string(gen))
