@@ -297,19 +297,37 @@ end
 
 function _giac_eval_string(expr::String, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        # Use CxxWrap bindings for real evaluation
-        ctx = _get_cxxwrap_context()
-        result_std = GiacCxxBindings.giac_eval(ctx, expr)
-        # Convert C++ std::string to Julia String
-        result = String(result_std)
-        # Store the result string and return a handle
-        return _make_stub_ptr(result)
+        # Use CxxWrap bindings for real evaluation - get Gen directly
+        gen = GiacCxxBindings.giac_eval(expr)
+        # Allocate heap copy and return real pointer (string-free!)
+        return Ptr{Cvoid}(GiacCxxBindings.gen_to_heap_ptr(gen))
     end
     # Stub mode: just store the expression as-is
     return _make_stub_ptr(expr)
 end
 
+"""
+    _gen_to_ptr(gen) -> Ptr{Cvoid}
+
+Convert a CxxWrap Gen to a heap pointer for GiacExpr.
+This is a string-free conversion path used by to_giac in Symbolics extension.
+"""
+function _gen_to_ptr(gen)::Ptr{Cvoid}
+    if !_stub_mode[] && GiacCxxBindings._have_library
+        return Ptr{Cvoid}(GiacCxxBindings.gen_to_heap_ptr(gen))
+    end
+    # Stub mode fallback: convert to string
+    return _make_stub_ptr(String(GiacCxxBindings.to_string(gen)))
+end
+
 function _giac_expr_to_string(ptr::Ptr{Cvoid})::String
+    if _stub_mode[]
+        return _get_stub_expr(ptr)
+    end
+    # Non-stub mode: ptr is a real giac::gen* on the heap
+    if GiacCxxBindings._have_library
+        return String(GiacCxxBindings.gen_ptr_to_string(ptr))
+    end
     return _get_stub_expr(ptr)
 end
 
@@ -319,6 +337,9 @@ function _giac_free_expr(ptr::Ptr{Cvoid})
     end
     if _stub_mode[]
         delete!(_stub_expressions, UInt(ptr))
+    elseif GiacCxxBindings._have_library
+        # Non-stub mode: free the real heap-allocated giac::gen
+        GiacCxxBindings.free_gen_ptr(ptr)
     end
     nothing
 end
@@ -339,7 +360,7 @@ end
 
 function _giac_expr_type(ptr::Ptr{Cvoid})::Symbol
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(ptr)
+        expr_str = _giac_expr_to_string(ptr)
         # Try to detect type from string representation
         # Integer: only digits, possibly with leading minus
         if occursin(r"^-?\d+$", expr_str)
@@ -384,7 +405,7 @@ end
 
 function _giac_to_int64(ptr::Ptr{Cvoid})::Int64
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(ptr)
+        expr_str = _giac_expr_to_string(ptr)
         # Handle GIAC boolean representations
         if expr_str == "true"
             return Int64(1)
@@ -398,7 +419,7 @@ end
 
 function _giac_to_float64(ptr::Ptr{Cvoid})::Float64
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(ptr)
+        expr_str = _giac_expr_to_string(ptr)
         return parse(Float64, expr_str)
     end
     return 0.0
@@ -407,7 +428,7 @@ end
 function _giac_complex_real(ptr::Ptr{Cvoid})::Float64
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            expr_str = _get_stub_expr(ptr)
+            expr_str = _giac_expr_to_string(ptr)
             gen = GiacCxxBindings.giac_eval(expr_str)
             # Use cplx_re accessor
             re_gen = GiacCxxBindings.cplx_re(gen)
@@ -423,7 +444,7 @@ end
 function _giac_complex_imag(ptr::Ptr{Cvoid})::Float64
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            expr_str = _get_stub_expr(ptr)
+            expr_str = _giac_expr_to_string(ptr)
             gen = GiacCxxBindings.giac_eval(expr_str)
             # Use cplx_im accessor
             im_gen = GiacCxxBindings.cplx_im(gen)
@@ -439,7 +460,7 @@ end
 function _giac_rational_num(ptr::Ptr{Cvoid})::Int64
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            expr_str = _get_stub_expr(ptr)
+            expr_str = _giac_expr_to_string(ptr)
             gen = GiacCxxBindings.giac_eval(expr_str)
             # Use frac_num accessor
             num_gen = GiacCxxBindings.frac_num(gen)
@@ -448,7 +469,7 @@ function _giac_rational_num(ptr::Ptr{Cvoid})::Int64
         catch e
             @debug "Rational numerator extraction failed: $e"
             # Fallback to string parsing
-            expr_str = _get_stub_expr(ptr)
+            expr_str = _giac_expr_to_string(ptr)
             parts = split(expr_str, "/")
             if length(parts) == 2
                 return parse(Int64, parts[1])
@@ -461,7 +482,7 @@ end
 function _giac_rational_den(ptr::Ptr{Cvoid})::Int64
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            expr_str = _get_stub_expr(ptr)
+            expr_str = _giac_expr_to_string(ptr)
             gen = GiacCxxBindings.giac_eval(expr_str)
             # Use frac_den accessor
             den_gen = GiacCxxBindings.frac_den(gen)
@@ -470,7 +491,7 @@ function _giac_rational_den(ptr::Ptr{Cvoid})::Int64
         catch e
             @debug "Rational denominator extraction failed: $e"
             # Fallback to string parsing
-            expr_str = _get_stub_expr(ptr)
+            expr_str = _giac_expr_to_string(ptr)
             parts = split(expr_str, "/")
             if length(parts) == 2
                 return parse(Int64, parts[2])
@@ -497,8 +518,8 @@ end
 
 function _giac_diff(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, n::Int, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
-        var_str = _get_stub_expr(var_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
+        var_str = _giac_expr_to_string(var_ptr)
         giac_cmd = n == 1 ? "diff($expr_str, $var_str)" : "diff($expr_str, $var_str, $n)"
         return _giac_eval_string(giac_cmd, ctx_ptr)
     end
@@ -507,8 +528,8 @@ end
 
 function _giac_integrate(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
-        var_str = _get_stub_expr(var_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
+        var_str = _giac_expr_to_string(var_ptr)
         return _giac_eval_string("integrate($expr_str, $var_str)", ctx_ptr)
     end
     return C_NULL
@@ -518,10 +539,10 @@ function _giac_integrate_definite(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid},
                                    a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid},
                                    ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
-        var_str = _get_stub_expr(var_ptr)
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
+        var_str = _giac_expr_to_string(var_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("integrate($expr_str, $var_str, $a_str, $b_str)", ctx_ptr)
     end
     return C_NULL
@@ -530,9 +551,9 @@ end
 function _giac_limit(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, point_ptr::Ptr{Cvoid},
                      dir::Int, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
-        var_str = _get_stub_expr(var_ptr)
-        point_str = _get_stub_expr(point_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
+        var_str = _giac_expr_to_string(var_ptr)
+        point_str = _giac_expr_to_string(point_ptr)
         # dir: -1 = left, 0 = both, 1 = right
         giac_cmd = if dir == -1
             "limit($expr_str, $var_str, $point_str, -1)"
@@ -549,9 +570,9 @@ end
 function _giac_series(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, point_ptr::Ptr{Cvoid},
                       order::Int, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
-        var_str = _get_stub_expr(var_ptr)
-        point_str = _get_stub_expr(point_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
+        var_str = _giac_expr_to_string(var_ptr)
+        point_str = _giac_expr_to_string(point_ptr)
         return _giac_eval_string("series($expr_str, $var_str=$point_str, $order)", ctx_ptr)
     end
     return C_NULL
@@ -563,7 +584,7 @@ end
 
 function _giac_factor(expr_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
         return _giac_eval_string("factor($expr_str)", ctx_ptr)
     end
     return C_NULL
@@ -571,7 +592,7 @@ end
 
 function _giac_expand(expr_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
         return _giac_eval_string("expand($expr_str)", ctx_ptr)
     end
     return C_NULL
@@ -579,7 +600,7 @@ end
 
 function _giac_simplify(expr_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
         return _giac_eval_string("simplify($expr_str)", ctx_ptr)
     end
     return C_NULL
@@ -587,8 +608,8 @@ end
 
 function _giac_solve(expr_ptr::Ptr{Cvoid}, var_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        expr_str = _get_stub_expr(expr_ptr)
-        var_str = _get_stub_expr(var_ptr)
+        expr_str = _giac_expr_to_string(expr_ptr)
+        var_str = _giac_expr_to_string(var_ptr)
         return _giac_eval_string("solve($expr_str, $var_str)", ctx_ptr)
     end
     return C_NULL
@@ -596,8 +617,8 @@ end
 
 function _giac_gcd(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("gcd($a_str, $b_str)", ctx_ptr)
     end
     return C_NULL
@@ -609,8 +630,8 @@ end
 
 function _giac_add(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)+($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -618,8 +639,8 @@ end
 
 function _giac_sub(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)-($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -627,8 +648,8 @@ end
 
 function _giac_mul(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)*($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -636,8 +657,8 @@ end
 
 function _giac_div(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)/($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -645,8 +666,8 @@ end
 
 function _giac_pow(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)^($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -654,7 +675,7 @@ end
 
 function _giac_neg(a_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
         return _giac_eval_string("-($a_str)", ctx_ptr)
     end
     return C_NULL
@@ -662,11 +683,11 @@ end
 
 function _giac_equal(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Bool
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         # Use GIAC's simplify to check equality: simplify(a - b) == 0
         result = _giac_eval_string("simplify(($a_str)-($b_str))", ctx_ptr)
-        result_str = _get_stub_expr(result)
+        result_str = _giac_expr_to_string(result)
         return result_str == "0"
     end
     return false
@@ -678,7 +699,7 @@ end
 
 function _giac_det(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
         return _giac_eval_string("det($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -686,7 +707,7 @@ end
 
 function _giac_inv_matrix(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
         return _giac_eval_string("inv($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -694,7 +715,7 @@ end
 
 function _giac_trace(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
         return _giac_eval_string("trace($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -702,8 +723,8 @@ end
 
 function _giac_matrix_mul(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)*($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -711,8 +732,8 @@ end
 
 function _giac_matrix_add(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)+($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -720,8 +741,8 @@ end
 
 function _giac_matrix_sub(a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        a_str = _get_stub_expr(a_ptr)
-        b_str = _get_stub_expr(b_ptr)
+        a_str = _giac_expr_to_string(a_ptr)
+        b_str = _giac_expr_to_string(b_ptr)
         return _giac_eval_string("($a_str)-($b_str)", ctx_ptr)
     end
     return C_NULL
@@ -729,8 +750,8 @@ end
 
 function _giac_matrix_scalar_mul(m_ptr::Ptr{Cvoid}, scalar_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
-        s_str = _get_stub_expr(scalar_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
+        s_str = _giac_expr_to_string(scalar_ptr)
         return _giac_eval_string("($s_str)*($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -738,7 +759,7 @@ end
 
 function _giac_matrix_transpose(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
         return _giac_eval_string("tran($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -746,7 +767,7 @@ end
 
 function _giac_matrix_det(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
         return _giac_eval_string("det($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -754,7 +775,7 @@ end
 
 function _giac_matrix_inv(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
         return _giac_eval_string("inv($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -762,7 +783,7 @@ end
 
 function _giac_matrix_trace(m_ptr::Ptr{Cvoid}, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(m_ptr)
+        m_str = _giac_expr_to_string(m_ptr)
         return _giac_eval_string("trace($m_str)", ctx_ptr)
     end
     return C_NULL
@@ -779,7 +800,7 @@ end
 
 function _giac_matrix_getindex(ptr::Ptr{Cvoid}, i::Int, j::Int)::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
-        m_str = _get_stub_expr(ptr)
+        m_str = _giac_expr_to_string(ptr)
         # GIAC uses 0-based indexing, but we receive 0-based indices from Julia (already adjusted)
         return _giac_eval_string("($m_str)[$i][$j]", C_NULL)
     end
@@ -957,7 +978,7 @@ end
 function _tier1_unary(func::Function, expr_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            expr_str = _get_stub_expr(expr_ptr)
+            expr_str = _giac_expr_to_string(expr_ptr)
             gen_arg = GiacCxxBindings.giac_eval(expr_str)
             result_gen = func(gen_arg)
             result_str = GiacCxxBindings.to_string(result_gen)
@@ -972,8 +993,8 @@ end
 function _tier1_binary(func::Function, a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            a_str = _get_stub_expr(a_ptr)
-            b_str = _get_stub_expr(b_ptr)
+            a_str = _giac_expr_to_string(a_ptr)
+            b_str = _giac_expr_to_string(b_ptr)
             gen_a = GiacCxxBindings.giac_eval(a_str)
             gen_b = GiacCxxBindings.giac_eval(b_str)
             result_gen = func(gen_a, gen_b)
@@ -989,9 +1010,9 @@ end
 function _tier1_ternary(func::Function, a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, c_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            a_str = _get_stub_expr(a_ptr)
-            b_str = _get_stub_expr(b_ptr)
-            c_str = _get_stub_expr(c_ptr)
+            a_str = _giac_expr_to_string(a_ptr)
+            b_str = _giac_expr_to_string(b_ptr)
+            c_str = _giac_expr_to_string(c_ptr)
             gen_a = GiacCxxBindings.giac_eval(a_str)
             gen_b = GiacCxxBindings.giac_eval(b_str)
             gen_c = GiacCxxBindings.giac_eval(c_str)

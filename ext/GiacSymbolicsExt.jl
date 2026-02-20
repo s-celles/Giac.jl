@@ -360,10 +360,9 @@ function Giac.to_giac(expr::Num)::GiacExpr
     end
     # Use direct conversion via tree traversal to build Gen
     gen = _convert_to_gen(expr)
-    # Convert Gen to GiacExpr via string (Gen was built directly, not parsed)
-    # This preserves the structure built by make_symbolic_unevaluated
-    gen_str = String(Giac.GiacCxxBindings.to_string(gen))
-    return giac_eval(gen_str)
+    # Convert Gen directly to GiacExpr without string serialization
+    ptr = Giac._gen_to_ptr(gen)
+    return GiacExpr(ptr)
 end
 
 """
