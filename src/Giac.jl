@@ -90,6 +90,9 @@ include("Commands.jl")
 # Include TempApi submodule (010-tempapi-submodule)
 include("TempApi.jl")
 
+# Include Constants submodule (053-symbolic-pi-constant)
+include("Constants.jl")
+
 # Types
 export GiacExpr, GiacContext, GiacMatrix, GiacError, HelpResult, GiacInput
 
@@ -191,6 +194,8 @@ function __init__()
         # Generate command functions in Commands submodule (009-commands-submodule)
         # Note: This must happen here because nested module __init__ runs BEFORE parent __init__
         Commands._generate_command_functions()
+        # Initialize symbolic constants (053-symbolic-pi-constant)
+        Constants._init_constants()
     catch e
         @error "Failed to initialize GIAC library" exception=e
         rethrow()

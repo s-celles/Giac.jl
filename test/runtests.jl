@@ -115,6 +115,12 @@ using LinearAlgebra
     # Verifies symbolic expression preservation in to_symbolics
     # ============================================================================
     include("test_symbolics_ext.jl")
+
+    # ============================================================================
+    # Constants Module Tests (053-symbolic-pi-constant)
+    # Verifies symbolic constants (pi, e, i) work correctly
+    # ============================================================================
+    include("test_constants.jl")
 end
 
 # Aqua.jl package quality tests

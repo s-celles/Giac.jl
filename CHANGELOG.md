@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Symbolic Constants module (`Giac.Constants`)**: New submodule providing symbolic
+  mathematical constants `pi`, `e`, and `i` as `GiacExpr` values that preserve their
+  symbolic form in expressions:
+  ```julia
+  using Giac
+  using Giac.Constants: pi, e, i
+
+  x = giac_eval("x")
+  expr = 2 * pi * x           # GiacExpr: 2*pi*x (stays symbolic!)
+  invoke_cmd(:exp, i * pi)    # GiacExpr: -1 (Euler's formula)
+  ```
+
+  Unlike Julia's `Base.pi` which converts to float when used with GiacExpr, these
+  symbolic constants maintain exact representation throughout computations. Constants
+  require explicit import to avoid shadowing Julia's native constants.
+
 - **Multiple dispatch for JULIA_CONFLICTS commands**: GIAC commands that conflict with Julia
   (like `zeros`, `min`, `max`, `det`, `inv`) now work with `GiacExpr` arguments via multiple dispatch.
   Julia's type-based dispatch routes calls correctly:

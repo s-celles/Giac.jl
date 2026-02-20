@@ -157,6 +157,7 @@ integrate(exp(x), x, -Inf, 0)    # 1
 
 - **[Core API](@ref)**: Types, evaluation, and main functions
 - **[Commands](@ref Giac.Commands)**: All GIAC commands as functions
+- **[Constants](@ref Giac.Constants)**: Symbolic mathematical constants (pi, e, i)
 - **[TempApi](@ref Giac.TempApi)**: Convenience functions with simple names
 
 ## Documentation
@@ -165,6 +166,7 @@ integrate(exp(x), x, -Inf, 0)    # 1
 - [Installation Guide](install.md)
 - [Quick Start](quickstart.md)
 - [Variable Declaration](variables.md)
+- [Symbolic Constants](constants.md)
 
 ### Mathematics
 - [Algebra](mathematics/algebra.md) - Factorization, expansion, simplification, solving
