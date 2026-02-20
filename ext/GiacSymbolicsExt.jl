@@ -383,20 +383,20 @@ Recursively convert a CxxWrap Gen object tree to Symbolics.jl expression.
 Uses Symbolics.term() for multiplication and exponentiation to preserve factored structure.
 """
 function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
-    t = Giac.GiacCxxBindings.type(gen)
+    t = Giac.GenTypes.T(Giac.GiacCxxBindings.type(gen))
 
-    if t == 0  # INT
+    if t == Giac.GenTypes.INT
         # Integer: use direct accessor for efficiency
         return Num(Giac.GiacCxxBindings.to_int64(gen))
-    elseif t == 1  # DOUBLE
+    elseif t == Giac.GenTypes.DOUBLE
         # Float: use direct accessor for efficiency
         return Num(Giac.GiacCxxBindings.to_double(gen))
-    elseif t == 2  # ZINT (arbitrary precision integer - GMP)
-        # Feature 045: Handle large integers that don't fit in Int64
+    elseif t == Giac.GenTypes.ZINT
+        # Arbitrary precision integer (GMP) - Feature 045
         # Use dedicated zint_to_string accessor for GMP integers
         gen_str = String(Giac.GiacCxxBindings.zint_to_string(gen))
         return Num(parse(BigInt, gen_str))
-    elseif t == 6  # IDNT
+    elseif t == Giac.GenTypes.IDNT
         # Identifier/variable: use dedicated idnt_name accessor
         name = String(Giac.GiacCxxBindings.idnt_name(gen))
         # Handle special constants
@@ -410,14 +410,14 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
             var_cache[name] = Symbolics.variable(Symbol(name))
         end
         return var_cache[name]
-    elseif t == 8  # SYMB
+    elseif t == Giac.GenTypes.SYMB
         # Symbolic expression: traverse tree
         op = Giac.GiacCxxBindings.symb_sommet_name(gen)
         feuille = Giac.GiacCxxBindings.symb_feuille(gen)
-        feuille_type = Giac.GiacCxxBindings.type(feuille)
+        feuille_type = Giac.GenTypes.T(Giac.GiacCxxBindings.type(feuille))
 
         # Get arguments
-        args = if feuille_type == 7  # VECT
+        args = if feuille_type == Giac.GenTypes.VECT
             n = Giac.GiacCxxBindings.vect_size(feuille)
             [Giac.GiacCxxBindings.vect_at(feuille, i-1) for i in 1:n]
         else
@@ -454,11 +454,11 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
             gen_str = String(Giac.GiacCxxBindings.to_string(gen))
             return _parse_symbolic_expr(gen_str, var_cache)
         end
-    elseif t == 7  # VECT
+    elseif t == Giac.GenTypes.VECT
         # Vector: convert each element
         n = Giac.GiacCxxBindings.vect_size(gen)
         return [_gen_tree_to_symbolics(Giac.GiacCxxBindings.vect_at(gen, i-1), var_cache) for i in 1:n]
-    elseif t == 10  # FRAC
+    elseif t == Giac.GenTypes.FRAC
         # Fraction: convert numerator and denominator
         num = Giac.GiacCxxBindings.frac_num(gen)
         den = Giac.GiacCxxBindings.frac_den(gen)
@@ -520,11 +520,12 @@ function Giac.to_symbolics(expr::GiacExpr)
         # Use hold() to preserve structure and get the proper SYMB type
         try
             held_gen = _get_held_gen(expr_str)
-            held_type = Giac.GiacCxxBindings.type(held_gen)
+            held_type = Giac.GenTypes.T(Giac.GiacCxxBindings.type(held_gen))
 
             # Use tree-based conversion for most types
             # This ensures consistent Num wrapping
-            if held_type in (0, 1, 6, 7, 8, 10)  # INT, DOUBLE, IDNT, VECT, SYMB, FRAC
+            if held_type in (Giac.GenTypes.INT, Giac.GenTypes.DOUBLE, Giac.GenTypes.IDNT,
+                             Giac.GenTypes.VECT, Giac.GenTypes.SYMB, Giac.GenTypes.FRAC)
                 return _gen_tree_to_symbolics(held_gen, var_cache)
             end
         catch e
