@@ -47,25 +47,6 @@ function _get_julia_function(giac_name::String)::Union{Function, Nothing}
 end
 
 # ============================================================================
-# Symbolic Operators Mapping
-# Maps GIAC operator names to Julia functions for symbolic term construction
-# ============================================================================
-
-"""
-    SYMBOLIC_OPS
-
-Dictionary mapping GIAC operator names to Julia functions.
-Used for preserving factorized expression structure (e.g., 2^6*5^6).
-"""
-const SYMBOLIC_OPS = Dict{String, Function}(
-    "*" => *,
-    "^" => ^,
-    "+" => +,
-    "-" => -,
-    "/" => /,
-)
-
-# ============================================================================
 # Helper Functions
 # ============================================================================
 
@@ -166,9 +147,9 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
         # Recursively convert arguments
         converted_args = [_gen_tree_to_symbolics(a, var_cache) for a in args]
 
-        # Handle operators
+        # Handle operators - use Symbolics.term() for * and ^ to preserve factored structure
         if op == "*" || op == "^"
-            julia_op = SYMBOLIC_OPS[op]
+            julia_op = _get_julia_function(op)
             unwrapped = [Symbolics.unwrap(a) for a in converted_args]
             return Num(Symbolics.term(julia_op, unwrapped...))
         elseif op == "+"
