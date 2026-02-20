@@ -6,19 +6,20 @@ module GiacSymbolicsExt
 
 using Giac
 using Symbolics
-# Import Term from SymbolicUtils (available via Symbolics reexport)
-import Symbolics.SymbolicUtils: Term, Sym, symtype
+# Import SymbolicUtils types (Sym and symtype used for type checking)
+# Note: Term removed - use Symbolics.term() for cross-version compatibility (v6/v7+)
+import Symbolics.SymbolicUtils: Sym, symtype
 
 # ============================================================================
 # Preservable Functions Mapping (T004)
-# Maps GIAC function names to Julia Base functions for Term construction
+# Maps GIAC function names to Julia Base functions for symbolic term construction
 # ============================================================================
 
 """
     PRESERVABLE_FUNCTIONS
 
 Dictionary mapping GIAC function names to Julia functions.
-These functions will be preserved as symbolic Term expressions rather than evaluated.
+These functions will be preserved as symbolic expressions rather than evaluated.
 """
 const PRESERVABLE_FUNCTIONS = Dict{String, Function}(
     # Square and cube roots (US1, US2)
@@ -44,8 +45,8 @@ const PRESERVABLE_FUNCTIONS = Dict{String, Function}(
 
 # ============================================================================
 # Symbolic Operators Mapping (T010 - Feature 044)
-# Maps GIAC operator names to Julia functions for Term construction
-# These operators preserve factored structure when used with Term()
+# Maps GIAC operator names to Julia functions for symbolic term construction
+# These operators preserve factored structure when used with Symbolics.term()
 # ============================================================================
 
 """
@@ -169,7 +170,7 @@ end
     _parse_symbolic_expr(s::AbstractString, var_cache::Dict{String, Num}) -> Any
 
 Recursively parse a GIAC expression string, preserving symbolic functions.
-Uses SymbolicUtils.Term for preservable functions like sqrt, exp, log, etc.
+Uses Symbolics.term() for preservable functions like sqrt, exp, log, etc.
 
 # Arguments
 - `s`: The expression string to parse
@@ -237,12 +238,12 @@ function _parse_symbolic_expr(s::AbstractString, var_cache::Dict{String, Num})
             # Recursively parse arguments
             parsed_args = [_parse_symbolic_expr(arg, var_cache) for arg in args]
 
-            # Create a Term to preserve the symbolic function
-            # Wrap in Num for Symbolics compatibility
+            # Create a symbolic term to preserve the function
+            # Use Symbolics.term for cross-version compatibility (v6 and v7+)
             if length(parsed_args) == 1
-                return Num(Term(julia_func, [Symbolics.unwrap(parsed_args[1])]))
+                return Num(Symbolics.term(julia_func, Symbolics.unwrap(parsed_args[1])))
             else
-                return Num(Term(julia_func, [Symbolics.unwrap(a) for a in parsed_args]))
+                return Num(Symbolics.term(julia_func, [Symbolics.unwrap(a) for a in parsed_args]...))
             end
         end
     end
@@ -293,8 +294,8 @@ function _convert_parsed_expr(expr, var_cache::Dict{String, Num})
             if haskey(PRESERVABLE_FUNCTIONS, func_name)
                 julia_func = PRESERVABLE_FUNCTIONS[func_name]
                 converted_args = [_convert_parsed_expr(a, var_cache) for a in args]
-                # Create Term for symbolic preservation
-                return Num(Term(julia_func, [Symbolics.unwrap(a) for a in converted_args]))
+                # Create symbolic term for preservation (cross-version compatible)
+                return Num(Symbolics.term(julia_func, [Symbolics.unwrap(a) for a in converted_args]...))
             else
                 # Standard function call - evaluate normally
                 converted_args = [_convert_parsed_expr(a, var_cache) for a in args]
@@ -379,7 +380,7 @@ end
     _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num}) -> Any
 
 Recursively convert a CxxWrap Gen object tree to Symbolics.jl expression.
-Uses Term objects for multiplication and exponentiation to preserve factored structure.
+Uses Symbolics.term() for multiplication and exponentiation to preserve factored structure.
 """
 function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
     t = Giac.GiacCxxBindings.type(gen)
@@ -429,10 +430,10 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
 
         # Handle operators that should preserve structure (factorization)
         if op == "*" || op == "^"
-            # Use Term to preserve factored structure without evaluation
+            # Use Symbolics.term to preserve factored structure (cross-version compatible)
             julia_op = SYMBOLIC_OPS[op]
             unwrapped = [Symbolics.unwrap(a) for a in converted_args]
-            return Num(Term(julia_op, unwrapped))
+            return Num(Symbolics.term(julia_op, unwrapped...))
         elseif op == "+"
             # Sum can be evaluated without losing structure
             return sum(converted_args)
@@ -445,10 +446,10 @@ function _gen_tree_to_symbolics(gen, var_cache::Dict{String, Num})
         elseif op == "/"
             return converted_args[1] / converted_args[2]
         elseif haskey(PRESERVABLE_FUNCTIONS, op)
-            # Preservable function (sqrt, sin, exp, etc.)
+            # Preservable function (sqrt, sin, exp, etc.) - cross-version compatible
             julia_func = PRESERVABLE_FUNCTIONS[op]
             unwrapped = [Symbolics.unwrap(a) for a in converted_args]
-            return Num(Term(julia_func, unwrapped))
+            return Num(Symbolics.term(julia_func, unwrapped...))
         else
             # Unknown operator: fall back to string parsing
             gen_str = String(Giac.GiacCxxBindings.to_string(gen))
