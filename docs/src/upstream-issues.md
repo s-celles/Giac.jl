@@ -56,19 +56,25 @@ The bug is triggered by **any negative symbolic coefficient in a sum expression*
 
 ### Root Cause
 
-The error occurs in `SymbolicUtils/src/types.jl` in the `remove_minus` function (approximately line 1254):
+The error originates in `show_add` in `SymbolicUtils/src/types.jl`:
 
 ```julia
-function remove_minus(t)
-    # This fails when t contains symbolic expressions like -sqrt(2)
-    # because (-(2^(1//2))) < 0 returns a symbolic Bool, not a literal Bool
-    if t < 0
-        ...
+function show_add(io::IO, args::ArgsT{T}) where {T}
+    @union_split_smallvec args begin
+        for (i, t) in enumerate(args)
+            neg = isnegative(t)  # <-- THIS IS THE PROBLEM
+            if i == 1
+                neg && print(io, "-")  # Uses `neg` in boolean context
+            else
+                print(io, neg ? " - " : " + ")  # Uses `neg` in boolean context
+            end
+            # ...
+        end
     end
 end
 ```
 
-The comparison `t < 0` returns a `SymbolicUtils.BasicSymbolic{Bool}` instead of a `Bool` when `t` is a symbolic expression.
+The `isnegative(t)` function returns a `SymbolicUtils.BasicSymbolic{Bool}` instead of a `Bool` when `t` contains symbolic expressions like `-sqrt(2)`. This symbolic Bool is then used in boolean contexts (`neg &&` and `neg ? :`) which causes the TypeError.
 
 ### Impact on Giac.jl
 
@@ -123,23 +129,24 @@ The issue affects any symbolic expression that cannot be evaluated to a numeric 
 
 ### Upstream Fix
 
-A fix should be submitted to SymbolicUtils.jl to handle symbolic expressions in `remove_minus` and related display functions. The fix should check if the result of comparison is symbolic before using it in a boolean context.
+A fix should be submitted to SymbolicUtils.jl. The `isnegative` function (or its usage in `show_add`) should handle the case where the result is symbolic rather than a literal Bool.
 
-**Suggested fix for `remove_minus` in SymbolicUtils/src/types.jl:**
+**Suggested fix for `show_add` in SymbolicUtils/src/types.jl:**
 
 ```julia
-function remove_minus(t)
-    # Handle the case where t is a symbolic expression
-    comparison = t < 0
-    if comparison isa Bool
-        if comparison
-            # t is a negative literal number
-            ...
+function show_add(io::IO, args::ArgsT{T}) where {T}
+    @union_split_smallvec args begin
+        for (i, t) in enumerate(args)
+            neg_result = isnegative(t)
+            # Handle symbolic Bool - treat as non-negative for display
+            neg = neg_result isa Bool ? neg_result : false
+            if i == 1
+                neg && print(io, "-")
+            else
+                print(io, neg ? " - " : " + ")
+            end
+            # ...
         end
-    else
-        # comparison is symbolic - cannot determine sign at display time
-        # Return t unchanged or handle gracefully
-        return (false, t)
     end
 end
 ```
@@ -147,4 +154,4 @@ end
 ### References
 
 - SymbolicUtils.jl repository: https://github.com/JuliaSymbolics/SymbolicUtils.jl
-- Related code: `src/types.jl`, functions `remove_minus`, `show_add`, `show_mul`
+- Related code: `src/types.jl`, functions `isnegative`, `show_add`, `show_mul`
