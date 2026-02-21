@@ -978,11 +978,9 @@ end
 function _tier1_unary(func::Function, expr_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            expr_str = _giac_expr_to_string(expr_ptr)
-            gen_arg = GiacCxxBindings.giac_eval(expr_str)
+            gen_arg = GiacCxxBindings.gen_from_heap_ptr(expr_ptr)
             result_gen = func(gen_arg)
-            result_str = GiacCxxBindings.to_string(result_gen)
-            return _make_stub_ptr(result_str)
+            return Ptr{Cvoid}(GiacCxxBindings.gen_to_heap_ptr(result_gen))
         catch e
             @debug "Tier 1 function failed: $e"
         end
@@ -993,13 +991,10 @@ end
 function _tier1_binary(func::Function, a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            a_str = _giac_expr_to_string(a_ptr)
-            b_str = _giac_expr_to_string(b_ptr)
-            gen_a = GiacCxxBindings.giac_eval(a_str)
-            gen_b = GiacCxxBindings.giac_eval(b_str)
-            result_gen = func(gen_a, gen_b)
-            result_str = GiacCxxBindings.to_string(result_gen)
-            return _make_stub_ptr(result_str)
+            a_gen = GiacCxxBindings.gen_from_heap_ptr(a_ptr)
+            b_gen = GiacCxxBindings.gen_from_heap_ptr(b_ptr)
+            result_gen = func(a_gen, b_gen)
+            return Ptr{Cvoid}(GiacCxxBindings.gen_to_heap_ptr(result_gen))
         catch e
             @debug "Tier 1 binary function failed: $e"
         end
@@ -1010,15 +1005,11 @@ end
 function _tier1_ternary(func::Function, a_ptr::Ptr{Cvoid}, b_ptr::Ptr{Cvoid}, c_ptr::Ptr{Cvoid})::Ptr{Cvoid}
     if !_stub_mode[] && GiacCxxBindings._have_library
         try
-            a_str = _giac_expr_to_string(a_ptr)
-            b_str = _giac_expr_to_string(b_ptr)
-            c_str = _giac_expr_to_string(c_ptr)
-            gen_a = GiacCxxBindings.giac_eval(a_str)
-            gen_b = GiacCxxBindings.giac_eval(b_str)
-            gen_c = GiacCxxBindings.giac_eval(c_str)
-            result_gen = func(gen_a, gen_b, gen_c)
-            result_str = GiacCxxBindings.to_string(result_gen)
-            return _make_stub_ptr(result_str)
+            a_gen = GiacCxxBindings.gen_from_heap_ptr(a_ptr)
+            b_gen = GiacCxxBindings.gen_from_heap_ptr(b_ptr)
+            c_gen = GiacCxxBindings.gen_from_heap_ptr(c_ptr)
+            result_gen = func(a_gen, b_gen, c_gen)
+            return Ptr{Cvoid}(GiacCxxBindings.gen_to_heap_ptr(result_gen))
         catch e
             @debug "Tier 1 ternary function failed: $e"
         end
