@@ -123,6 +123,12 @@ using LinearAlgebra
     include("test_constants.jl")
 
     # ============================================================================
+    # Held Command Display Tests (055-held-cmd-display)
+    # Verifies HeldCmd type, hold_cmd, release, LaTeX and plain text display
+    # ============================================================================
+    include("test_held_cmd.jl")
+
+    # ============================================================================
     # MathJSON Conversion Extension Tests (054-mathjson-conversion)
     # Verifies bidirectional conversion between GiacExpr and MathJSON types
     # ============================================================================

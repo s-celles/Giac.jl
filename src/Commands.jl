@@ -58,7 +58,8 @@ module Commands
 using ..Giac: GiacExpr, GiacInput, GiacError, giac_eval, with_giac_lock,
               VALID_COMMANDS, JULIA_CONFLICTS, CONFLICT_CATEGORIES, exportable_commands,
               suggest_commands, _format_suggestions, _warn_conflict,
-              _arg_to_giac_string, _build_command_string, help, HelpResult
+              _arg_to_giac_string, _build_command_string, help, HelpResult,
+              HeldCmd
 
 # ============================================================================
 # Core Command Invocation (invoke_cmd)
@@ -148,6 +149,93 @@ invoke_cmd(cmd::String, args...)::GiacExpr = invoke_cmd(Symbol(cmd), args...)
 
 # Export invoke_cmd
 export invoke_cmd
+
+# ============================================================================
+# Held Command Display (055-held-cmd-display)
+# ============================================================================
+
+"""
+    hold_cmd(cmd::Symbol, args...) -> HeldCmd
+
+Create a held (unevaluated) representation of a GIAC command.
+
+Like `invoke_cmd`, but does NOT execute the command. Instead, returns a
+`HeldCmd` object that can be displayed with LaTeX rendering in notebooks
+and executed later via `release`.
+
+# Arguments
+- `cmd::Symbol`: GIAC command name (e.g., `:integrate`, `:diff`, `:factor`)
+- `args...`: Command arguments (GiacExpr, String, Number, Symbol, AbstractVector)
+
+# Returns
+- `HeldCmd`: An unevaluated command object with rich display
+
+# Throws
+- `GiacError(:eval)`: If command name is not a valid GIAC command
+
+# Examples
+```julia
+using Giac
+using Giac.Commands: hold_cmd, release
+
+@giac_var x
+h = hold_cmd(:integrate, x^2, x)  # No execution — returns HeldCmd
+display(h)                          # Renders ∫ x² dx in notebooks
+result = release(h)                 # Now executes: returns x³/3
+```
+
+# See also
+- [`invoke_cmd`](@ref): Execute a command immediately
+- [`release`](@ref): Execute a HeldCmd
+- [`HeldCmd`](@ref): The held command type
+"""
+function hold_cmd(cmd::Symbol, args...)::HeldCmd
+    # Validate command exists (same validation as invoke_cmd)
+    if !isempty(VALID_COMMANDS) && cmd ∉ VALID_COMMANDS
+        suggestions = suggest_commands(cmd)
+        suggestion_text = _format_suggestions(suggestions)
+        throw(GiacError("Unknown command: $cmd.$suggestion_text", :eval))
+    end
+
+    return HeldCmd(cmd, args)
+end
+
+# String variant for convenience
+hold_cmd(cmd::String, args...)::HeldCmd = hold_cmd(Symbol(cmd), args...)
+
+"""
+    release(held::HeldCmd) -> GiacExpr
+
+Execute a held command and return the result.
+
+Takes a `HeldCmd` created by `hold_cmd` and executes it via `invoke_cmd`,
+returning the computed `GiacExpr` result.
+
+# Arguments
+- `held::HeldCmd`: A held command to execute
+
+# Returns
+- `GiacExpr`: Result of executing the held command
+
+# Examples
+```julia
+using Giac
+using Giac.Commands: hold_cmd, release
+
+@giac_var x
+h = hold_cmd(:integrate, x^2, x)
+result = release(h)  # Returns x³/3
+```
+
+# See also
+- [`hold_cmd`](@ref): Create a HeldCmd
+- [`invoke_cmd`](@ref): Direct command execution
+"""
+function release(held::HeldCmd)::GiacExpr
+    return invoke_cmd(held.cmd, held.args...)
+end
+
+export hold_cmd, release
 
 # ============================================================================
 # Docstring Generation (026-julia-help-docstrings)

@@ -45,6 +45,7 @@ makedocs(
             "Commands submodule" => "api/commands_submodule.md",
             "TempApi" => "api/tempapi.md",
         ],
+        "Held Commands" => "held_commands.md",
         "Tables.jl Compatibility" => "tables.md",
         "Extensions" => [
              "Symbolics.jl" => "extensions/symbolics.md",

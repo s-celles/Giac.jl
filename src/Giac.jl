@@ -84,6 +84,9 @@ include("introspection.jl")
 include("conversion.jl")
 include("iteration.jl")
 
+# Held command display (055-held-cmd-display)
+include("held_cmd.jl")
+
 # Include Commands submodule (009-commands-submodule)
 include("Commands.jl")
 
@@ -137,9 +140,15 @@ export available_commands, reset_conflict_warnings!
 # GiacCommand type (kept for compatibility, callable uses invoke_cmd internally)
 export GiacCommand
 
+# Held command display (055-held-cmd-display)
+export HeldCmd, hold_cmd, release
+
 # Re-export invoke_cmd from Commands submodule (009-commands-submodule)
 # This makes invoke_cmd available directly after `using Giac`
 using .Commands: invoke_cmd
+
+# Re-export hold_cmd and release from Commands submodule (055-held-cmd-display)
+using .Commands: hold_cmd, release
 
 # Conversion functions (extended by GiacSymbolicsExt and GiacMathJSONExt)
 export to_giac, to_symbolics, to_mathjson
