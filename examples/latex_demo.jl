@@ -136,6 +136,9 @@ M = GiacMatrix([[a, b], [c, d]])
 # ╔═╡ 54a28ee1-cf11-456c-91c5-def28da697f2
 det(M)
 
+# ╔═╡ e468bcbb-b698-4a49-b7ca-60b73326c331
+GiacMatrix(:a, 20, 20)
+
 # ╔═╡ d6e7f8a9-b0c1-2345-defa-456789012345
 md"""
 ---
@@ -191,7 +194,7 @@ md"""
 # ╟─f8971c4d-71d9-4542-85dc-2851238ffc14
 # ╠═1cd3a4ab-784b-4bab-a26a-f3b55c0a8f58
 # ╠═2c65fb7f-9a73-46fa-8b0d-e4eecb5cfc9a
-# ╠═c8ceeb8e-71f0-4e11-819d-a0c4760e60c4
+# ╟─c8ceeb8e-71f0-4e11-819d-a0c4760e60c4
 # ╠═c1baad0a-d9f7-4dfc-9cc0-78c00847de0b
 # ╠═641b234c-c664-44c2-894d-0e62da7b9076
 # ╠═08e2309b-ef33-4390-ad02-0f72452d62eb
@@ -205,6 +208,7 @@ md"""
 # ╠═b4c5d6e7-f8a9-0123-bcde-234567890123
 # ╠═c5d6e7f8-a9b0-1234-cdef-345678901234
 # ╠═54a28ee1-cf11-456c-91c5-def28da697f2
+# ╠═e468bcbb-b698-4a49-b7ca-60b73326c331
 # ╟─d6e7f8a9-b0c1-2345-defa-456789012345
 # ╠═e7f8a9b0-c1d2-3456-efab-567890123456
 # ╟─f8a9b0c1-d2e3-4567-fabc-678901234567
