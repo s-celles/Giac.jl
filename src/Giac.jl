@@ -141,13 +141,14 @@ export GiacCommand
 # This makes invoke_cmd available directly after `using Giac`
 using .Commands: invoke_cmd
 
-# Conversion functions (extended by GiacSymbolicsExt)
-export to_giac, to_symbolics
+# Conversion functions (extended by GiacSymbolicsExt and GiacMathJSONExt)
+export to_giac, to_symbolics, to_mathjson
 
 """
     to_giac(expr)
 
-Convert an expression to GiacExpr. Extended by GiacSymbolicsExt for Symbolics.Num types.
+Convert an expression to GiacExpr. Extended by GiacSymbolicsExt for Symbolics.Num types
+and by GiacMathJSONExt for MathJSON.AbstractMathJSONExpr types.
 """
 function to_giac end
 
@@ -157,6 +158,14 @@ function to_giac end
 Convert a GiacExpr to a Symbolics.jl expression. Extended by GiacSymbolicsExt.
 """
 function to_symbolics end
+
+"""
+    to_mathjson(expr::GiacExpr)
+    to_mathjson(m::GiacMatrix)
+
+Convert a GiacExpr or GiacMatrix to a MathJSON.jl expression. Extended by GiacMathJSONExt.
+"""
+function to_mathjson end
 
 # Note: Calculus and algebra functions (giac_diff, giac_integrate, giac_factor, etc.)
 # have been removed in favor of Giac.Commands equivalents.

@@ -48,6 +48,7 @@ makedocs(
         "Tables.jl Compatibility" => "tables.md",
         "Extensions" => [
              "Symbolics.jl" => "extensions/symbolics.md",
+             "MathJSON.jl" => "extensions/mathjson.md",
         ],
         "Developer Guide" => [
             "Overview" => "developer/index.md",

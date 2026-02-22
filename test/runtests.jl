@@ -121,6 +121,12 @@ using LinearAlgebra
     # Verifies symbolic constants (pi, e, i) work correctly
     # ============================================================================
     include("test_constants.jl")
+
+    # ============================================================================
+    # MathJSON Conversion Extension Tests (054-mathjson-conversion)
+    # Verifies bidirectional conversion between GiacExpr and MathJSON types
+    # ============================================================================
+    include("test_mathjson_conversion.jl")
 end
 
 # Aqua.jl package quality tests
