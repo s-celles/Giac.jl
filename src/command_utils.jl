@@ -105,6 +105,19 @@ function _arg_to_giac_string(arg::AbstractVector)::String
     return "[" * join(elements, ",") * "]"
 end
 
+# GiacMatrix - convert to GIAC matrix format [[a,b],[c,d]] (058-commands-matrix-support)
+function _arg_to_giac_string(arg::GiacMatrix)::String
+    rows_str = String[]
+    for i in 1:arg.rows
+        row_elements = String[]
+        for j in 1:arg.cols
+            push!(row_elements, string(arg[i, j]))
+        end
+        push!(rows_str, "[" * join(row_elements, ",") * "]")
+    end
+    return "[" * join(rows_str, ",") * "]"
+end
+
 # DerivativeCondition - unevaluated derivative initial conditions (035-derivative-operator)
 function _arg_to_giac_string(arg::DerivativeCondition)::String
     return arg.condition_str

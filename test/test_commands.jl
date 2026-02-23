@@ -293,3 +293,59 @@ end
         @test string(result) == "2*x"
     end
 end
+
+# ============================================================================
+# GiacMatrix Command Support (058-commands-matrix-support)
+# ============================================================================
+@testset "GiacMatrix Command Support (058-commands-matrix-support)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping GiacMatrix command tests - GIAC library not available (stub mode)"
+        @test_skip true
+        return
+    end
+
+    M = GiacMatrix([[1, 2], [3, 4]])
+
+    @testset "invoke_cmd with GiacMatrix" begin
+        # T003: invoke_cmd(:eigenvals, GiacMatrix(...))
+        result = invoke_cmd(:eigenvals, M)
+        @test result isa GiacExpr
+        result_str = string(result)
+        # Eigenvalues of [[1,2],[3,4]] are (5±√33)/2
+        @test !isempty(result_str)
+
+        # T005: invoke_cmd(:det, GiacMatrix(...))
+        det_result = invoke_cmd(:det, M)
+        @test det_result isa GiacExpr
+        @test string(det_result) == "-2"
+
+        # T006: invoke_cmd(:transpose, GiacMatrix(...))
+        trans_result = invoke_cmd(:transpose, M)
+        @test trans_result isa GiacExpr
+        trans_str = string(trans_result)
+        @test occursin("[", trans_str)
+    end
+
+    @testset "Giac.Commands with GiacMatrix" begin
+        # T004: eigenvals(GiacMatrix(...)) via generated Tier 2 command
+        eigenvals_result = Giac.Commands.eigenvals(M)
+        @test eigenvals_result isa GiacExpr
+        @test !isempty(string(eigenvals_result))
+
+        # trace via GiacMatrix-specific method (trace is in JULIA_CONFLICTS
+        # but safe for GiacMatrix via multiple dispatch)
+        trace_result = Giac.Commands.trace(M)
+        @test trace_result isa GiacExpr
+        @test string(trace_result) == "5"
+    end
+
+    @testset "GiacMatrix with symbolic entries" begin
+        # T007: Matrix with symbolic entries
+        @giac_var x y
+        M_sym = GiacMatrix([[x, y], [1, x]])
+        det_sym = invoke_cmd(:det, M_sym)
+        @test det_sym isa GiacExpr
+        det_str = string(det_sym)
+        @test occursin("x", det_str)
+    end
+end

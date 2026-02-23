@@ -213,6 +213,26 @@ inverse([[1, 2], [3, 4]])    # Returns inverse matrix
 
 See [`GiacInput`](@ref) for the full list of supported input types.
 
+## GiacMatrix Command Support
+
+`GiacMatrix` objects can be passed directly to GIAC commands, both via `invoke_cmd` and generated command functions:
+
+```julia
+using Giac
+using Giac.Commands: eigenvals, trace
+
+M = GiacMatrix([[1, 2], [3, 4]])
+
+# Direct command calls
+eigenvals(M)              # Returns eigenvalues
+trace(M)                  # Returns 5
+
+# Via invoke_cmd (works for all commands including Base-conflicting ones)
+invoke_cmd(:det, M)       # Returns -2
+invoke_cmd(:transpose, M) # Returns transposed matrix
+invoke_cmd(:eigenvals, M) # Returns eigenvalues
+```
+
 ## Command Discovery
 
 ```@docs

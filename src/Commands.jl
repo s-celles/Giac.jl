@@ -55,11 +55,12 @@ invoke_cmd(:sin, x)      # Including conflicting ones
 """
 module Commands
 
-using ..Giac: GiacExpr, GiacInput, GiacError, giac_eval, with_giac_lock,
+using ..Giac: GiacExpr, GiacMatrix, GiacInput, GiacError, giac_eval, with_giac_lock,
               VALID_COMMANDS, JULIA_CONFLICTS, CONFLICT_CATEGORIES, exportable_commands,
               suggest_commands, _format_suggestions, _warn_conflict,
               _arg_to_giac_string, _build_command_string, help, HelpResult,
               HeldCmd
+import LinearAlgebra
 
 # ============================================================================
 # Core Command Invocation (invoke_cmd)
@@ -412,12 +413,16 @@ _has_giac_method(:zeros) # false (no existing method)
 ```
 """
 function _has_giac_method(cmd::Symbol)::Bool
-    # Check if the command exists in Base
-    if !isdefined(Base, cmd)
+    # Check if the command exists in Base or LinearAlgebra
+    local func
+    if isdefined(Base, cmd)
+        func = getfield(Base, cmd)
+    elseif isdefined(LinearAlgebra, cmd)
+        func = getfield(LinearAlgebra, cmd)
+    else
         return false
     end
 
-    func = getfield(Base, cmd)
     if !(func isa Function)
         return false
     end
@@ -485,6 +490,10 @@ function _generate_command_functions()
                 @doc $docstring function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
                     invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
                 end
+                # GiacMatrix support (058-commands-matrix-support)
+                function Base.$(cmd)(first_arg::GiacMatrix, rest...)::GiacExpr
+                    invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                end
             end
             # Note: Don't export Base-extended functions - they're already accessible
             # via Base and exporting undefined local symbols causes Aqua warnings
@@ -492,11 +501,26 @@ function _generate_command_functions()
             # Create new function with GiacInput type constraint
             # This enables native Julia type usage: ifactor(1000), isprime(17), etc.
             docstring = _build_docstring(cmd; is_base_extension=false)
-            @eval begin
-                @doc $docstring function $(cmd)(first_arg::GiacInput, rest...)::GiacExpr
-                    invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+            # Skip GiacMatrix method if cmd collides with a LinearAlgebra Type (e.g., LQ, LU, QR, SVD)
+            _skip_matrix = isdefined(LinearAlgebra, cmd) && getfield(LinearAlgebra, cmd) isa Type
+            if _skip_matrix
+                @eval begin
+                    @doc $docstring function $(cmd)(first_arg::GiacInput, rest...)::GiacExpr
+                        invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                    end
+                    export $(cmd)
                 end
-                export $(cmd)
+            else
+                @eval begin
+                    @doc $docstring function $(cmd)(first_arg::GiacInput, rest...)::GiacExpr
+                        invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                    end
+                    # GiacMatrix support (058-commands-matrix-support)
+                    function $(cmd)(first_arg::GiacMatrix, rest...)::GiacExpr
+                        invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                    end
+                    export $(cmd)
+                end
             end
         end
     end
@@ -517,7 +541,7 @@ function _generate_command_functions()
             continue
         end
 
-        # Check if this is a Base function or LinearAlgebra function
+        # Check if this is a Base, LinearAlgebra, or standalone function
         if isdefined(Base, cmd)
             func = getfield(Base, cmd)
             if func isa Function
@@ -527,9 +551,41 @@ function _generate_command_functions()
                     @doc $docstring function Base.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
                         invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
                     end
+                    # GiacMatrix support (058-commands-matrix-support)
+                    function Base.$(cmd)(first_arg::GiacMatrix, rest...)::GiacExpr
+                        invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                    end
                 end
                 conflict_count += 1
             end
+        elseif isdefined(LinearAlgebra, cmd) && getfield(LinearAlgebra, cmd) isa Function
+            # LinearAlgebra function extension (058-commands-matrix-support)
+            docstring = _build_docstring(cmd; is_base_extension=true)
+            @eval begin
+                @doc $docstring function LinearAlgebra.$(cmd)(first_arg::GiacExpr, rest...)::GiacExpr
+                    invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                end
+                function LinearAlgebra.$(cmd)(first_arg::GiacMatrix, rest...)::GiacExpr
+                    invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                end
+            end
+            conflict_count += 1
+        else
+            # Skip if cmd collides with a Type in LinearAlgebra (e.g., LQ, LU, QR, SVD)
+            if isdefined(LinearAlgebra, cmd) && getfield(LinearAlgebra, cmd) isa Type
+                @debug "Skipping $cmd - conflicts with LinearAlgebra type"
+                continue
+            end
+            # Command not in Base or LinearAlgebra (e.g., trace)
+            # Safe to create GiacMatrix-only methods via multiple dispatch (058-commands-matrix-support)
+            docstring = _build_docstring(cmd; is_base_extension=false)
+            @eval begin
+                @doc $docstring function $(cmd)(first_arg::GiacMatrix, rest...)::GiacExpr
+                    invoke_cmd($(QuoteNode(cmd)), first_arg, rest...)
+                end
+                export $(cmd)
+            end
+            conflict_count += 1
         end
     end
 
