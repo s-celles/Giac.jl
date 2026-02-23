@@ -427,6 +427,42 @@ function Base.convert(::Type{GiacExpr}, ::Irrational{:ℯ})
 end
 
 # =============================================================================
+# Numerator / Denominator (057-numerator-denominator-methods)
+# =============================================================================
+
+"""
+    numerator(g::GiacExpr) -> GiacExpr
+
+Return the numerator of a GIAC expression. Delegates to GIAC's `numer` command,
+which handles both numeric fractions (e.g., `25/15`) and symbolic rational
+expressions (e.g., `(x^3-1)/(x^2-1)`).
+
+# Examples
+```julia
+numerator(giac_eval("25/15"))          # 5
+@giac_var x
+numerator((x^3 - 1) / (x^2 - 1))     # x^2+x+1
+```
+"""
+Base.numerator(g::GiacExpr)::GiacExpr = invoke_cmd(:numer, g)
+
+"""
+    denominator(g::GiacExpr) -> GiacExpr
+
+Return the denominator of a GIAC expression. Delegates to GIAC's `denom` command,
+which handles both numeric fractions (e.g., `25/15`) and symbolic rational
+expressions (e.g., `(x^3-1)/(x^2-1)`).
+
+# Examples
+```julia
+denominator(giac_eval("25/15"))        # 3
+@giac_var x
+denominator((x^3 - 1) / (x^2 - 1))   # x+1
+```
+"""
+Base.denominator(g::GiacExpr)::GiacExpr = invoke_cmd(:denom, g)
+
+# =============================================================================
 # Iteration support for expression components (future enhancement)
 # =============================================================================
 

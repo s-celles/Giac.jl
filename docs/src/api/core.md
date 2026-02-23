@@ -328,6 +328,19 @@ Giac.symb_funcname
 Giac.symb_argument
 ```
 
+### Julia Standard Interface
+
+`Base.numerator` and `Base.denominator` are also extended for `GiacExpr`, delegating to GIAC's `numer`/`denom` commands. These handle both numeric and symbolic fractions:
+
+```julia
+numerator(giac_eval("25/15"))          # 5
+denominator(giac_eval("25/15"))        # 3
+
+@giac_var x
+numerator((x^3 - 1) / (x^2 - 1))     # x^2+x+1
+denominator((x^3 - 1) / (x^2 - 1))   # x+1
+```
+
 ## Conversion Functions
 
 ```@docs

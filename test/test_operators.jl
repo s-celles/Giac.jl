@@ -242,4 +242,37 @@
             end
         end
     end
+
+    # =========================================================================
+    # Base.numerator / Base.denominator (057-numerator-denominator-methods)
+    # =========================================================================
+    @testset "Base.numerator and Base.denominator" begin
+        @giac_var x
+
+        if is_stub_mode()
+            @test_throws GiacError numerator(giac_eval("25/15"))
+        else
+            # Numeric fractions
+            @test string(numerator(giac_eval("25/15"))) == "5"
+            @test string(denominator(giac_eval("25/15"))) == "3"
+
+            # Symbolic rational expressions
+            expr = (x^3 - 1) / (x^2 - 1)
+            num_str = string(numerator(expr))
+            den_str = string(denominator(expr))
+            @test occursin("x", num_str)
+            @test occursin("x", den_str)
+
+            # Integer (numerator is itself, denominator is 1)
+            @test string(numerator(giac_eval("42"))) == "42"
+            @test string(denominator(giac_eval("42"))) == "1"
+
+            # Zero
+            @test string(numerator(giac_eval("0"))) == "0"
+            @test string(denominator(giac_eval("0"))) == "1"
+
+            # Non-fraction expression
+            @test string(denominator(x + 1)) == "1"
+        end
+    end
 end
