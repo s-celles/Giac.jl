@@ -22,6 +22,12 @@ using Pluto
 Pluto.run(notebook="examples/latex_demo.jl")
 ```
 
-See screenshot:
+See screenshots:
 
 ![screencapture-pluto-notebook](assets/screencapture-pluto-notebook-latex_demo.png)
+
+![screencapture-basics.png](assets/screencapture-basics.png)
+
+![screencapture-examples.png](assets/screencapture-examples.png)
+
+![screencapture-examples-2.png](assets/screencapture-examples-2.png)
