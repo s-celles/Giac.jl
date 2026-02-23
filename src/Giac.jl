@@ -141,7 +141,7 @@ export available_commands, reset_conflict_warnings!
 export GiacCommand
 
 # Held command display (055-held-cmd-display)
-export HeldCmd, hold_cmd, release
+export HeldCmd, HeldEquation, hold_cmd, release
 
 # Re-export invoke_cmd from Commands submodule (009-commands-submodule)
 # This makes invoke_cmd available directly after `using Giac`

@@ -89,6 +89,16 @@ function _arg_to_latex(arg::AbstractVector)::String
     return "[" * join(elements, ", ") * "]"
 end
 
+function _arg_to_latex(arg::GiacMatrix)::String
+    # Render matrix as LaTeX using GIAC's latex() on the underlying expression
+    latex_result = invoke_cmd(:latex, arg)
+    latex_str = string(latex_result)
+    if length(latex_str) > 2 && latex_str[1] == '"' && latex_str[end] == '"'
+        return latex_str[2:end-1]
+    end
+    return string(arg.ptr)
+end
+
 function _arg_to_latex(arg)::String
     return string(arg)
 end
@@ -214,3 +224,139 @@ function Base.show(io::IO, ::MIME"text/plain", held::HeldCmd)
     print(io, "HeldCmd: ")
     show(io, held)
 end
+
+# ============================================================================
+# HeldEquation Type (059-heldcmd-equation-tilde)
+# ============================================================================
+
+"""
+    HeldEquation
+
+Represents an equation where at least one side is a `HeldCmd` (unevaluated command).
+
+Provides proper LaTeX rendering that preserves the unevaluated command form,
+unlike a plain `GiacExpr` equation where GIAC's `latex()` would evaluate both sides.
+
+# Fields
+- `lhs`: Left-hand side (HeldCmd, GiacExpr, or Number)
+- `rhs`: Right-hand side (HeldCmd, GiacExpr, or Number)
+
+# Examples
+```julia
+@giac_var x
+h = hold_cmd(:factor, x^4 - 1)
+eq = h ~ factor(x^4 - 1)  # Displays: factor(x⁴-1) = (x-1)(x+1)(x²+1)
+```
+
+# See also
+- [`HeldCmd`](@ref): Unevaluated command type
+- [`~`](@ref): Equation operator
+"""
+struct HeldEquation
+    lhs::Any
+    rhs::Any
+end
+
+# LaTeX helper for one side of the equation
+function _side_to_latex(io::IO, side::HeldCmd)
+    # Delegate to the existing HeldCmd LaTeX rendering (without $$ delimiters)
+    if side.cmd === :integrate
+        _latex_integrate(io, side.args)
+    elseif side.cmd === :diff
+        _latex_diff(io, side.args)
+    elseif side.cmd === :laplace
+        _latex_transform(io, "L", side.args)
+    elseif side.cmd === :invlaplace || side.cmd === :ilaplace
+        _latex_inv_transform(io, "L", side.args)
+    elseif side.cmd === :ztransform || side.cmd === :ztrans
+        _latex_transform(io, "Z", side.args)
+    elseif side.cmd === :invztransform || side.cmd === :invztrans
+        _latex_inv_transform(io, "Z", side.args)
+    else
+        _latex_generic(io, side)
+    end
+end
+
+function _side_to_latex(io::IO, side::GiacExpr)
+    latex_result = invoke_cmd(:latex, side)
+    latex_str = string(latex_result)
+    # Strip surrounding quotes from GIAC's latex() output
+    if length(latex_str) > 2 && latex_str[1] == '"' && latex_str[end] == '"'
+        print(io, latex_str[2:end-1])
+    else
+        print(io, string(side))
+    end
+end
+
+function _side_to_latex(io::IO, side::Number)
+    print(io, string(side))
+end
+
+function Base.show(io::IO, ::MIME"text/latex", eq::HeldEquation)
+    print(io, "\$\$")
+    _side_to_latex(io, eq.lhs)
+    print(io, " = ")
+    _side_to_latex(io, eq.rhs)
+    print(io, "\$\$")
+end
+
+function _side_to_string(side::HeldCmd)::String
+    arg_strings = String[_arg_to_giac_string(a) for a in side.args]
+    return _build_command_string(string(side.cmd), arg_strings)
+end
+
+_side_to_string(side) = string(side)
+
+function Base.show(io::IO, eq::HeldEquation)
+    print(io, _side_to_string(eq.lhs), " = ", _side_to_string(eq.rhs))
+end
+
+function Base.show(io::IO, ::MIME"text/plain", eq::HeldEquation)
+    show(io, eq)
+end
+
+# ============================================================================
+# Equation Operator (~) for HeldCmd (059-heldcmd-equation-tilde)
+# ============================================================================
+
+"""
+    ~(a::HeldCmd, b::GiacExpr) -> HeldEquation
+
+Create an equation with an unevaluated command on the left.
+
+# Examples
+```julia
+@giac_var x
+h = hold_cmd(:factor, x^4 - 1)
+eq = h ~ factor(x^4 - 1)  # factor(x⁴-1) = (x-1)(x+1)(x²+1)
+```
+"""
+Base.:~(a::HeldCmd, b::GiacExpr) = HeldEquation(a, b)
+
+"""
+    ~(a::GiacExpr, b::HeldCmd) -> HeldEquation
+
+Create an equation with an unevaluated command on the right.
+"""
+Base.:~(a::GiacExpr, b::HeldCmd) = HeldEquation(a, b)
+
+"""
+    ~(a::HeldCmd, b::HeldCmd) -> HeldEquation
+
+Create an equation between two unevaluated commands.
+"""
+Base.:~(a::HeldCmd, b::HeldCmd) = HeldEquation(a, b)
+
+"""
+    ~(a::HeldCmd, b::Number) -> HeldEquation
+
+Create an equation with an unevaluated command and a number.
+"""
+Base.:~(a::HeldCmd, b::Number) = HeldEquation(a, b)
+
+"""
+    ~(a::Number, b::HeldCmd) -> HeldEquation
+
+Create an equation with a number and an unevaluated command.
+"""
+Base.:~(a::Number, b::HeldCmd) = HeldEquation(a, b)

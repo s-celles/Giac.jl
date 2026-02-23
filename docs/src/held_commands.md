@@ -90,6 +90,34 @@ result = release(h)  # Computes the integral
 display(result)       # Shows the evaluated result
 ```
 
+## Equation Display with `~`
+
+Held commands support the `~` (tilde) equation operator, enabling side-by-side display
+of unevaluated and evaluated forms:
+
+```julia
+using Giac
+using Giac.Commands: hold_cmd, release, eigenvals
+
+M = GiacMatrix([[1, 2], [3, 4]])
+
+# Show "eigenvals([[1,2],[3,4]]) = [computed result]"
+h = hold_cmd(:eigenvals, M)
+eq = h ~ eigenvals(M)
+
+# Also works with the held command on the right
+eq = eigenvals(M) ~ h
+
+# Between two held commands
+eq = hold_cmd(:factor, x^2 - 1) ~ hold_cmd(:expand, (x-1)*(x+1))
+
+# With numbers
+eq = hold_cmd(:det, M) ~ -2
+```
+
+All type combinations are supported: `HeldCmd ~ GiacExpr`, `GiacExpr ~ HeldCmd`,
+`HeldCmd ~ HeldCmd`, `HeldCmd ~ Number`, and `Number ~ HeldCmd`.
+
 ## API Reference
 
 ```@docs

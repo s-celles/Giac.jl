@@ -349,3 +349,77 @@ end
         @test occursin("x", det_str)
     end
 end
+
+# ============================================================================
+# HeldCmd Equation Tilde Operator (059-heldcmd-equation-tilde)
+# ============================================================================
+@testset "HeldCmd Equation Tilde Operator (059-heldcmd-equation-tilde)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping HeldCmd tilde tests - GIAC library not available (stub mode)"
+        @test_skip true
+        return
+    end
+
+    using Giac.Commands: hold_cmd, release
+    using Giac: HeldEquation
+
+    M = GiacMatrix([[1, 2], [3, 4]])
+
+    @testset "HeldCmd ~ GiacExpr" begin
+        # SC-001: hold_cmd(:eigenvals, M) ~ eigenvals(M) produces valid equation
+        h = hold_cmd(:eigenvals, M)
+        result = Giac.Commands.eigenvals(M)
+        eq = h ~ result
+        @test eq isa HeldEquation
+        eq_str = string(eq)
+        @test occursin("=", eq_str)
+        # LaTeX should preserve unevaluated form
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), eq)
+        latex_str = String(take!(latex_io))
+        @test occursin("eigenvals", latex_str)
+        @test occursin("=", latex_str)
+    end
+
+    @testset "GiacExpr ~ HeldCmd" begin
+        h = hold_cmd(:eigenvals, M)
+        result = Giac.Commands.eigenvals(M)
+        eq = result ~ h
+        @test eq isa HeldEquation
+        eq_str = string(eq)
+        @test occursin("=", eq_str)
+        # LaTeX should preserve unevaluated form on the right
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), eq)
+        latex_str = String(take!(latex_io))
+        @test occursin("eigenvals", latex_str)
+    end
+
+    @testset "HeldCmd ~ HeldCmd" begin
+        @giac_var x
+        h1 = hold_cmd(:factor, x^2 - 1)
+        h2 = hold_cmd(:expand, (x - 1) * (x + 1))
+        eq = h1 ~ h2
+        @test eq isa HeldEquation
+        eq_str = string(eq)
+        @test occursin("=", eq_str)
+    end
+
+    @testset "HeldCmd ~ Number" begin
+        h = hold_cmd(:det, M)
+        eq = h ~ -2
+        @test eq isa HeldEquation
+        eq_str = string(eq)
+        @test occursin("=", eq_str)
+        @test occursin("-2", eq_str)
+    end
+
+    @testset "Number ~ HeldCmd" begin
+        h = hold_cmd(:det, M)
+        eq = -2 ~ h
+        @test eq isa HeldEquation
+        eq_str = string(eq)
+        @test occursin("=", eq_str)
+        @test occursin("-2", eq_str)
+    end
+end

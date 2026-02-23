@@ -544,6 +544,10 @@ function _generate_command_functions()
         # Check if this is a Base, LinearAlgebra, or standalone function
         if isdefined(Base, cmd)
             func = getfield(Base, cmd)
+            if func isa Core.Builtin || func isa Core.IntrinsicFunction
+                @debug "Skipping $cmd - Julia builtin"
+                continue
+            end
             if func isa Function
                 # Generate docstring for Base extension (026-julia-help-docstrings)
                 docstring = _build_docstring(cmd; is_base_extension=true)

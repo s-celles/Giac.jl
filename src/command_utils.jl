@@ -417,3 +417,19 @@ Compute the least common multiple of two GiacExprs.
 Uses Tier 1 C++ wrapper for high performance.
 """
 Base.lcm(a::GiacExpr, b::GiacExpr)::GiacExpr = _tier1_or_fallback_binary(_giac_lcm_tier1, :lcm, a, b)
+
+"""
+    Base.collect(expr::GiacExpr) -> GiacExpr
+
+Collect like terms in a polynomial expression using GIAC's `collect` command.
+
+Overrides `Base.collect` for `GiacExpr` so that `collect(expr)` calls GIAC's
+symbolic `collect` rather than Julia's iteration-based `collect`.
+
+# Examples
+```julia
+@giac_var x
+collect(x^2 - 4x + 4)  # Returns (x-2)^2
+```
+"""
+Base.collect(expr::GiacExpr)::GiacExpr = giac_cmd(:collect, expr)
