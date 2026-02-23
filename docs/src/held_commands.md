@@ -67,6 +67,40 @@ hold_cmd(:ztrans, n^2, n, z)
 hold_cmd(:invztrans, z/(z-1), z, n)
 ```
 
+### Limits
+
+```julia
+# Basic limit: lim_{x→0} sin(x)/x
+hold_cmd(:limit, sin(x)/x, x, 0)
+
+# Limit at infinity: lim_{x→+∞} 1/x
+hold_cmd(:limit, 1/x, x, Inf)
+
+# One-sided limits (direction: 1 for right, -1 for left)
+hold_cmd(:limit, sign(x), x, 0, 1)   # lim_{x→0⁺}
+hold_cmd(:limit, sign(x), x, 0, -1)  # lim_{x→0⁻}
+```
+
+### Sums and Products
+
+```julia
+# Finite sum: Σ_{n=1}^{17} 1/n²
+hold_cmd(:sum, 1/n^2, n, 1, 17)
+
+# Infinite sum (Basel problem): Σ_{n=1}^{∞} 1/n²
+hold_cmd(:sum, 1/n^2, n, 1, Inf)
+
+# Product: Π_{k=1}^{n} k
+hold_cmd(:product, k, k, 1, n)
+```
+
+### Riemann Sums
+
+```julia
+# Renders as: lim_{n→+∞} Σ_{k=0}^{n-1} 1/(n+k)
+hold_cmd(:sum_riemann, 1/(n+k), [n, k])
+```
+
 ## Generic Commands
 
 Commands without specialized rendering use function-call notation:

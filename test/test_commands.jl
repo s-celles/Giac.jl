@@ -423,3 +423,167 @@ end
         @test occursin("-2", eq_str)
     end
 end
+
+# ============================================================================
+# HeldCmd Specialized LaTeX: Limit, Sum, Product, Sum_Riemann (060-heldcmd-latex-limit-sum)
+# ============================================================================
+@testset "HeldCmd Limit LaTeX (060 - US1)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping limit LaTeX tests - GIAC library not available (stub mode)"
+        @test_skip true
+        return
+    end
+
+    using Giac.Commands: hold_cmd
+
+    @giac_var x
+
+    @testset "Basic limit" begin
+        h = hold_cmd(:limit, sin(x)/x, x, 0)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\lim", latex_str)
+        @test occursin("x \\to 0", latex_str)
+        @test occursin("\\frac", latex_str)  # sin(x)/x rendered as fraction
+    end
+
+    @testset "Right-sided limit (dir=1)" begin
+        h = hold_cmd(:limit, sign(x), x, 0, 1)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\lim", latex_str)
+        @test occursin("^+", latex_str)
+    end
+
+    @testset "Left-sided limit (dir=-1)" begin
+        h = hold_cmd(:limit, sign(x), x, 0, -1)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\lim", latex_str)
+        @test occursin("^-", latex_str)
+    end
+
+    @testset "Limit at infinity" begin
+        h = hold_cmd(:limit, 1/x, x, Inf)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\lim", latex_str)
+        @test occursin("\\infty", latex_str)
+    end
+
+    @testset "Limit in HeldEquation" begin
+        h = hold_cmd(:limit, sin(x)/x, x, 0)
+        eq = h ~ giac_eval("1")
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), eq)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\lim", latex_str)
+        @test occursin("=", latex_str)
+    end
+end
+
+@testset "HeldCmd Sum/Product LaTeX (060 - US2)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping sum/product LaTeX tests - GIAC library not available (stub mode)"
+        @test_skip true
+        return
+    end
+
+    using Giac.Commands: hold_cmd
+
+    @giac_var n k
+
+    @testset "Bounded sum" begin
+        h = hold_cmd(:sum, 1/n^2, n, 1, 17)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\sum", latex_str)
+        @test occursin("n=1", latex_str)
+        @test occursin("17", latex_str)
+    end
+
+    @testset "Sum with symbolic upper bound" begin
+        h = hold_cmd(:sum, 1/k, k, 1, n)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\sum", latex_str)
+        @test occursin("k=1", latex_str)
+    end
+
+    @testset "Infinite sum" begin
+        h = hold_cmd(:sum, 1/n^2, n, 1, Inf)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\sum", latex_str)
+        @test occursin("\\infty", latex_str)
+    end
+
+    @testset "Sum without bounds" begin
+        h = hold_cmd(:sum, sin(n), n)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\sum", latex_str)
+        @test occursin("n", latex_str)
+    end
+
+    @testset "Bounded product" begin
+        h = hold_cmd(:product, k, k, 1, n)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\prod", latex_str)
+        @test occursin("k=1", latex_str)
+    end
+
+    @testset "Product in HeldEquation" begin
+        h = hold_cmd(:product, k, k, 1, n)
+        eq = h ~ invoke_cmd(:product, k, k, 1, n)
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), eq)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\prod", latex_str)
+        @test occursin("=", latex_str)
+    end
+end
+
+@testset "HeldCmd Sum Riemann LaTeX (060 - US3)" begin
+    if Giac.is_stub_mode()
+        @warn "Skipping sum_riemann LaTeX tests - GIAC library not available (stub mode)"
+        @test_skip true
+        return
+    end
+
+    using Giac.Commands: hold_cmd
+
+    @giac_var n k
+
+    @testset "Basic Riemann sum" begin
+        h = hold_cmd(:sum_riemann, 1 / (n + k), [n, k])
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), h)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\lim_{n \\to +\\infty}", latex_str)
+        @test occursin("\\sum_{k=0}^{n-1}", latex_str)
+        # Should NOT be the generic fallback
+        @test !occursin("\\mathrm{sum\\_riemann}", latex_str)
+    end
+
+    @testset "Riemann sum in HeldEquation" begin
+        h = hold_cmd(:sum_riemann, 1 / (n + k), [n, k])
+        result = Giac.Commands.sum_riemann(1 / (n + k), [n, k])
+        eq = h ~ result
+        latex_io = IOBuffer()
+        show(latex_io, MIME("text/latex"), eq)
+        latex_str = String(take!(latex_io))
+        @test occursin("\\lim_{n \\to +\\infty}", latex_str)
+        @test occursin("=", latex_str)
+    end
+end

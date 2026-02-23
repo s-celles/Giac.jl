@@ -325,10 +325,7 @@ Sum of a list:
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000065
-hold_cmd(:sum, [1,2,3,4])
-
-# ╔═╡ 87242dc9-c0c7-4fb0-8ca9-d58b843355bf
-invoke_cmd(:sum, [1,2,3,4])
+hold_cmd(:sum, [1,2,3,4]) ~ invoke_cmd(:sum, [1,2,3,4])
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000066
 md"""
@@ -336,16 +333,26 @@ md"""
 """
 
 # ╔═╡ 6a27b3c9-5fcd-4f84-ae80-da79dcebddbb
-hold_cmd(:sum_riemann, 1 / (n + k), [n, k])
-
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000067
-sum_riemann(1 / (n + k), [n, k])
+hold_cmd(:sum_riemann, 1 / (n + k), [n, k]) ~ sum_riemann(1 / (n + k), [n, k])
 
 # ╔═╡ eb4be260-0366-4005-b566-1b417caba394
-hold_cmd(:sum_riemann, n / (n^2+k^2), [n,k])
+hold_cmd(:sum_riemann, n / (n^2+k^2), [n,k]) ~ sum_riemann(n / (n^2+k^2), [n,k])
 
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000068
-sum_riemann(n / (n^2+k^2), [n,k])
+# ╔═╡ b0c1d2e3-f4a5-6789-bcde-300000000001
+md"""
+### Products
+
+The `product` command computes products (∏ notation). Since `Base.Iterators.product` shadows it, use `invoke_cmd` or `hold_cmd`:
+"""
+
+# ╔═╡ b0c1d2e3-f4a5-6789-bcde-300000000002
+hold_cmd(:product, k, k, 1, n) ~ invoke_cmd(:product, k, k, 1, n)
+
+# ╔═╡ b0c1d2e3-f4a5-6789-bcde-300000000004
+hold_cmd(:product, k, k, 1, 5) ~ invoke_cmd(:product, k, k, 1, 5)
+
+# ╔═╡ b0c1d2e3-f4a5-6789-bcde-300000000005
+hold_cmd(:product, 2*k, k, 1, 5) ~ invoke_cmd(:product, 2*k, k, 1, 5)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000070
 md"""
@@ -423,7 +430,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000081
-curl([2*x*y, x*z, y*z], [x,y,z])
+hold_cmd(:curl, [2*x*y, x*z, y*z], [x,y,z]) ~ curl([2*x*y, x*z, y*z], [x,y,z])
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000082
 md"""
@@ -431,7 +438,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000083
-divergence([x^2+y, x+z+y, z^3+x^2], [x,y,z])
+hold_cmd(:divergence, [x^2+y, x+z+y, z^3+x^2], [x,y,z]) ~ divergence([x^2+y, x+z+y, z^3+x^2], [x,y,z])
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000084
 md"""
@@ -439,7 +446,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000085
-grad(2*x^2*y - x*z^3, [x,y,z])
+hold_cmd(:grad, 2*x^2*y - x*z^3, [x,y,z]) ~ grad(2*x^2*y - x*z^3, [x,y,z])
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000086
 md"""
@@ -447,7 +454,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000087
-hessian(2*x^2*y - x*z, [x,y,z])
+hold_cmd(:hessian, 2*x^2*y - x*z, [x,y,z]) ~ hessian(2*x^2*y - x*z, [x,y,z])
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000090
 md"""
@@ -461,14 +468,13 @@ GIAC provides many commands for rewriting trigonometric expressions.
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000091
-sin(3*x) ~ trigexpand(sin(3*x))
+hold_cmd(:trigexpand, sin(3*x)) ~ trigexpand(sin(3*x))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000092
-sin(x)^3 ~ tlin(sin(x)^3)
+hold_cmd(:tlin, sin(x)^3) ~ tlin(sin(x)^3)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000093
-sin(x) + cos(x) ~ tcollect(sin(x) + cos(x))
-#hold_cmd(:tcollect, sin(x) + cos(x)) ~ tcollect(sin(x) + cos(x))
+hold_cmd(:tcollect, sin(x) + cos(x)) ~ tcollect(sin(x) + cos(x))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000094
 md"""
@@ -476,13 +482,13 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000095
-trigsin(cos(x)^4 + sin(x)^2)
+hold_cmd(:trigsin, cos(x)^4 + sin(x)^2) ~ trigsin(cos(x)^4 + sin(x)^2)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000096
-trigcos(cos(x)^4 + sin(x)^2)
+hold_cmd(:trigcos, cos(x)^4 + sin(x)^2) ~ trigcos(cos(x)^4 + sin(x)^2)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000097
-trigtan(cos(x)^4 + sin(x)^2)
+hold_cmd(:trigtan, cos(x)^4 + sin(x)^2) ~ trigtan(cos(x)^4 + sin(x)^2)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000098
 md"""
@@ -490,7 +496,11 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000099
-(halftan(cos(x)), halftan(sin(x)), halftan(tan(x)))
+(
+	hold_cmd(:halftan, cos(x)) ~ halftan(cos(x)),
+	hold_cmd(:halftan, sin(x)) ~ halftan(sin(x)),
+	hold_cmd(:halftan, tan(x)) ~ halftan(tan(x)),
+)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000009a
 md"""
@@ -760,13 +770,14 @@ For more details, see the [Giac.jl documentation](https://s-celles.github.io/Gia
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000063
 # ╠═8e05925b-de16-49e9-b334-6c2912fea73c
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000064
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000065
-# ╠═87242dc9-c0c7-4fb0-8ca9-d58b843355bf
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000065
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000066
-# ╟─6a27b3c9-5fcd-4f84-ae80-da79dcebddbb
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000067
-# ╟─eb4be260-0366-4005-b566-1b417caba394
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000068
+# ╠═6a27b3c9-5fcd-4f84-ae80-da79dcebddbb
+# ╠═eb4be260-0366-4005-b566-1b417caba394
+# ╟─b0c1d2e3-f4a5-6789-bcde-300000000001
+# ╠═b0c1d2e3-f4a5-6789-bcde-300000000002
+# ╠═b0c1d2e3-f4a5-6789-bcde-300000000004
+# ╠═b0c1d2e3-f4a5-6789-bcde-300000000005
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000070
 # ╟─ba7561c5-9ac3-47f0-bc9c-fb293c14876f
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000071
