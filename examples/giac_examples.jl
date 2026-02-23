@@ -37,7 +37,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000011
-giac_eval("4*atan(1/5) - atan(1/239)") ~ simplify(giac_eval("4*atan(1/5) - atan(1/239)"))
+hold_cmd(:simplify, giac_eval("4*atan(1/5) - atan(1/239)")) ~ simplify(giac_eval("4*atan(1/5) - atan(1/239)"))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000012
 (sin(3*x) + sin(7*x)) / sin(5*x) ~ simplify(texpand((sin(3*x) + sin(7*x)) / sin(5*x)))
@@ -48,7 +48,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000014
-x + 2*x + 1 - 4 ~ collect(x + 2*x + 1 - 4)[1]
+hold_cmd(:collect, x + 2*x + 1 - 4) ~ collect(x + 2*x + 1 - 4)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000015
 collect(x^2 - 9*x + 5*x + 3 + 1)
@@ -73,10 +73,10 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000001b
-x^4 - 1 ~ factor(x^4 - 1)
+hold_cmd(:factor, x^4 - 1) ~ factor(x^4 - 1)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000001c
-x^4 + 12*x^3 + 54*x^2 + 108*x + 81 ~ factor(x^4 + 12*x^3 + 54*x^2 + 108*x + 81)
+hold_cmd(:factor, x^4 + 12*x^3 + 54*x^2 + 108*x + 81) ~ factor(x^4 + 12*x^3 + 54*x^2 + 108*x + 81)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000001d
 md"""
@@ -84,10 +84,10 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000001e
-x / (4 - x^2) ~ partfrac(x / (4 - x^2))
+hold_cmd(:partfrac, x / (4 - x^2)) ~ partfrac(x / (4 - x^2))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000001f
-(x^2 - 2*x + 3) / (x^2 - 3*x + 2) ~ partfrac((x^2 - 2*x + 3) / (x^2 - 3*x + 2))
+hold_cmd(:partfrac, (x^2 - 2*x + 3) / (x^2 - 3*x + 2)) ~ partfrac((x^2 - 2*x + 3) / (x^2 - 3*x + 2))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000020
 md"""
@@ -109,6 +109,9 @@ denominator(giac_eval("25/15"))
 
 # ╔═╡ 360695e0-101b-47df-bafe-1942593ac232
 (x^3 - 1) / (x^2 - 1)
+
+# ╔═╡ 713c05cf-fc44-422c-8228-159041ef6947
+simplify((x^3 - 1) / (x^2 - 1))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000023
 numerator((x^3 - 1) / (x^2 - 1))
@@ -178,10 +181,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000031
-hold_cmd(:diff, x^3 - x, x)
-
-# ╔═╡ c800be04-60f8-4de8-be85-fa8f57a824b2
-diff(x^3 - x, x)
+hold_cmd(:diff, x^3 - x, x) ~ diff(x^3 - x, x)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000032
 md"""
@@ -189,10 +189,7 @@ Higher-order derivatives (2nd, 3rd, ...):
 """
 
 # ╔═╡ 744a8a67-2217-4f4d-a14e-620f5c4b408c
-hold_cmd(:diff, x^3 - x, x, 2)
-
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000033
-diff(x^3 - x, x, 2)
+hold_cmd(:diff, x^3 - x, x, 2) ~ diff(x^3 - x, x, 2)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000034
 md"""
@@ -211,7 +208,7 @@ Gradient-like derivative with respect to a list of variables:
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000037
-diff(x*y + z*y, giac_eval("[y,z]"))
+diff(x*y + z*y, [y,z])
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000040
 md"""
@@ -227,7 +224,7 @@ Indefinite integrals:
 # ╔═╡ 0ad15d89-6269-47f4-a8be-823c775a41a1
 hold_cmd(:integrate, 1/x, x)
 
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000041
+# ╔═╡ 698e46a1-aad5-4a1e-8956-185e49d7f740
 integrate(1/x, x)
 
 # ╔═╡ 9dffdc70-ac0f-4197-9569-9906c54ccdae
@@ -257,22 +254,16 @@ md"""
 """
 
 # ╔═╡ 61d6b7bd-58c4-4ff7-838b-b2afcb141238
-hold_cmd(:limit, sin(x)/x, x, 0)
-
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000051
-limit(sin(x)/x, x, 0)
+hold_cmd(:limit, sin(x)/x, x, 0) ~ limit(sin(x)/x, x, 0)
 
 # ╔═╡ 10d0be2a-6503-49ee-958a-6669a8b9029e
-hold_cmd(:limit, (n*tan(x)-tan(n*x))/(sin(n*x)-n*sin(x)), x, 0)
+hold_cmd(:limit, (n*tan(x)-tan(n*x))/(sin(n*x)-n*sin(x)), x, 0) ~ limit((n*tan(x)-tan(n*x))/(sin(n*x)-n*sin(x)), x, 0)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000052
-limit((n*tan(x)-tan(n*x))/(sin(n*x)-n*sin(x)), x, 0)
+hold_cmd(:limit, (2*x-1)/exp(1/(x-1)), x, Inf) ~ limit((2*x-1)/exp(1/(x-1)), x, Inf)
 
 # ╔═╡ 92a6f8fb-1911-4dec-9337-6cf5f673ab89
 hold_cmd(:limit, (2*x-1)/exp(1/(x-1)), x, Inf)
-
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000053
-limit((2*x-1)/exp(1/(x-1)), x, Inf)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000054
 md"""
@@ -280,16 +271,10 @@ One-sided limits (direction: 1 for right, -1 for left):
 """
 
 # ╔═╡ c577424f-bc7b-422c-a820-0b2fc2d7d4cd
-hold_cmd(:limit, sign(x), x, 0, 1)
-
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000055
-limit(sign(x), x, 0, 1)
+hold_cmd(:limit, sign(x), x, 0, 1) ~ limit(sign(x), x, 0, 1)
 
 # ╔═╡ 90d822c0-f6da-4434-aaba-c5d21c83ce04
-hold_cmd(:limit, sign(x), x, 0, -1)
-
-# ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000056
-limit(sign(x), x, 0, -1)
+hold_cmd(:limit, sign(x), x, 0, -1) ~ limit(sign(x), x, 0, -1)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000057
 md"""
@@ -516,7 +501,7 @@ md"""
 exp(1im * x) ~ exp2trig(exp(1im * x))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000009c
-trig2exp(sin(x))
+hold_cmd(:trig2exp, sin(x)) ~ trig2exp(sin(x))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000009d
 md"""
@@ -524,13 +509,13 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000009e
-tan2sincos(tan(x))
+hold_cmd(:tan2sincos, tan(x)) ~ tan2sincos(tan(x))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000009f
-sin2costan(sin(x))
+hold_cmd(:sin2costan, sin(x)) ~ sin2costan(sin(x))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-2000000000a0
-atrig2ln(atan(x))
+hold_cmd(:atrig2ln, atan(x)) ~ atrig2ln(atan(x))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-2000000000a1
 md"""
@@ -538,13 +523,13 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-2000000000a2
-exp2pow(exp(3*ln(x)))
+hold_cmd(:exp2pow, exp(3*ln(x))) ~ exp2pow(exp(3*ln(x)))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-2000000000a3
-pow2exp(a^b)
+hold_cmd(:pow2exp, a^b) ~ pow2exp(a^b)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-2000000000a4
-powexpand(giac_eval("2")^(x+y))
+hold_cmd(:powexpand, giac_eval("2")^(x+y)) ~ powexpand(giac_eval("2")^(x+y))
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-2000000000a5
 lncollect(ln(x) + 2*ln(y))
@@ -597,15 +582,14 @@ GiacMatrix(:m, 5, 5)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000010a
 md"""
-### Eigenvalues (ToFix)
+### Eigenvalues
 """
 
+# ╔═╡ 4ea627a7-be62-489c-9ee2-8ddd445684cf
+M2 = GiacMatrix([[1, 2], [3, 4]])
+
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-20000000010b
-begin
-	M2 = GiacMatrix([[1, 2], [3, 4]])
-	#invoke_cmd(:eigenvals, M2)
-	eigenvals(M2)
-end
+hold_cmd(:eigenvals, M2) ~ eigenvals(M2)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000110
 md"""
@@ -619,11 +603,8 @@ md"""
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000111
 begin
 	@giac_var t s α
-	hold_cmd(:laplace, α*t, t, s)
+	hold_cmd(:laplace, α*t, t, s) ~ laplace(α*t, t, s)
 end
-
-# ╔═╡ 025e1911-9d01-47ed-916e-dd3889ebd78f
-laplace(α*t, t, s)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000112
 md"""
@@ -631,10 +612,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000113
-hold_cmd(:ilaplace, α/s^2, s, t)
-
-# ╔═╡ 8a9c4eba-b763-4d65-b3e4-6fd7c7580461
-ilaplace(α/s^2, s, t)
+hold_cmd(:ilaplace, α/s^2, s, t) ~ ilaplace(α/s^2, s, t)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000114
 md"""
@@ -642,10 +620,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000115
-hold_cmd(:ztrans, α^n, n, z)
-
-# ╔═╡ 1247c27e-2ef7-443e-a21b-c7350e86f0a2
-ztrans(α^n, n, z)
+hold_cmd(:ztrans, α^n, n, z) ~ ztrans(α^n, n, z)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000116
 md"""
@@ -653,10 +628,7 @@ md"""
 """
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000117
-hold_cmd(:invztrans, z/(z-α), z, n)
-
-# ╔═╡ cad51dcf-064a-479c-839a-a68708682a88
-invztrans(z/(z-α), z, n)
+hold_cmd(:invztrans, z/(z-α), z, n) ~ invztrans(z/(z-α), z, n)
 
 # ╔═╡ b0c1d2e3-f4a5-6789-bcde-200000000120
 md"""
@@ -736,6 +708,7 @@ For more details, see the [Giac.jl documentation](https://s-celles.github.io/Gia
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000021
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000022
 # ╠═360695e0-101b-47df-bafe-1942593ac232
+# ╠═713c05cf-fc44-422c-8228-159041ef6947
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000023
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000024
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000025
@@ -752,10 +725,8 @@ For more details, see the [Giac.jl documentation](https://s-celles.github.io/Gia
 # ╠═b0c1d2e3-f4a5-6789-bcde-20000000002b
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000030
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000031
-# ╠═c800be04-60f8-4de8-be85-fa8f57a824b2
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000032
 # ╟─744a8a67-2217-4f4d-a14e-620f5c4b408c
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000033
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000034
 # ╠═d2fad6f5-0c4e-45c0-b5a9-2979291b5124
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000035
@@ -763,24 +734,20 @@ For more details, see the [Giac.jl documentation](https://s-celles.github.io/Gia
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000037
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000040
 # ╟─0ad15d89-6269-47f4-a8be-823c775a41a1
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000041
+# ╠═698e46a1-aad5-4a1e-8956-185e49d7f740
 # ╟─9dffdc70-ac0f-4197-9569-9906c54ccdae
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000042
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000043
 # ╟─b9602cdc-aca4-45bb-abd3-e415803e9325
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000044
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000050
-# ╟─61d6b7bd-58c4-4ff7-838b-b2afcb141238
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000051
-# ╟─10d0be2a-6503-49ee-958a-6669a8b9029e
+# ╠═61d6b7bd-58c4-4ff7-838b-b2afcb141238
+# ╠═10d0be2a-6503-49ee-958a-6669a8b9029e
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000052
 # ╟─92a6f8fb-1911-4dec-9337-6cf5f673ab89
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000053
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000054
-# ╟─c577424f-bc7b-422c-a820-0b2fc2d7d4cd
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000055
-# ╟─90d822c0-f6da-4434-aaba-c5d21c83ce04
-# ╠═b0c1d2e3-f4a5-6789-bcde-200000000056
+# ╠═c577424f-bc7b-422c-a820-0b2fc2d7d4cd
+# ╠═90d822c0-f6da-4434-aaba-c5d21c83ce04
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000057
 # ╟─18665807-3610-4927-a5f7-64542002de07
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000058
@@ -856,26 +823,23 @@ For more details, see the [Giac.jl documentation](https://s-celles.github.io/Gia
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000108
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000109
 # ╟─b0c1d2e3-f4a5-6789-bcde-20000000010a
+# ╠═4ea627a7-be62-489c-9ee2-8ddd445684cf
 # ╠═b0c1d2e3-f4a5-6789-bcde-20000000010b
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000110
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000111
-# ╠═025e1911-9d01-47ed-916e-dd3889ebd78f
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000111
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000112
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000113
-# ╠═8a9c4eba-b763-4d65-b3e4-6fd7c7580461
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000113
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000114
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000115
-# ╠═1247c27e-2ef7-443e-a21b-c7350e86f0a2
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000115
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000116
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000117
-# ╠═cad51dcf-064a-479c-839a-a68708682a88
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000117
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000120
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000121
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000121
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000122
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000123
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000124
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000124
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000125
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000126
-# ╟─b0c1d2e3-f4a5-6789-bcde-200000000127
+# ╠═b0c1d2e3-f4a5-6789-bcde-200000000127
 # ╠═b0c1d2e3-f4a5-6789-bcde-200000000128
 # ╟─b0c1d2e3-f4a5-6789-bcde-200000000140

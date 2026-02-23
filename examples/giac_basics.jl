@@ -173,11 +173,20 @@ md"""
 ### `factor` — Factorize a polynomial
 """
 
-# ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000032
+# ╔═╡ ca8643a8-ec11-411d-ad5b-2f0e06eca927
+md"""Let's factorize this polynomial"""
+
+# ╔═╡ 3e96d232-3daa-4af5-99eb-f753c189d7f7
+hold_cmd(:factor, x^4 - 1)
+
+# ╔═╡ 975357e4-95ab-4e93-99a2-fa1ddbe312b2
 factor(x^4 - 1)
 
+# ╔═╡ 98a772aa-d6ee-4620-805a-b4d5dbea32fa
+md"""And this one also"""
+
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000033
-factor(x^4 + 12*x^3 + 54*x^2 + 108*x + 81)
+hold_cmd(:factor, x^4 + 12*x^3 + 54*x^2 + 108*x + 81) ~ factor(x^4 + 12*x^3 + 54*x^2 + 108*x + 81)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000034
 md"""
@@ -185,10 +194,10 @@ md"""
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000035
-expand((x + y) * (z + 1))
+hold_cmd(:expand, (x + y) * (z + 1)) ~ expand((x + y) * (z + 1))
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000036
-expand((x + 3)^4)
+hold_cmd(:expand, (x + 3)^4) ~ expand((x + 3)^4)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000037
 md"""
@@ -196,7 +205,7 @@ md"""
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000038
-simplify(giac_eval("4*atan(1/5) - atan(1/239)"))
+giac_eval("4*atan(1/5) - atan(1/239)") ~ simplify(giac_eval("4*atan(1/5) - atan(1/239)"))
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000039
 md"""
@@ -204,7 +213,7 @@ md"""
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-10000000003a
-collect(x^2 - 9*x + 5*x + 3 + 1)
+hold_cmd(:collect, x^2 - 9*x + 5*x + 3 + 1) ~ collect(x^2 - 9*x + 5*x + 3 + 1)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000040
 md"""
@@ -216,7 +225,7 @@ md"""
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000041
-diff(x^3 - x, x)
+hold_cmd(:diff, x^3 - x, x) ~ diff(x^3 - x, x)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000042
 md"""
@@ -224,7 +233,7 @@ Higher-order derivatives:
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000043
-diff(x^3 - x, x, 2)  # Second derivative
+hold_cmd(:diff, x^3 - x, x, 2) ~ diff(x^3 - x, x, 2)  # Second derivative
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000044
 md"""
@@ -232,7 +241,7 @@ Multivariate derivatives:
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000045
-diff(exp(x*y), x)
+hold_cmd(:diff, exp(x*y), x) ~ diff(exp(x*y), x)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000046
 md"""
@@ -242,7 +251,13 @@ Indefinite integral:
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000047
+hold_cmd(:integrate, x^2, x)
+
+# ╔═╡ cc66e884-9920-41a4-a583-b72283d8e282
 integrate(x^2, x)
+
+# ╔═╡ 86928574-b2d9-42da-8803-5154dfceaa3b
+hold_cmd(:integrate, 1/x, x)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000048
 integrate(1/x, x)
@@ -253,10 +268,10 @@ Definite integral with bounds:
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-10000000004a
-integrate(x^2, x, 0, 1)
+hold_cmd(:integrate, x^2, x, 0, 1) ~ integrate(x^2, x, 0, 1)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-10000000004b
-integrate(giac_eval("1/(1-x^4)"), x, 2, 3)
+hold_cmd(:integrate, 1/(1-x^4), x, 2, 3) ~ integrate(1/(1-x^4), x, 2, 3)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000050
 md"""
@@ -276,7 +291,7 @@ md"""
 eq = x^2 - 3 ~ 1
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000053
-solve(eq, x)
+hold_cmd(:solve, eq, x) ~ solve(eq, x)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000054
 md"""
@@ -292,6 +307,9 @@ system = [
 ]
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000055
+hold_cmd(:solve, system, [x,y,z])
+
+# ╔═╡ a2099ebb-ed5c-43dc-9a1d-026095cccd59
 solve(system, [x,y,z])
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000056
@@ -300,7 +318,7 @@ md"""
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000057
-fsolve(cos(x) ~ x, x)
+hold_cmd(:fsolve, cos(x) ~ x, x) ~ fsolve(cos(x) ~ x, x)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000060
 md"""
@@ -317,7 +335,7 @@ md"""
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000062
-partfrac(x / (4 - x^2))
+hold_cmd(:partfrac, x / (4 - x^2)) ~ partfrac(x / (4 - x^2))
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000063
 md"""
@@ -325,7 +343,7 @@ md"""
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000064
-ifactors(120)
+hold_cmd(:ifactors, 120) ~ ifactors(120)
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000065
 md"""
@@ -409,7 +427,10 @@ All commands are available via `using Giac.Commands`.
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000027
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000030
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000031
-# ╠═a0b1c2d3-e4f5-6789-abcd-100000000032
+# ╟─ca8643a8-ec11-411d-ad5b-2f0e06eca927
+# ╟─3e96d232-3daa-4af5-99eb-f753c189d7f7
+# ╟─975357e4-95ab-4e93-99a2-fa1ddbe312b2
+# ╟─98a772aa-d6ee-4620-805a-b4d5dbea32fa
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000033
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000034
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000035
@@ -425,7 +446,9 @@ All commands are available via `using Giac.Commands`.
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000044
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000045
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000046
-# ╠═a0b1c2d3-e4f5-6789-abcd-100000000047
+# ╟─a0b1c2d3-e4f5-6789-abcd-100000000047
+# ╠═cc66e884-9920-41a4-a583-b72283d8e282
+# ╟─86928574-b2d9-42da-8803-5154dfceaa3b
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000048
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000049
 # ╠═a0b1c2d3-e4f5-6789-abcd-10000000004a
@@ -436,7 +459,8 @@ All commands are available via `using Giac.Commands`.
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000053
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000054
 # ╠═5da29e53-fda6-4ef9-90b0-e20e42879c70
-# ╠═a0b1c2d3-e4f5-6789-abcd-100000000055
+# ╟─a0b1c2d3-e4f5-6789-abcd-100000000055
+# ╠═a2099ebb-ed5c-43dc-9a1d-026095cccd59
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000056
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000057
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000060
