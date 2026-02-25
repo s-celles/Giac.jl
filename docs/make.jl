@@ -23,6 +23,7 @@ makedocs(
         "Constants" => "constants.md",
         "Command discovery and help" => "command_discovery_help.md",
         "Variable Substitution" => "substitute.md",
+        "Creating Julia Functions" => "julia_functions.md",
         "Using with Pluto reactive notebooks" => "pluto.md",
         "Mathematics" => [
             "Algebra" => "mathematics/algebra.md",
