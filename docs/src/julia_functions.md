@@ -220,4 +220,4 @@ Each call to `f(_x)` goes through the GIAC engine (substitution + evaluation). F
 ## See Also
 
 - [Variable Substitution](@ref) for full details on `substitute`
-- [Variable Declaration](@ref) for `@giac_var` usage
+- [Symbolic variables](@ref) for `@giac_var` usage
