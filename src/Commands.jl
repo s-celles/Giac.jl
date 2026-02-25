@@ -580,6 +580,11 @@ function _generate_command_functions()
                 @debug "Skipping $cmd - conflicts with LinearAlgebra type"
                 continue
             end
+            # Skip if cmd is already imported from parent Giac module (e.g., help)
+            if isdefined(@__MODULE__, cmd)
+                @debug "Skipping $cmd - already defined in Commands (imported from parent)"
+                continue
+            end
             # Command not in Base or LinearAlgebra (e.g., trace)
             # Safe to create GiacMatrix-only methods via multiple dispatch (058-commands-matrix-support)
             docstring = _build_docstring(cmd; is_base_extension=false)
