@@ -4,6 +4,18 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    #! format: off
+    return quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+    #! format: on
+end
+
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000001
 begin
 	using Pkg
@@ -12,6 +24,9 @@ begin
 
 	using Giac
 	using Giac.Commands
+
+	using PlutoUI
+	using Plots
 end
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000000
@@ -35,7 +50,7 @@ Use the `@giac_var` macro to create symbolic variables. These are `GiacExpr` obj
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000003
-@giac_var x y z
+@giac_var x y z a b c
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000004
 typeof(x)
@@ -46,7 +61,10 @@ Symbolic variables support standard arithmetic operators. Expressions are built 
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000006
+# ╠═╡ disabled = true
+#=╠═╡
 expr = x^2 + 2*x*y + y^2
+  ╠═╡ =#
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000007
 md"""
@@ -345,32 +363,67 @@ md"""
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000064
 hold_cmd(:ifactors, 120) ~ ifactors(120)
 
+# ╔═╡ 1cebf4e2-5038-4164-a5cc-815a431906de
+md"""
+### Julia functions from a `GiacExpr`
+
+You can define a Julia function from a `GiacExpr` using `substitute`:
+"""
+
+# ╔═╡ 637ee8a7-c218-4086-8a8b-a676ab885895
+expr = a * x^2 + b * x + c
+
+# ╔═╡ 0ffcd6e9-12ff-4c08-af41-70427e14fd84
+@bind _a Slider(-10:0.1:10, default=1)
+
+# ╔═╡ d42fefb3-f65d-404b-bd86-f4ae7f011844
+@bind _b Slider(-10:0.1:10, default=1)
+
+# ╔═╡ 2fe0843c-1ed1-4a7e-aaa9-d30c8c8998af
+@bind _c Slider(-10:0.1:10, default=-2)
+
+# ╔═╡ 89755bd7-174c-42e3-9764-c2c6dd02c529
+num_expr = substitute(expr, Dict(a => _a, b => _b, c => _c))
+
+# ╔═╡ df72e3d0-2118-4853-a9b1-a1398a0d6f4c
+f(_x) = to_julia(substitute(num_expr, x => _x))
+
+# ╔═╡ fa02ef0c-9870-43ea-a906-894bb383dd94
+begin
+	_x = range(-10, 10, length=100)
+	Plots.plot(_x, f.(_x))
+end
+
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000065
 md"""
-### Giac programs (ToFix)
+### GIAC programs
 
 You can write multi-line GIAC programs using string evaluation:
 """
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000066
-begin
-	mysqcu = giac_eval("""
-	  proc(x)
-	    if x > 0 then
-	      x^2
-	    else
-	      x^3
-	    fi
-	  end
-	""")
-	(mysqcu, typeof(mysqcu))
-end
+giac_eval("""
+  mysqcu := proc(x)
+	if x > 0 then
+	  x^2
+	else
+	  x^3
+	fi
+  end
+""");
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000067
 giac_eval("mysqcu(5)")
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000068
 giac_eval("mysqcu(-5)")
+
+# ╔═╡ bee4b6d5-d4a5-479f-b564-be5ddca74e74
+begin
+	g(_x) = giac_eval("mysqcu($_x)") |> to_julia
+	_y = g.(collect(_x))
+	Plots.plot(_x, _y)
+end
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000069
 md"""
@@ -468,8 +521,17 @@ All commands are available via `using Giac.Commands`.
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000062
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000063
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000064
-# ╟─a0b1c2d3-e4f5-6789-abcd-100000000065
+# ╟─1cebf4e2-5038-4164-a5cc-815a431906de
+# ╠═637ee8a7-c218-4086-8a8b-a676ab885895
+# ╠═0ffcd6e9-12ff-4c08-af41-70427e14fd84
+# ╠═d42fefb3-f65d-404b-bd86-f4ae7f011844
+# ╠═2fe0843c-1ed1-4a7e-aaa9-d30c8c8998af
+# ╠═89755bd7-174c-42e3-9764-c2c6dd02c529
+# ╠═df72e3d0-2118-4853-a9b1-a1398a0d6f4c
+# ╠═fa02ef0c-9870-43ea-a906-894bb383dd94
+# ╠═a0b1c2d3-e4f5-6789-abcd-100000000065
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000066
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000067
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000068
+# ╠═bee4b6d5-d4a5-479f-b564-be5ddca74e74
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000069
