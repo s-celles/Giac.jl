@@ -27,6 +27,7 @@ begin
 
 	using PlutoUI
 	using Plots
+	plotlyjs()
 end
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000000
@@ -374,13 +375,15 @@ You can define a Julia function from a `GiacExpr` using `substitute`:
 expr = a * x^2 + b * x + c
 
 # ╔═╡ 0ffcd6e9-12ff-4c08-af41-70427e14fd84
-@bind _a Slider(-10:0.1:10, default=1)
-
-# ╔═╡ d42fefb3-f65d-404b-bd86-f4ae7f011844
-@bind _b Slider(-10:0.1:10, default=1)
+begin
+	slider_a = @bind _a Slider(-10:0.1:10, default=1, show_value=true)
+	slider_b = @bind _b Slider(-10:0.1:10, default=1, show_value=true)
+	slider_c = @bind _c Slider(-10:0.1:10, default=-2, show_value=true)
+	md""
+end
 
 # ╔═╡ 2fe0843c-1ed1-4a7e-aaa9-d30c8c8998af
-@bind _c Slider(-10:0.1:10, default=-2)
+
 
 # ╔═╡ 89755bd7-174c-42e3-9764-c2c6dd02c529
 num_expr = substitute(expr, Dict(a => _a, b => _b, c => _c))
@@ -393,6 +396,16 @@ begin
 	_x = range(-10, 10, length=100)
 	Plots.plot(_x, f.(_x))
 end
+
+# ╔═╡ d42fefb3-f65d-404b-bd86-f4ae7f011844
+md"""
+a= $slider_a
+
+b= $slider_b
+
+c= $slider_c
+"""
+
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000065
 md"""
@@ -423,6 +436,80 @@ begin
 	g(_x) = giac_eval("mysqcu($_x)") |> to_julia
 	_y = g.(collect(_x))
 	Plots.plot(_x, _y)
+end
+
+# ╔═╡ 22bc7d82-d9e3-4a4e-a631-d7f6d1a7a834
+begin
+	function plot3d()
+		# Function z = f(x, y)
+		expr = sin(√(a * x^2 + b * y^2)) * cos(x/2)
+		num_expr = substitute(expr, Dict(a => _a, b => _b))
+		f(_x, _y) = to_julia(substitute(num_expr, Dict(x => _x, y => _y)))
+
+		# Define grid
+		x_ = range(-3, 3, length=100)
+		y_ = range(-3, 3, length=100)
+		
+		# Draw surface
+		surface(x_, y_, f,
+		    xlabel = "x", ylabel = "y", zlabel = "z",
+		    title = "Surface z = $num_expr",
+		    colorbar = true,
+		    camera = (30, 45),       # viewing angle (azimuth, elevation)
+		    color = :viridis,        # color palette
+		    size = (800, 600)
+		)
+	end
+
+	plot3d()
+end
+
+# ╔═╡ dbaed88e-2bbc-403a-92dd-ad9f8c613fbc
+md"""
+a= $slider_a
+
+b= $slider_b
+"""
+
+# ╔═╡ 1f0ce723-24eb-4214-ae11-8f8d96286e5b
+begin
+	function plot_vector_field()
+		dx = 0.1
+		sc = 0.1
+	    expr = a*x^2 - b*y^2
+	    grad_x = diff(expr, x)
+	    grad_y = diff(expr, y)
+	
+	    d_subs = Dict(a => _a, b => _b)
+	    num_expr   = substitute(expr, d_subs)
+	    num_grad_x = substitute(grad_x, d_subs)
+	    num_grad_y = substitute(grad_y, d_subs)
+	
+	    V(xv, yv)  = to_julia(substitute(num_expr,   Dict(x => xv, y => yv)))
+	    fu(xv, yv) = to_julia(substitute(num_grad_x, Dict(x => xv, y => yv)))
+	    fv(xv, yv) = to_julia(substitute(num_grad_y, Dict(x => xv, y => yv)))
+	
+	    xr = -2:dx:2      # dx instead of step
+	    yr = -2:dx:2
+	    xx = [xi for xi in xr, yi in yr][:]
+	    yy = [yi for xi in xr, yi in yr][:]
+	
+	    u = fu.(xx, yy)
+	    v = fv.(xx, yy)
+	
+	    xf = range(-2, 2, length=100)
+	    yf = range(-2, 2, length=100)
+	
+	    contourf(xf, yf, V, levels=15, color=:coolwarm, alpha=0.5,
+	        aspect_ratio=:equal, size=(650, 600))
+	
+		s = sc / maximum(sqrt.(u.^2 + v.^2))
+		quiver!(xx, yy, quiver=(s .* u, s .* v),
+			color=:black, lw=1.2,
+			title="Gradient field of $(_a)x² - $(_b)y²")
+	end
+	
+	plot_vector_field()
 end
 
 # ╔═╡ a0b1c2d3-e4f5-6789-abcd-100000000069
@@ -524,14 +611,17 @@ All commands are available via `using Giac.Commands`.
 # ╟─1cebf4e2-5038-4164-a5cc-815a431906de
 # ╠═637ee8a7-c218-4086-8a8b-a676ab885895
 # ╠═0ffcd6e9-12ff-4c08-af41-70427e14fd84
-# ╠═d42fefb3-f65d-404b-bd86-f4ae7f011844
 # ╠═2fe0843c-1ed1-4a7e-aaa9-d30c8c8998af
 # ╠═89755bd7-174c-42e3-9764-c2c6dd02c529
 # ╠═df72e3d0-2118-4853-a9b1-a1398a0d6f4c
 # ╠═fa02ef0c-9870-43ea-a906-894bb383dd94
+# ╠═d42fefb3-f65d-404b-bd86-f4ae7f011844
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000065
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000066
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000067
 # ╠═a0b1c2d3-e4f5-6789-abcd-100000000068
 # ╠═bee4b6d5-d4a5-479f-b564-be5ddca74e74
+# ╠═22bc7d82-d9e3-4a4e-a631-d7f6d1a7a834
+# ╟─dbaed88e-2bbc-403a-92dd-ad9f8c613fbc
+# ╟─1f0ce723-24eb-4214-ae11-8f8d96286e5b
 # ╟─a0b1c2d3-e4f5-6789-abcd-100000000069
