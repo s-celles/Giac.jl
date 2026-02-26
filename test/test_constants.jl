@@ -123,6 +123,20 @@
                     rethrow(e)
                 end
             end
+
+            # Test Constants.e round-trip through to_symbolics
+            e_expr = convert(GiacExpr, Giac.Constants.e)
+            sym_e = Giac.to_symbolics(e_expr)
+            @test !isa(sym_e, AbstractFloat)
+            # "e" identifier is not yet handled as a special constant in GiacSymbolicsExt
+            # (only "pi" and "i" are special-cased), so this may produce a free variable
+            sym_e_str = string(sym_e)
+            @test_broken !occursin("e", sym_e_str) || sym_e_str == "ℯ"
+
+            # Test Constants.i round-trip through to_symbolics
+            i_expr = convert(GiacExpr, Giac.Constants.i)
+            sym_i = Giac.to_symbolics(i_expr)
+            @test !isa(sym_i, AbstractFloat)
         else
             @test_skip "Symbolics extension not loaded"
         end

@@ -76,7 +76,7 @@ Convert help information for a single command to a table:
 using Giac
 using DataFrames
 
-hr = Giac.help(:factor)  # Internal function for programmatic access
+hr = Giac.help(:factor)  # Returns structured HelpResult (unexported; for raw text use giac_help(:factor))
 df = DataFrame(hr)
 # 1×5 DataFrame
 #  Row │ command  category  description  related           examples

@@ -388,8 +388,10 @@ end
 
 @testset "suggest_commands (US1)" begin
     if Giac.is_stub_mode()
-        @warn "Skipping suggestion tests - GIAC library not available (stub mode)"
-        @test_skip true
+        @warn "Skipping most suggestion tests - GIAC library not available (stub mode)"
+        # Stub mode: suggest_commands returns empty vector, does not throw
+        @test suggest_commands(:factr) isa Vector{Symbol}
+        @test isempty(suggest_commands(:factr))
     else
         @testset "returns Vector{Symbol}" begin
             # T010: Test suggest_commands(:factr) returns Vector{Symbol}
@@ -541,6 +543,11 @@ end
                     @test result[i][2] <= result[i+1][2]
                 end
             end
+        end
+
+        @testset "exact match returns empty" begin
+            # Exact match should return no suggestions (distance 0 is excluded)
+            @test isempty(Giac.suggest_commands_with_distances(:factor))
         end
     end
 end

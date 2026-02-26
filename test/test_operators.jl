@@ -251,10 +251,19 @@
 
         if is_stub_mode()
             @test_throws GiacError numerator(giac_eval("25/15"))
+            @test_throws GiacError denominator(giac_eval("25/15"))
         else
             # Numeric fractions
             @test string(numerator(giac_eval("25/15"))) == "5"
             @test string(denominator(giac_eval("25/15"))) == "3"
+
+            # Return type assertions
+            @test numerator(giac_eval("25/15")) isa GiacExpr
+            @test denominator(giac_eval("25/15")) isa GiacExpr
+
+            # Negative fraction
+            @test string(numerator(giac_eval("-3/7"))) == "-3"
+            @test string(denominator(giac_eval("-3/7"))) == "7"
 
             # Symbolic rational expressions
             expr = (x^3 - 1) / (x^2 - 1)
@@ -271,7 +280,8 @@
             @test string(numerator(giac_eval("0"))) == "0"
             @test string(denominator(giac_eval("0"))) == "1"
 
-            # Non-fraction expression
+            # Non-fraction expression (numerator returns itself, denominator is 1)
+            @test string(numerator(x + 1)) == "x+1"
             @test string(denominator(x + 1)) == "1"
         end
     end

@@ -301,6 +301,32 @@
             null_expr = GiacExpr(C_NULL)
             @test_throws GiacError null_expr(0)
         end
+
+        # Additional edge cases: calling derivative-form and plain identifier expressions
+        @testset "calling a derivative expression" begin
+            if !is_stub_mode()
+                @giac_var t u(t)
+                du = invoke_cmd(:diff, u, t)
+                result = du(0)
+                @test result isa GiacExpr
+                result_str = string(result)
+                @test occursin("0", result_str)
+            else
+                @test_broken false
+            end
+        end
+
+        @testset "calling plain identifier GiacExpr" begin
+            if !is_stub_mode()
+                @giac_var x
+                sin_expr = giac_eval("sin")
+                result = sin_expr(x)
+                @test result isa GiacExpr
+                @test string(result) == "sin(x)"
+            else
+                @test_broken false
+            end
+        end
     end
 
     @testset "LaTeX display (014-pluto-latex-notebook)" begin

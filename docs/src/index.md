@@ -37,7 +37,7 @@ For full GIAC integration with C++ library, see the [Installation Guide](install
 
 GIAC commands are available through multiple access patterns:
 
-### 1. Selective Import from Commands Submodule (Recommanded)
+### 1. Selective Import from Commands Submodule (Recommended)
 
 ```julia
 using Giac
@@ -94,8 +94,9 @@ is_boolean(giac_eval("true"))  # true
 is_boolean(giac_eval("1"))     # false
 
 # Type introspection
-giac_type(g) == GIAC_VECT  # true
-is_vector(g)               # true
+using Giac.GenTypes: VECT
+giac_type(g) == VECT  # true
+is_vector(g)           # true
 
 # Fraction components
 frac = giac_eval("3/4")
