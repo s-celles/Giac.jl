@@ -33,7 +33,7 @@ using Symbolics.SymbolicUtils: Term
                 # Check that sym is a Num (symbolic expression preserved)
                 # Note: string(sym) may fail on complex expressions due to SymbolicUtils display bug
                 # ToFix upstream: see https://github.com/JuliaSymbolics/SymbolicUtils.jl/issues/864
-                @test_broken sym isa Num
+                @test sym isa Num
                 # The expression should be preserved symbolically
                 @test Symbolics.unwrap(sym) !== nothing
             end

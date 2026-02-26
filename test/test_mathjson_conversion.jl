@@ -2,6 +2,7 @@
 # Tests bidirectional conversion between GiacExpr/GiacMatrix and MathJSON types
 
 using MathJSON
+using Giac: to_mathjson, to_giac
 
 @testset "MathJSON Conversion" begin
 
