@@ -410,6 +410,60 @@
         @test !Giac.is_constant(giac_eval("sin(x)"))
         @test Giac.unwrap_const(giac_eval("sin(pi/2)")) ≈ 1
         @test Giac.unwrap_const(giac_eval("sin(x)")) == giac_eval("sin(x)")
+
+        # Issue #19: `infinity` and `undef` are GIAC atoms with no free
+        # symbols, so is_constant must report them as constants. The
+        # compound infinity forms (`+infinity`, `-infinity`, `inf`,
+        # `-inf`) wrap the bare `infinity` IDNT and reduce to it via
+        # hasmatch recursion. `unsigned_inf` is a GIAC alias that parses
+        # to the same `infinity` atom.
+        @test Giac.is_constant(giac_eval("infinity"))
+        @test Giac.is_constant(giac_eval("inf"))
+        @test Giac.is_constant(giac_eval("+inf"))
+        @test Giac.is_constant(giac_eval("-inf"))
+        @test Giac.is_constant(giac_eval("+infinity"))
+        @test Giac.is_constant(giac_eval("-infinity"))
+        @test Giac.is_constant(giac_eval("unsigned_inf"))
+        @test Giac.is_constant(giac_eval("undef"))
+
+        # Compound expressions built from the special atoms remain
+        # constant when no free variable is introduced.
+        @test Giac.is_constant(giac_eval("infinity^2"))
+        @test Giac.is_constant(giac_eval("1/infinity"))
+
+        # Negative cases: names that *look* like special atoms but are
+        # actually parsed by GIAC as ordinary free identifiers (they
+        # behave just like `xyz`). `nan + 1` yields `nan+1`, the same
+        # shape as `xyz + 1` — so they must NOT be recognized as
+        # constant.
+        @test !Giac.is_constant(giac_eval("nan"))
+        @test !Giac.is_constant(giac_eval("NaN"))
+        @test !Giac.is_constant(giac_eval("undefined"))
+        @test !Giac.is_constant(giac_eval("unsigned_infinity"))
+    end
+
+    # ========================================================================
+    # Constants.is_giac_constant — recognized symbolic constants
+    # ========================================================================
+    @testset "Constants.is_giac_constant" begin
+        # Existing pi/e/i.
+        @test Giac.Constants.is_giac_constant(giac_eval("pi"))
+        @test Giac.Constants.is_giac_constant(giac_eval("e"))
+        @test Giac.Constants.is_giac_constant(giac_eval("i"))
+
+        # Issue #19: real GIAC atoms `infinity` and `undef`.
+        @test Giac.Constants.is_giac_constant(giac_eval("infinity"))
+        @test Giac.Constants.is_giac_constant(giac_eval("undef"))
+
+        # Negative cases — including names that look special but are
+        # plain free identifiers in GIAC.
+        @test !Giac.Constants.is_giac_constant(giac_eval("x"))
+        @test !Giac.Constants.is_giac_constant(giac_eval("1"))
+        @test !Giac.Constants.is_giac_constant(giac_eval("sin(x)"))
+        @test !Giac.Constants.is_giac_constant(giac_eval("nan"))
+        @test !Giac.Constants.is_giac_constant(giac_eval("NaN"))
+        @test !Giac.Constants.is_giac_constant(giac_eval("undefined"))
+        @test !Giac.Constants.is_giac_constant(giac_eval("unsigned_infinity"))
     end
 
     # ========================================================================

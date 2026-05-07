@@ -295,8 +295,13 @@ end
 """
     is_constant(g::GiacExpr) -> Bool
 
-Return `true` if the expression has no symbolic variables
+Return `true` if the expression has no symbolic variables.
 
+GIAC's recognized symbolic constants — `pi`, `e`, `i`, `infinity`, and
+`undef` — are treated as constants (i.e. they do **not** count as free
+symbols). Compound infinity forms like `inf`, `+inf`, `-inf`,
+`+infinity`, and `-infinity` are wrappers around the bare `infinity`
+atom and so are also classified as constants.
 
 # Example
 ```julia
@@ -305,6 +310,10 @@ is_constant(giac_eval("sin(x)"))    # false
 is_constant(giac_eval("1 == 1"))    # true (comparison returns constant)
 is_constant(giac_eval("pi"))        # true
 is_constant(giac_eval("0"))         # true (integer, not boolean)
+is_constant(giac_eval("inf"))       # true (issue #19)
+is_constant(giac_eval("-inf"))      # true
+is_constant(giac_eval("undef"))     # true
+is_constant(giac_eval("nan"))       # false (`nan` is a free identifier)
 ```
 
 """

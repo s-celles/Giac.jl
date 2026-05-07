@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`is_constant` now recognizes the GIAC `infinity` and `undef`
+  atoms.** Previously, `is_constant(giac_eval("inf"))` returned `false`
+  because `infinity` was treated as a free identifier. After this fix,
+  any expression built from these atoms — including `inf`, `+inf`,
+  `-inf`, `+infinity`, `-infinity`, `unsigned_inf`, `1/0` (which GIAC
+  evaluates to `+infinity`), and `0/0` (which evaluates to `undef`) —
+  is correctly classified as a constant. `Giac.Constants.is_giac_constant`
+  picks up these atoms via a name-based fallback, since GIAC's internal
+  `==` reports `infinity == infinity` as `false`. As a follow-on fix,
+  `to_julia` no longer infinitely recurses on these irreducible atoms
+  (`evalf` is a no-op on them); it returns the `GiacExpr` unchanged,
+  matching the prior public behavior. Closes
+  [#19](https://github.com/s-celles/Giac.jl/issues/19).
+
+  Note: names like `nan`, `NaN`, `unsigned_infinity`, and `undefined`
+  are *not* GIAC atoms — GIAC parses them as ordinary free identifiers
+  (e.g. `nan + 1` yields `nan+1` exactly like `xyz + 1` yields `xyz+1`),
+  so they remain non-constant.
+
 ## [0.14.0] - 2026-05-02
 
 ### Added

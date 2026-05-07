@@ -203,22 +203,43 @@ function _init_constants()
     _giac_constants[] = (_pi[], _e[], _i[])
 end
 
+# Names of additional GIAC atoms that have no free symbols but for which
+# `_giac_equal(c, c)` returns `false` (so a cached-value `==` test cannot
+# match them). Compared by their printed string. The list is the set of
+# *real* GIAC atoms — names like `nan`, `NaN`, `unsigned_infinity`, and
+# `undefined` are not in GIAC's atom table; they parse as ordinary free
+# identifiers and must NOT be added here.
+const _giac_constant_names = ("infinity", "undef")
+
 """
     is_giac_constant(expr::GiacExpr) -> Bool
 
-Return `true` when `expr` is one of the symbolic constants `pi`, `e`, or `i`.
+Return `true` when `expr` is one of the symbolic constants recognized by
+GIAC: `pi`, `e`, `i`, `infinity`, or `undef`.
+
+`infinity` and `undef` are GIAC atoms (e.g. `0/0` evaluates to `undef`,
+`1/0` evaluates to `+infinity`). Names like `nan`, `unsigned_infinity`,
+or `undefined` are *not* GIAC atoms — they behave like ordinary free
+identifiers and so are *not* recognized as constants.
 
 # Examples
 ```julia
-Giac.Constants.is_giac_constant(giac_eval("pi"))   # true
-Giac.Constants.is_giac_constant(giac_eval("e"))    # true
-Giac.Constants.is_giac_constant(giac_eval("i"))    # true
-Giac.Constants.is_giac_constant(giac_eval("x"))    # false (free variable)
-Giac.Constants.is_giac_constant(giac_eval("1"))    # false (numeric literal)
+Giac.Constants.is_giac_constant(giac_eval("pi"))         # true
+Giac.Constants.is_giac_constant(giac_eval("e"))          # true
+Giac.Constants.is_giac_constant(giac_eval("i"))          # true
+Giac.Constants.is_giac_constant(giac_eval("infinity"))   # true (issue #19)
+Giac.Constants.is_giac_constant(giac_eval("undef"))      # true
+Giac.Constants.is_giac_constant(giac_eval("x"))          # false (free variable)
+Giac.Constants.is_giac_constant(giac_eval("1"))          # false (numeric literal)
+Giac.Constants.is_giac_constant(giac_eval("nan"))        # false (free variable)
 ```
 """
 function is_giac_constant(expr::GiacExpr)::Bool
-    any(==(expr), _giac_constants[])
+    any(==(expr), _giac_constants[]) && return true
+    # GIAC's `_giac_equal` returns false for `infinity == infinity`
+    # (and likewise for `undef`), so the tuple comparison above never
+    # matches them. Fall back to a name-based check.
+    return string(expr) in _giac_constant_names
 end
 
 
