@@ -350,7 +350,9 @@ _parse_function_expr("x")        # nothing
 ```
 """
 function _parse_function_expr(expr_str::String)
-    m = match(r"^([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]+)\)$", expr_str)
+    # \p{L}/\p{N}: GIAC accepts Unicode identifiers (ϕ, 𝑧, α, …);
+    # ASCII-only [a-zA-Z] would reject them.
+    m = match(r"^([\p{L}_][\p{L}\p{N}_]*)\(([^)]+)\)$", expr_str)
     if m !== nothing
         funcname = m.captures[1]
         args_str = m.captures[2]

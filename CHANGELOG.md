@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1] - 2026-05-10
+
+### Added
+
+- **`CONTRIBUTORS.md`**: a top-level acknowledgements file listing the
+  people who built, reviewed, and inspired this package — Giac authors
+  (Bernard Parisse & Renée De Graeve), the original `Giac.jl`
+  (Harald Hofstaetter), Julia ecosystem reviewers (Viral B. Shah,
+  Mosè Giordano, Max Horn), code contributors (John Verzani),
+  feature/bug-report contributors (Thibault Duretz), and methodology
+  inspiration (Sam Abbott). Linked from the README.
+
+### Fixed
+
+- **`D` operator now accepts Unicode identifiers**: `D(ϕ)` on a function
+  variable defined as `@giac_var 𝑧 ϕ(𝑧)` previously failed with
+  `ArgumentError: D() requires a function expression like u(t)`. The
+  internal parser regex (`_parse_function_expr`) only matched ASCII
+  letters, even though GIAC C++ and Julia both accept Unicode names. The
+  regex now uses Unicode letter/number classes (`\p{L}`, `\p{N}`), so
+  Greek letters, mathematical italics, and other Unicode identifiers work
+  with `D(u)`, `D(u, n)`, and chained forms. Reported by
+  [@tduretz](https://github.com/tduretz).
+
 ## [0.14.0] - 2026-05-02
 
 ### Added

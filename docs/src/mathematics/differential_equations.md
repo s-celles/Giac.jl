@@ -28,6 +28,17 @@ D(u, 3)     # Third derivative u'''
 | `D(u, 2)` | `diff(u, t, 2)` | Second derivative (direct) |
 | `D(u)(0) ~ 1` | `"u'(0)=1"` | Initial condition for u'(0) |
 
+### Unicode identifiers
+
+Function and variable names may use any Unicode letters that Julia and GIAC
+accept as identifiers — Greek letters, mathematical italics, etc.:
+
+```julia
+@giac_var 𝑧 ϕ(𝑧)
+D(ϕ)        # diff(ϕ(𝑧), 𝑧)
+D(ϕ, 2)     # diff(ϕ(𝑧), 𝑧, 2)
+```
+
 ## First-Order ODEs
 
 ### Basic Example
