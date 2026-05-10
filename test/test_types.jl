@@ -301,7 +301,28 @@
             # GIAC operations should return nothing
             @test Giac._parse_function_expr("diff(u,t)") === nothing
             @test Giac._parse_function_expr("sin(x)") === nothing
+
+            # Unicode identifiers (issue reported by @tduretz)
+            # GIAC C++ accepts Unicode names, so D() must too.
+            @test Giac._parse_function_expr("ϕ(𝑧)") == ("ϕ", "𝑧")
+            @test Giac._parse_function_expr("ψ(t)") == ("ψ", "t")
+            @test Giac._parse_function_expr("α(β,γ)") == ("α", "β")
         end
+    end
+
+    @testset "Derivative Operator D - Unicode identifiers" begin
+        # Regression test for @tduretz report: D(ϕ) used to fail because the
+        # parser regex only accepted ASCII names.
+        @giac_var 𝑧 ϕ(𝑧)
+        dϕ = D(ϕ)
+        @test dϕ isa DerivativeExpr
+        @test dϕ.order == 1
+        @test dϕ.funcname == "ϕ"
+        @test dϕ.varname == "𝑧"
+
+        d2ϕ = D(ϕ, 2)
+        @test d2ϕ.order == 2
+        @test d2ϕ.funcname == "ϕ"
     end
 
     @testset "Derivative Operator D - Basic Creation" begin
