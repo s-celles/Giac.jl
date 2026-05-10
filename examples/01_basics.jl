@@ -396,7 +396,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 Giac = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
 
 [compat]
-Giac = "~0.11.2"
+Giac = "~0.14.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -405,7 +405,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "914f03dded69b2f46b6b103c4f4aac84aca1a4c1"
+project_hash = "2fc8c6e70d5aa2047f3a6c9e77ecfc46f96098ac"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -418,6 +418,11 @@ version = "1.11.0"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 version = "1.11.0"
+
+[[deps.CommonSolve]]
+git-tree-sha1 = "78ea4ddbcf9c241827e7035c3a03e2e456711470"
+uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+version = "0.2.6"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -472,18 +477,20 @@ uuid = "78b55507-aeef-58d4-861c-77aaff3498b1"
 version = "0.21.0+0"
 
 [[deps.Giac]]
-deps = ["CxxWrap", "GIAC_jll", "Libdl", "LinearAlgebra", "Tables", "libcxxwrap_julia_jll", "libgiac_julia_jll"]
-git-tree-sha1 = "593055032b1a12b4cfb20fa56bb9461e8bd15b69"
+deps = ["CommonSolve", "CxxWrap", "GIAC_jll", "Libdl", "LinearAlgebra", "Tables", "libcxxwrap_julia_jll", "libgiac_julia_jll"]
+git-tree-sha1 = "89dd61ed83bf686cfc68b280416b32cc541e1bf5"
 uuid = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
-version = "0.11.2"
+version = "0.14.0"
 
     [deps.Giac.extensions]
     GiacMathJSONExt = "MathJSON"
     GiacSymbolicsExt = "Symbolics"
+    GiacTermInterfaceExt = "TermInterface"
 
     [deps.Giac.weakdeps]
     MathJSON = "77215b4b-6f01-425c-beac-950ae6536d4d"
     Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+    TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
 
 [[deps.IteratorInterfaceExtensions]]
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"

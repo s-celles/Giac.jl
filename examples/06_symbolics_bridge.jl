@@ -42,6 +42,18 @@ Rationals, complex numbers, and the canonical mathematical constants `π`, `ℯ`
 **Versions used when this notebook was last authored:** Julia 1.12.6, `Giac v0.11.2`, `Symbolics v7.19.0`, `Groebner v0.10.3`, `SymbolicUtils v4.24.2`. Claims about *what Symbolics does or does not do* are version-dependent — the cell below prints the versions actually loaded at runtime, so the reader can confirm what is being observed.
 """
 
+# ╔═╡ 1a17980a-d7b0-4a7c-a823-2acaee00feae
+# ╠═╡ disabled = true
+#=╠═╡
+begin
+	#using Pkg
+	#Pkg.add("Giac")
+	#Pkg.add("Symbolics")
+	#Pkg.add(PackageSpec(url="https://github.com/s-celles/Giac.jl"))
+	#Pkg.develop(PackageSpec(path=".."))
+end
+  ╠═╡ =#
+
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-6000000005ff
 let
 	pkgs = ["Julia" => string(VERSION)]
@@ -56,18 +68,6 @@ let
 	end
 	pkgs
 end
-
-# ╔═╡ 1a17980a-d7b0-4a7c-a823-2acaee00feae
-# ╠═╡ disabled = true
-#=╠═╡
-begin
-	#using Pkg
-	#Pkg.add("Giac")
-	#Pkg.add("Symbolics")
-	#Pkg.add(PackageSpec(url="https://github.com/s-celles/Giac.jl"))
-	#Pkg.develop(PackageSpec(path=".."))
-end
-  ╠═╡ =#
 
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000500
 md"""
@@ -177,6 +177,132 @@ round_trip_in = x^2 + 2x + 1
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000516
 to_symbolics(to_giac(round_trip_in))
 
+# ╔═╡ a09665a5-e207-4c87-af18-e8907fad09c4
+md"""
+---
+
+## A.5  Create a Julia function from a `GiacExpr`
+
+`Giac.build_function(expr, vars...; backend = ...)` wraps a `GiacExpr` into a Julia callable. Two backends are available:
+
+- `backend = :giac` (default, always available) — each call goes through GIAC's `substitute` + `to_julia` pipeline. Works on **any** GIAC expression head, but pays one FFI round-trip per call.
+- `backend = :symbolics` (requires `using Symbolics`, which we already have) — the expression is round-tripped through `to_symbolics` and compiled to native Julia code by `Symbolics.build_function`. Compiled once, dispatched as plain Julia thereafter — typically one-to-three orders of magnitude faster in hot loops, and composes with `ForwardDiff` / SciML autodiff.
+
+The natural workflow this section illustrates:
+
+> Symbolics expression  →  `to_giac`  →  algebra GIAC is good at (factor, simplify, integrate, …)  →  `Giac.build_function`  →  fast Julia callable.
+
+`Symbolics` also exports `build_function`, so when both packages are loaded the bare name is ambiguous; we always write `Giac.build_function(...)` below.
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000300
+md"""
+### Demo expression
+
+A modest mix of polynomial and trigonometric parts — enough that one FFI call per evaluation is visibly slower than compiled Julia code.
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000301
+sym_demo_expr = sin(x) * cos(2x) + (x + 1)^3
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000302
+giac_demo_expr = to_giac(sym_demo_expr)
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000303
+md"""
+`Giac.build_function` takes `GiacExpr` variables (not Symbolics `Num`), so convert `x` once:
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000304
+gx = to_giac(x)
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000305
+md"""
+### Backend `:giac` (default)
+
+Each call goes through the GIAC FFI:
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000306
+f_giac = Giac.build_function(giac_demo_expr, gx; backend = :giac)
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000307
+f_giac(2.5)
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000308
+md"""
+### Backend `:symbolics`
+
+Compiled once via `Symbolics.build_function`, dispatched as native Julia code thereafter:
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000309
+f_sym = Giac.build_function(giac_demo_expr, gx; backend = :symbolics)
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-60000000030a
+f_sym(2.5)
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-60000000030b
+md"""
+### Numerical equivalence
+
+Both backends agree on the supported subset (within `1e-10`):
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-60000000030c
+let xs = range(-3.0, 3.0; length = 50)
+	all(isapprox.(f_giac.(xs), f_sym.(xs); atol = 1e-10))
+end
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-60000000030d
+md"""
+### Benchmark — why the choice matters
+
+Time `N = 10_000` evaluations of the same expression with each backend. The default `:giac` backend pays one FFI round-trip per call; `:symbolics` runs as compiled Julia code.
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-60000000030e
+build_function_benchmark = let N = 10_000, xs = range(-3.0, 3.0; length = N)
+	# Warm-up so the first call's compilation isn't counted.
+	f_giac(xs[1]); f_sym(xs[1])
+
+	t_giac = @elapsed for v in xs; f_giac(v); end
+	t_sym  = @elapsed for v in xs; f_sym(v);  end
+
+	(
+		N         = N,
+		giac_ms   = round(1_000 * t_giac; digits = 2),
+		sym_ms    = round(1_000 * t_sym;  digits = 2),
+		speedup_x = round(t_giac / t_sym; digits = 1),
+	)
+end
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-60000000030f
+md"""
+The `speedup_x` field above is `t_giac / t_sym` — how many times longer the same loop takes with `:giac`. On a representative laptop this expression measures ~520 ms (`:giac`) vs ~0.4 ms (`:symbolics`) for 10 000 calls, i.e. **~1000× faster**. The exact ratio depends on the expression and the hardware, but the structural reason it is large is fixed: `:symbolics` runs as compiled Julia code, while `:giac` pays one FFI hop per call.
+
+### When to pick which
+
+| Situation | Backend |
+|---|---|
+| One-off evaluation, plotting, broadcasting in non-hot paths | `:giac` |
+| Tight loops, ODE solvers, optimization, MC simulation | `:symbolics` |
+| Need `ForwardDiff` / SciML autodiff downstream | `:symbolics` |
+| Expression contains a GIAC head `to_symbolics` cannot translate | `:giac` (only option) |
+| Free symbol left unbound deliberately (residual `GiacExpr` is fine) | `:giac` |
+
+The `:symbolics` backend errors at **build** time on unbound free symbols and on heads it cannot translate — which is what you want, because failures surface before you start a long run rather than after. The `:giac` backend silently returns a residual `GiacExpr` for unbound symbols and accepts every head GIAC understands; that flexibility is worth the per-call FFI cost in non-numeric pipelines.
+"""
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000310
+md"""
+### Why the bridge matters here
+
+Going `Symbolics → Giac → build_function(...; backend = :symbolics)` looks circuitous, but it's the whole point of the bridge: it lets a `Symbolics` workflow tap GIAC for the algebra steps `Symbolics` itself doesn't (yet) cover — factorization, partial fractions, exact integration, Laplace transforms, etc. (the rest of this notebook is a catalogue of these gaps) — and then come back to native Julia code for fast numeric evaluation.
+
+If you start *and* finish on the Symbolics side without needing GIAC's algebra, just use `Symbolics.build_function` directly — the bridge buys you nothing in that case.
+"""
+
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000517
 md"""
 ---
@@ -192,6 +318,10 @@ Referenced Symbolics issues (authoritative):
 - [#59 — Feature completeness against SymPy](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59)
 - [#249 — Partial fraction decomposition](https://github.com/JuliaSymbolics/Symbolics.jl/issues/249)
 - [#1770 — Laplace and inverse Laplace transforms](https://github.com/JuliaSymbolics/Symbolics.jl/issues/1770)
+
+Referenced Symbolics pull requests (in-flight attempts at closing gaps shown below):
+
+- [PR #1843 — Polynomial algebra (factor / sqrfree / discriminant / resultant)](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843) — AI-generated draft targeting §2, §6, §9 of this notebook; unmerged as of this writing. When the cells below were authored, Symbolics v7.19.0 was loaded, i.e. *without* the PR.
 """
 
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000002
@@ -242,7 +372,7 @@ md"""
 
 ## 2. Polynomial factorization
 
-Tracked in [#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59) under *Polynomials → Factorization* (unchecked as of this notebook).
+Tracked in [#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59) under *Polynomials → Factorization* (unchecked as of this notebook). In-flight attempt: [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843).
 
 `Symbolics.factor` exists but delegates to `Primes.factor` — it **only handles integers** and raises `MethodError` on a polynomial:
 """
@@ -266,6 +396,18 @@ Giac.Commands.factor(to_giac(poly))
 
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000023
 to_symbolics(Giac.Commands.factor(to_giac(poly)))
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-6000000000f3
+md"""
+**Symbolics-side attempt from [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843).** The PR adds a two-argument `Symbolics.factor(f, var)` that returns `(unit, [(factor, multiplicity), …])` — **not exported**, to avoid shadowing `Base.factor` / `Primes.factor`. Once merged, the native call would be:
+
+```julia
+u, fs = Symbolics.factor(x^4 - 1, x)
+# → (1, [(x - 1, 1), (x + 1, 1), (x^2 + 1, 1)])
+```
+
+Higher-degree residuals (≥ 4 with no rational root) delegate to `Nemo.factor` through `SymbolicsNemoExt` when `Nemo` is loaded.
+"""
 
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000030
 md"""
@@ -373,7 +515,7 @@ md"""
 
 ## 6. Resultants
 
-Tracked in [#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59) under *Polynomials → Resultants* (unchecked). `AbstractAlgebra.jl` and `Nemo.jl` implement resultants for their own polynomial types; Symbolics itself has no `resultant` on `Num`.
+Tracked in [#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59) under *Polynomials → Resultants* (unchecked). In-flight attempt: [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843). `AbstractAlgebra.jl` and `Nemo.jl` implement resultants for their own polynomial types; Symbolics itself has no `resultant` on `Num` in v7.19.0.
 
 $\mathrm{Res}_x(x^2 - 1,\; x^2 - 4) = 9$
 """
@@ -386,6 +528,17 @@ p2 = x^2 - 4
 
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000063
 Giac.Commands.resultant(to_giac(p1), to_giac(p2), to_giac(x))
+
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000064
+md"""
+**Symbolics-side attempt from [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843).** The PR adds `Symbolics.resultant(f, g, var; algorithm = :euclid | :sylvester)` with two algorithms that must agree on every valid input (PRS via extended Euclid, and the Sylvester-matrix determinant). Once merged:
+
+```julia
+Symbolics.resultant(x^2 - 1, x^2 - 4, x)                       # → 9
+Symbolics.resultant(x^2 - 1, x^2 - 4, x; algorithm = :sylvester)  # → 9
+Symbolics.resultant(a*x + b, c*x + d, x)                       # → a*d - b*c
+```
+"""
 
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000080
 md"""
@@ -457,7 +610,7 @@ md"""
 
 ## 9. Square-free decomposition & discriminant
 
-Tracked in [#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59) under *Polynomials* (unchecked). Symbolics has no `sqrfree` or `discriminant` on `Num`; searching under common alternative names (`squarefree`, `square_free`, `sqfree`, `disc`) returns nothing either.
+Tracked in [#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59) under *Polynomials* (unchecked). In-flight attempt: [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843). In v7.19.0, Symbolics has no `sqrfree` or `discriminant` on `Num`; searching under common alternative names (`squarefree`, `square_free`, `sqfree`, `disc`) returns nothing either.
 
 `sqrfree(x⁵ − 2x⁴ + x³)` factors into distinct square-free pieces — here `(x − 1)²·x³`:
 """
@@ -488,6 +641,19 @@ Giac.Commands.discriminant(to_giac(quad), to_giac(x))
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-6000000000aa
 to_symbolics(Giac.Commands.discriminant(to_giac(quad), to_giac(x)))
 
+# ╔═╡ d1e2f3a4-b5c6-7890-abcd-6000000000ab
+md"""
+**Symbolics-side attempt from [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843).** The PR adds `Symbolics.sqrfree(f, var)` (Yun's algorithm, characteristic 0) and `Symbolics.discriminant(f, var)` (via the classical `(-1)^{n(n-1)/2} · Res(f, f') / lc(f)` identity). Once merged:
+
+```julia
+u, fs = Symbolics.sqrfree(x^5 - 2x^4 + x^3, x)
+# → (1, [(x - 1, 2), (x, 3)])    # same (x − 1)²·x³ split shown above
+
+Symbolics.discriminant(a*x^2 + b*x + c, x)   # → b^2 - 4*a*c
+Symbolics.discriminant(x^3 - 3x + 2, x)      # → 0   (repeated root at x = 1)
+```
+"""
+
 # ╔═╡ d1e2f3a4-b5c6-7890-abcd-600000000099
 md"""
 ---
@@ -499,15 +665,15 @@ Only features shown above are listed here.
 | Feature | Symbolics.jl attempt (what it returned) | Giac.jl command (what it returned) |
 |---------|-----------------------------------------|------------------------------------|
 | Trig simplification | `Symbolics.simplify(tan(x)−sin(x)/cos(x))` → `(-sin(x)+cos(x)·tan(x))/cos(x)` | `Giac.Commands.simplify` → `0` |
-| Polynomial factorization | `Symbolics.factor(x⁴−1)` → `MethodError` (delegates to `Primes.factor`) | `factor(x⁴−1)` → `(x−1)(x+1)(x²+1)` |
+| Polynomial factorization ([PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843) proposes native `Symbolics.factor(f, x)`) | `Symbolics.factor(x⁴−1)` → `MethodError` (delegates to `Primes.factor`) | `factor(x⁴−1)` → `(x−1)(x+1)(x²+1)` |
 | Partial fractions ([#249](https://github.com/JuliaSymbolics/Symbolics.jl/issues/249)) | `Symbolics.simplify_fractions(x/(x²−1))` → `x/(x²−1)` unchanged | `partfrac(x/(x²−1))` → `½/(x−1) + ½/(x+1)` |
 | Laplace / inverse Laplace ([#1770](https://github.com/JuliaSymbolics/Symbolics.jl/issues/1770); [PR #1590](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1590) unmerged) | no `laplace`/`ilaplace` function | `laplace(e⁻ᵗcos t)` → `(s+1)/(s²+2s+2)`; `ilaplace(1/(s²+1))` → `sin(t)` |
 | Integer factorization | `Primes.factor` stalls on 60-digit balanced semiprimes (context of [Primes.jl #173](https://github.com/JuliaMath/Primes.jl/pull/173), ECM+MPQS polyalg.) | `ifactors` returns the factorization of 2⁶⁷−1 and of the 60-digit semiprime in seconds |
-| Resultants ([#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59)) | `Num` has no `resultant` method | `resultant(x²−1, x²−4, x)` → `9` |
+| Resultants ([#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59); [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843) proposes `Symbolics.resultant(f, g, x; algorithm = :euclid|:sylvester)`) | `Num` has no `resultant` method | `resultant(x²−1, x²−4, x)` → `9` |
 | Diophantine `a u + b v = c` ([#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59)) | `symbolic_solve` (with `Groebner`) → `Dict(u => 1//3 - 4//3 v, v => v)` — line over ℚ | `isolve(21u + 28v = 7)` → integer family `u = -1+4k, v = 1-3k`; `iabcuv` gives one witness `[-1,1]` |
 | Transcendental solve — exact form | `symbolic_solve(cos(x)=1//2)` → `1.047… + 6.28…·k` (float for `π/3`) | `solve` → `[-π/3, π/3]` exact |
-| Square-free decomposition ([#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59)) | no `sqrfree`/`squarefree` on `Num` | `sqrfree` → `(x−1)²·x³` |
-| Discriminant ([#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59)) | no `discriminant` on `Num` | `discriminant(ax²+bx+c, x)` → `b²−4ac` |
+| Square-free decomposition ([#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59); [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843) proposes `Symbolics.sqrfree(f, x)`) | no `sqrfree`/`squarefree` on `Num` | `sqrfree` → `(x−1)²·x³` |
+| Discriminant ([#59](https://github.com/JuliaSymbolics/Symbolics.jl/issues/59); [PR #1843](https://github.com/JuliaSymbolics/Symbolics.jl/pull/1843) proposes `Symbolics.discriminant(f, x)`) | no `discriminant` on `Num` | `discriminant(ax²+bx+c, x)` → `b²−4ac` |
 
 **Pattern:** `to_giac → Giac.Commands.<op> → to_symbolics`.
 
@@ -525,7 +691,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Giac = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
 Groebner = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+
+[compat]
+Giac = "~0.14.0"
+Groebner = "~0.10.3"
+Symbolics = "~7.21.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -534,12 +706,12 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "a1afaa4209975d445b4cd9303f83090dd52e6d71"
+project_hash = "94eff9696efaa589a6102491a48905c1da109ce4"
 
 [[deps.ADTypes]]
-git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
+git-tree-sha1 = "bbc22a9a08a0ef6460041086d8a7b27940ed4ffd"
 uuid = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-version = "1.21.0"
+version = "1.22.0"
 
     [deps.ADTypes.extensions]
     ADTypesChainRulesCoreExt = "ChainRulesCore"
@@ -692,6 +864,11 @@ version = "0.2.2"
 git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
 uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 version = "1.0.2"
+
+[[deps.CommonSolve]]
+git-tree-sha1 = "78ea4ddbcf9c241827e7035c3a03e2e456711470"
+uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+version = "0.2.6"
 
 [[deps.CommonWorldInvalidations]]
 git-tree-sha1 = "ae52d1c52048455e85a387fbee9be553ec2b68d0"
@@ -851,18 +1028,20 @@ uuid = "78b55507-aeef-58d4-861c-77aaff3498b1"
 version = "0.21.0+0"
 
 [[deps.Giac]]
-deps = ["CxxWrap", "GIAC_jll", "Libdl", "LinearAlgebra", "Tables", "libcxxwrap_julia_jll", "libgiac_julia_jll"]
-git-tree-sha1 = "593055032b1a12b4cfb20fa56bb9461e8bd15b69"
+deps = ["CommonSolve", "CxxWrap", "GIAC_jll", "Libdl", "LinearAlgebra", "Tables", "libcxxwrap_julia_jll", "libgiac_julia_jll"]
+git-tree-sha1 = "89dd61ed83bf686cfc68b280416b32cc541e1bf5"
 uuid = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
-version = "0.11.2"
+version = "0.14.0"
 
     [deps.Giac.extensions]
     GiacMathJSONExt = "MathJSON"
     GiacSymbolicsExt = "Symbolics"
+    GiacTermInterfaceExt = "TermInterface"
 
     [deps.Giac.weakdeps]
     MathJSON = "77215b4b-6f01-425c-beac-950ae6536d4d"
     Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+    TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
 
 [[deps.Graphs]]
 deps = ["ArnoldiMethod", "DataStructures", "Inflate", "LinearAlgebra", "Random", "SimpleTraits", "SparseArrays", "Statistics"]
@@ -1042,9 +1221,9 @@ version = "2025.11.4"
 
 [[deps.MultivariatePolynomials]]
 deps = ["DataStructures", "LinearAlgebra", "MutableArithmetics", "StarAlgebras"]
-git-tree-sha1 = "9436679244f099fe5cd8a8053f40696be4e3bdd8"
+git-tree-sha1 = "4838893d9b035c2f6967c0d533350e1755b58a70"
 uuid = "102ac46a-7ee4-5c85-9060-abc95bfdeaa3"
-version = "0.5.18"
+version = "0.5.19"
 
     [deps.MultivariatePolynomials.extensions]
     MultivariatePolynomialsChainRulesCoreExt = "ChainRulesCore"
@@ -1297,9 +1476,9 @@ version = "1.1.0"
 
 [[deps.SymbolicUtils]]
 deps = ["AbstractTrees", "ArrayInterface", "Combinatorics", "ConstructionBase", "DataStructures", "Dictionaries", "DocStringExtensions", "DynamicPolynomials", "EnumX", "ExproniconLite", "Graphs", "LinearAlgebra", "MacroTools", "Moshi", "MultivariatePolynomials", "MutableArithmetics", "NaNMath", "PrecompileTools", "ReadOnlyArrays", "Setfield", "SparseArrays", "SpecialFunctions", "StaticArraysCore", "SymbolicIndexingInterface", "TaskLocalValues", "TermInterface", "WeakCacheSets"]
-git-tree-sha1 = "98c23082cba20c6ae17e920600c89e4f6491e618"
+git-tree-sha1 = "94289f54ee5eb8feccaad382b80c4fd43d99b7ab"
 uuid = "d1185830-fcd6-423d-90d6-eec64667417b"
-version = "4.24.2"
+version = "4.25.2"
 
     [deps.SymbolicUtils.extensions]
     SymbolicUtilsChainRulesCoreExt = "ChainRulesCore"
@@ -1315,9 +1494,9 @@ version = "4.24.2"
 
 [[deps.Symbolics]]
 deps = ["ADTypes", "AbstractPlutoDingetjes", "ArrayInterface", "Bijections", "CommonWorldInvalidations", "ConstructionBase", "DataStructures", "DiffRules", "DocStringExtensions", "DomainSets", "DynamicPolynomials", "Libdl", "LinearAlgebra", "LogExpFunctions", "MacroTools", "Markdown", "Moshi", "MultivariatePolynomials", "MutableArithmetics", "NaNMath", "PrecompileTools", "Preferences", "Primes", "RecipesBase", "Reexport", "RuntimeGeneratedFunctions", "SciMLPublic", "Setfield", "SparseArrays", "SpecialFunctions", "StaticArraysCore", "SymbolicIndexingInterface", "SymbolicLimits", "SymbolicUtils", "TermInterface"]
-git-tree-sha1 = "c0ff31ee7be485d05d15a0b32a2cd615e90cbfc0"
+git-tree-sha1 = "85bb4be51a7e90e531b1faa926b9497f436ca535"
 uuid = "0c5d862f-8b57-4792-8d23-62f2024744c7"
-version = "7.19.0"
+version = "7.21.0"
 
     [deps.Symbolics.extensions]
     SymbolicsD3TreesExt = "D3Trees"
@@ -1483,9 +1662,27 @@ version = "17.7.0+0"
 # ╟─d1e2f3a4-b5c6-7890-abcd-600000000511
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000512
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000513
-# ╟─d1e2f3a4-b5c6-7890-abcd-600000000514
+# ╠═d1e2f3a4-b5c6-7890-abcd-600000000514
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000515
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000516
+# ╟─a09665a5-e207-4c87-af18-e8907fad09c4
+# ╟─d1e2f3a4-b5c6-7890-abcd-600000000300
+# ╠═d1e2f3a4-b5c6-7890-abcd-600000000301
+# ╠═d1e2f3a4-b5c6-7890-abcd-600000000302
+# ╟─d1e2f3a4-b5c6-7890-abcd-600000000303
+# ╠═d1e2f3a4-b5c6-7890-abcd-600000000304
+# ╟─d1e2f3a4-b5c6-7890-abcd-600000000305
+# ╠═d1e2f3a4-b5c6-7890-abcd-600000000306
+# ╠═d1e2f3a4-b5c6-7890-abcd-600000000307
+# ╟─d1e2f3a4-b5c6-7890-abcd-600000000308
+# ╠═d1e2f3a4-b5c6-7890-abcd-600000000309
+# ╠═d1e2f3a4-b5c6-7890-abcd-60000000030a
+# ╟─d1e2f3a4-b5c6-7890-abcd-60000000030b
+# ╠═d1e2f3a4-b5c6-7890-abcd-60000000030c
+# ╟─d1e2f3a4-b5c6-7890-abcd-60000000030d
+# ╠═d1e2f3a4-b5c6-7890-abcd-60000000030e
+# ╟─d1e2f3a4-b5c6-7890-abcd-60000000030f
+# ╟─d1e2f3a4-b5c6-7890-abcd-600000000310
 # ╟─d1e2f3a4-b5c6-7890-abcd-600000000517
 # ╟─d1e2f3a4-b5c6-7890-abcd-600000000002
 # ╟─d1e2f3a4-b5c6-7890-abcd-600000000010
@@ -1500,6 +1697,7 @@ version = "17.7.0+0"
 # ╠═d1e2f3a4-b5c6-7890-abcd-6000000000f2
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000022
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000023
+# ╟─d1e2f3a4-b5c6-7890-abcd-6000000000f3
 # ╟─d1e2f3a4-b5c6-7890-abcd-600000000030
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000031
 # ╠═d1e2f3a4-b5c6-7890-abcd-6000000000f4
@@ -1526,6 +1724,7 @@ version = "17.7.0+0"
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000061
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000062
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000063
+# ╟─d1e2f3a4-b5c6-7890-abcd-600000000064
 # ╟─d1e2f3a4-b5c6-7890-abcd-600000000080
 # ╠═d1e2f3a4-b5c6-7890-abcd-600000000081
 # ╠═d1e2f3a4-b5c6-7890-abcd-60000000008a
@@ -1547,6 +1746,7 @@ version = "17.7.0+0"
 # ╠═d1e2f3a4-b5c6-7890-abcd-6000000000a8
 # ╠═d1e2f3a4-b5c6-7890-abcd-6000000000a9
 # ╠═d1e2f3a4-b5c6-7890-abcd-6000000000aa
+# ╟─d1e2f3a4-b5c6-7890-abcd-6000000000ab
 # ╟─d1e2f3a4-b5c6-7890-abcd-600000000099
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
