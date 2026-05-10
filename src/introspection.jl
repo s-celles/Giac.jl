@@ -337,27 +337,12 @@ function hasmatch(ex::GiacExpr, pred)
 end
 
 """
-    free_symbols(ex::GiacExpr) -> Set{GiacExpr}
+    free_symbols(ex::GiacExpr) -> GiacExpr
 
 Return the free symbols in a symbolic expression
 """
-function free_symbols(ex::GiacExpr)::Set{GiacExpr}
-    S = Set{GiacExpr}()
-    free_symbols!(S, ex)
-    S
-end
-function free_symbols!(S::Set{GiacExpr}, ex::GiacExpr)::Nothing
-    Constants.is_giac_constant(ex) && return nothing
-    if is_identifier(ex)
-        push!(S, ex)
-        return nothing
-    end
-    !is_symbolic(ex) && return nothing
-    !iscall(ex) && return nothing
-    for a ∈ arguments(ex)
-        free_symbols!(S, a)
-    end
-    return nothing
+function free_symbols(ex::GiacExpr)::GiacExpr
+    return Commands.lname(ex)
 end
 
 
