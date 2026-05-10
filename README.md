@@ -8,3 +8,8 @@
 [![codecov](https://codecov.io/github/s-celles/Giac.jl/graph/badge.svg)](https://codecov.io/github/s-celles/Giac.jl)
 
 A Julia wrapper for the [Giac](https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac.html) computer algebra system.
+
+## Contributors
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the people who built, reviewed,
+and inspired this package.
