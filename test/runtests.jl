@@ -2,6 +2,15 @@ using Test
 using Giac
 using LinearAlgebra
 
+# Windows MPFR diagnostic — temporary, do not merge.
+# Probes whether evalf(pi, 100) returns a real (MPFR) gen with 100-digit
+# precision under MinGW. Wrapped so it never breaks the test run.
+try
+    include("diagnose_mpfr.jl")
+catch e
+    @warn "diagnose_mpfr.jl raised; continuing" exception=(e, catch_backtrace())
+end
+
 @testset "Giac.jl" begin
     # Module loading test (US2)
     @testset "Module Loading" begin
