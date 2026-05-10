@@ -425,6 +425,8 @@
         @test Giac.is_constant(giac_eval("-infinity"))
         @test Giac.is_constant(giac_eval("unsigned_inf"))
         @test Giac.is_constant(giac_eval("undef"))
+        @test to_julia(giac_eval("inf")) isa GiacExpr
+        @test to_julia(giac_eval("undef")) isa GiacExpr
 
         # Compound expressions built from the special atoms remain
         # constant when no free variable is introduced.
