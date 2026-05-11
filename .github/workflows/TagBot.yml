@@ -27,5 +27,8 @@ jobs:
     steps:
       - uses: JuliaRegistries/TagBot@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Use a PAT (not GITHUB_TOKEN) so the tag push triggers downstream
+          # workflows like Documentation and CI. Events created with
+          # GITHUB_TOKEN are deliberately not propagated by GitHub Actions.
+          token: ${{ secrets.TAGBOT_PAT }}
           ssh: ${{ secrets.DOCUMENTER_KEY }}
