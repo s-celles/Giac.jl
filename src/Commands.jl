@@ -59,7 +59,8 @@ using ..Giac: GiacExpr, GiacMatrix, GiacInput, GiacError, giac_eval, with_giac_l
               VALID_COMMANDS, JULIA_CONFLICTS, CONFLICT_CATEGORIES, exportable_commands,
               suggest_commands, _format_suggestions, _warn_conflict,
               _arg_to_giac_string, _build_command_string, help, HelpResult,
-              HeldCmd
+              HeldCmd,
+              _fastpath_disabled, _has_direct_gen, _invoke_cmd_direct
 import LinearAlgebra
 
 import CommonSolve: solve
@@ -107,6 +108,17 @@ result = invoke_cmd(:sin, giac_eval("pi/6"))  # Returns 1/2
 result = invoke_cmd(:eval, giac_eval("2+3"))  # Returns 5
 ```
 
+# Performance
+
+Since v0.14.2, `invoke_cmd` takes a direct-`Gen` fast path that bypasses the
+GIAC parser when every argument has a direct `Gen` representation
+(`GiacExpr`, `Int32`, Int32-fitting `Int64`, finite `Float64`). Otherwise it
+falls back to the existing string-concatenation path. Geometric-mean
+speed-up across the standard workload mix is ≈ 1.5×, with workloads
+returning long symbolic expressions (`factor`, `expand`) seeing the largest
+wins. Set `GIAC_INVOKE_CMD_STRING_PATH=1` to disable the fast path. See
+`docs/src/developer/invoke_cmd_fastpath.md` for details.
+
 # See also
 - [`giac_eval`](@ref): Direct string evaluation
 - [`Giac.search_commands`](@ref): Find available commands
@@ -125,6 +137,13 @@ function invoke_cmd(cmd::Symbol, args...)::GiacExpr
     # This helps users understand why certain commands can't be exported directly
     _warn_conflict(cmd)
 
+    # Fast path (069-invoke-cmd-fastpath): bypass _arg_to_giac_string + giac_eval
+    # when every argument has a direct Gen representation. Set
+    # GIAC_INVOKE_CMD_STRING_PATH=1 to disable globally.
+    if !_fastpath_disabled[] && all(_has_direct_gen, args)
+        return _invoke_cmd_direct(cmd, args)
+    end
+
     # Convert arguments to GIAC strings
     arg_strings = String[]
     for arg in args
@@ -141,6 +160,8 @@ function invoke_cmd(cmd::Symbol, args...)::GiacExpr
     # Build and execute command (convert Symbol to String only at C++ boundary)
     cmd_str = string(cmd)
     cmd_string = _build_command_string(cmd_str, arg_strings)
+
+    @debug "invoke_cmd string path" cmd=cmd nargs=length(args)
 
     return with_giac_lock() do
         giac_eval(cmd_string)

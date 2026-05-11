@@ -73,6 +73,9 @@ using LinearAlgebra
     # build_function tier 3 (Symbolics backend) tests (067-build-function-tier3)
     include("test_build_function_tier3.jl")
 
+    # invoke_cmd fast path tests (069-invoke-cmd-fastpath)
+    include("test_invoke_cmd_fastpath.jl")
+
     # Output handling tests (029-output-handling)
     include("test_output_handling.jl")
 

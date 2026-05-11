@@ -20,6 +20,9 @@
 !test/
 !test/*.jl
 
+!bench/
+!bench/*.jl
+
 !examples/
 !examples/*.jl
 !examples/*.png
