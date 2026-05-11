@@ -113,6 +113,71 @@ The output is two JSON-RPC response objects: the `initialize` reply and the
 `tools/call` reply whose `content[0].text` contains Giac's factored form
 of `x^4 - 1`.
 
+## Example prompts
+
+Once the server is wired into your MCP client, you can address it in plain
+natural language. The LLM routes the request to `giac_eval` (or
+`giac_search`) and returns Giac's exact symbolic result. A few prompts to
+get started, grouped by domain:
+
+### French — direct style
+
+- `factorise avec giac x²-1`
+- `développe avec giac (a+b)²`
+- `résous avec giac x² - 5x + 6 = 0`
+- `dérive avec giac sin(x²)`
+- `intègre avec giac x·exp(x)`
+- `calcule avec giac la limite de sin(x)/x en 0`
+- `décompose avec giac 1/(x³-1) en éléments simples`
+
+### English — direct style
+
+- `with giac, factor x^4 - 1`
+- `with giac, expand (x+y+z)^3`
+- `with giac, solve x^3 - 6x^2 + 11x - 6 = 0`
+- `with giac, integrate 1/(x^2 + 2x + 5) dx`
+- `with giac, compute the Laplace transform of t^2 * exp(-t) * sin(t)`
+- `with giac, compute the Z-transform of n^2`
+
+### English — natural, story-style
+
+These read like questions a human would actually ask. The LLM still routes
+them through `giac_eval`, but the framing exercises its judgement about
+which Giac construct to invoke.
+
+- `with giac, I'm stuck on x^4 - 5x^2 + 4 — can you break it into factors?`
+- `with giac, between which two integers does the real root of x^3 + x - 1 = 0 lie?`
+- `with giac, what's the slope of tan(x^2) at x = 1?`
+- `with giac, give me the area under the bell curve exp(-x^2) over the whole real line`
+- `with giac, does the sequence (1 + 1/n)^n converge, and to what?`
+- `with giac, a mass on a spring satisfies y'' + 4y = cos(2t) — find the motion`
+- `with giac, a population grows logistically with y' = y(1-y) and starts at 1/2; what's y(t)?`
+- `with giac, is the matrix [[1,2,3],[4,5,6],[7,8,10]] invertible? Prove it`
+- `with giac, the matrix [[2,1,0],[0,2,1],[0,0,2]] isn't diagonalizable — what's its Jordan structure?`
+- `with giac, what polynomial of degree 3 passes through (0,1), (1,2), (2,5), (3,10)?`
+- `with giac, do x^2 + x + 1 and x^3 - 1 share a common root?`
+- `with giac, my password is the prime just after one billion — what is it?`
+- `with giac, is the Mersenne number 2^31 - 1 actually prime?`
+- `with giac, find integers u and v such that 1071·u + 462·v = gcd(1071, 462)`
+- `with giac, an engineer needs the Laplace transform of t² e^(-t) sin(t) — deliver it`
+- `with giac, recover the time-domain signal whose Laplace transform is (s+1)/((s²+1)(s+2))`
+- `with giac, rewrite sin(5x) using only sin(x) and cos(x)`
+- `with giac, fuse sin(x) + cos(x) into a single sinusoid`
+- `with giac, how many 5-card poker hands are there from a standard deck?`
+- `with giac, give me the 50th Fibonacci number`
+- `with giac, fit a line through (1,2), (2,5), (3,7), (4,10) and tell me the slope`
+- `with giac, Euler famously summed 1/k² — confirm his answer`
+- `with giac, give me a closed-form expression for 1³ + 2³ + … + n³`
+- `with giac, does the alternating sum (-1)^k / k converge, and to what value?`
+
+### Catalogue search
+
+Use the `giac_search` tool when you don't remember the exact command name:
+
+- `with giac, which commands deal with matrices?`
+- `with giac, what's available for prime numbers?`
+- `with giac, list the Laplace-related commands`
+
 ## API reference
 
 ```@docs
