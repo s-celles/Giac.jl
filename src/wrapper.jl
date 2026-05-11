@@ -240,6 +240,9 @@ function init_giac_library()
 
         # Initialize xcasroot for help file support
         _init_xcasroot(lib_path)
+
+        # Cache the invoke_cmd fast-path kill-switch env var (069-invoke-cmd-fastpath)
+        _refresh_fastpath_flag!()
     else
         # Library found at runtime but not at compile time
         # CxxWrap requires the library at compile time for @wrapmodule
@@ -757,6 +760,70 @@ function _giac_subst_vec_tier1(expr::GiacExpr,
     vals_vect = GiacCxxBindings.make_vect(val_gens, Int32(0))
     result_gen = with_giac_lock() do
         GiacCxxBindings.giac_subst(expr_gen, vars_vect, vals_vect)
+    end
+    return GiacExpr(_make_gen_ptr(result_gen))
+end
+
+# ============================================================================
+# Direct Gen fast path for invoke_cmd (069-invoke-cmd-fastpath)
+#
+# Bypasses _arg_to_giac_string + _build_command_string + giac_eval when all
+# arguments have a direct Gen representation. Routes to the specialized
+# apply_func0/1/2/3 bindings (which return clean Gens) for arity 0-3, and to
+# apply_funcN (with a StdVector{Gen}) for arity >= 4. Per empirical research
+# R6, apply_funcN wraps arity-1 results in seq[...]; using the specialized
+# bindings avoids that.
+# ============================================================================
+
+_has_direct_gen(::GiacExpr)        = true
+_has_direct_gen(::Int32)           = true
+_has_direct_gen(x::Int64)          = typemin(Int32) <= x <= typemax(Int32)
+_has_direct_gen(x::Float64)        = isfinite(x)
+_has_direct_gen(@nospecialize(_))  = false
+
+_to_gen_direct(x::GiacExpr) = _get_gen_or_eval(x)
+_to_gen_direct(x::Int32)    = GiacCxxBindings.Gen(x)
+_to_gen_direct(x::Int64)    = GiacCxxBindings.Gen(Int32(x))
+_to_gen_direct(x::Float64)  = GiacCxxBindings.Gen(x)
+
+# Process-level kill switch. Cached at module init from GIAC_INVOKE_CMD_STRING_PATH.
+const _fastpath_disabled = Ref{Bool}(false)
+
+function _compute_fastpath_disabled()::Bool
+    v = lowercase(get(ENV, "GIAC_INVOKE_CMD_STRING_PATH", ""))
+    return v == "1" || v == "true" || v == "yes"
+end
+
+function _refresh_fastpath_flag!()::Bool
+    _fastpath_disabled[] = _compute_fastpath_disabled()
+    return _fastpath_disabled[]
+end
+
+function _invoke_cmd_direct(cmd::Symbol, args::Tuple)::GiacExpr
+    name = string(cmd)
+    @debug "invoke_cmd fast path" cmd=cmd nargs=length(args)
+    n = length(args)
+    result_gen = with_giac_lock() do
+        if n == 0
+            GiacCxxBindings.apply_func0(name)
+        elseif n == 1
+            GiacCxxBindings.apply_func1(name, _to_gen_direct(args[1]))
+        elseif n == 2
+            GiacCxxBindings.apply_func2(name,
+                                        _to_gen_direct(args[1]),
+                                        _to_gen_direct(args[2]))
+        elseif n == 3
+            GiacCxxBindings.apply_func3(name,
+                                        _to_gen_direct(args[1]),
+                                        _to_gen_direct(args[2]),
+                                        _to_gen_direct(args[3]))
+        else
+            gens = StdVector{GiacCxxBindings.Gen}()
+            for a in args
+                push!(gens, _to_gen_direct(a))
+            end
+            GiacCxxBindings.apply_funcN(name, gens)
+        end
     end
     return GiacExpr(_make_gen_ptr(result_gen))
 end

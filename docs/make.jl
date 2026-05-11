@@ -58,6 +58,7 @@ makedocs(
             "Overview" => "developer/index.md",
             "Package Architecture" => "developer/architecture.md",
             "Performance Tiers" => "developer/tier-system.md",
+            "invoke_cmd Fast Path" => "developer/invoke_cmd_fastpath.md",
             "Adding Functions" => "developer/contributing.md",
             "Memory Management" => "developer/memory.md",
             "Troubleshooting" => "developer/troubleshooting.md",

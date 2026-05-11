@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Direct `Gen` fast path for `invoke_cmd` / `giac_cmd` (spec 069)**: the
+  generic command dispatcher now bypasses the GIAC parser when all arguments
+  have a direct `Gen` representation (`GiacExpr`, `Int32`, Int32-fitting
+  `Int64`, finite `Float64`). The path resolves arguments through
+  `_get_gen_or_eval` / `Gen(Int32(x))` / `Gen(Float64(x))` and routes to
+  `apply_func0`/`apply_func1`/`apply_func2`/`apply_func3` (positional, zero
+  `StdVector` allocation) for arity 0–3 and `apply_funcN` with a
+  `StdVector{Gen}` for arity ≥ 4. Geometric-mean speed-up across the standard
+  workload mix is ≈ 1.5× with per-workload wins up to ≈ 2× on commands whose
+  result is a long symbolic expression (`factor`, `expand`). The existing
+  string-concatenation path is preserved as a fallback for `Rational`,
+  `Complex`, `AbstractIrrational`, `AbstractVector`, `GiacMatrix`,
+  `±Inf`/`NaN`, `Symbol`, `String`, `DerivativeCondition`, `DerivativePoint`,
+  `Function`, `BigInt`, `Int128`, and out-of-Int32-range `Int64` — all
+  existing call shapes continue to work unchanged. Beyond the speed-up, the
+  fast path structurally eliminates the `Gen → string → parse → Gen`
+  round-trip class of bug that motivated `_giac_subst_vec_tier1` (spec 065).
+  Set `GIAC_INVOKE_CMD_STRING_PATH=1` to disable globally.
+
 ## [0.14.1] - 2026-05-10
 
 ### Added
