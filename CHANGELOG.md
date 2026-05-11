@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **Acknowledge that `GiacContext` does not yet isolate evaluations.** The
+  public `giac_eval(expr, ctx::GiacContext)` signature and `GiacContext`
+  type previously suggested per-context isolation of variable bindings
+  and computation state. In reality, the C++ wrapper
+  (`libgiac-julia-wrapper`) currently exposes only a singleton context, so
+  every `GiacContext` value funnels into the same `giac::context *`.
+  Consequence: `:=` bindings persist across `giac_eval` calls regardless
+  of which `GiacContext` is passed, and the `GiacMCPExt` server cannot
+  honour its documented "each call is independent" contract without
+  workarounds. Added a `!!! warning` block to the docstrings of
+  `giac_eval` and `GiacContext`, a clarifying comment in
+  `_giac_eval_string`, and an updated note in the `giac_eval` MCP tool
+  description telling LLM clients to use `purge(name)` or `restart` to
+  clear leaked bindings. Tracked upstream as
+  [libgiac-julia-wrapper#3](https://github.com/s-celles/libgiac-julia-wrapper/issues/3);
+  the warnings can be removed once per-context evaluation is exposed at
+  the C++ layer.
+
 ## [0.14.1] - 2026-05-11
 
 ### Added

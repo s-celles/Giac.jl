@@ -638,8 +638,14 @@ Base.:~(d::DerivativeExpr, other) = _to_giac_expr(d) ~ other
 
 Represents a GIAC evaluation context.
 
-Manages configuration settings, variable bindings, and computation state.
 Thread-safe via internal locking.
+
+!!! warning "Context isolation is not yet implemented"
+    Creating multiple `GiacContext` values does NOT isolate variable bindings
+    or computation state: the C++ layer (`libgiac-julia-wrapper`) currently
+    exposes only a process-wide singleton context, so `:=` bindings made
+    through any `GiacContext` are visible to all of them. Tracked upstream
+    in [libgiac-julia-wrapper#3](https://github.com/s-celles/libgiac-julia-wrapper/issues/3).
 
 # Example
 ```julia
