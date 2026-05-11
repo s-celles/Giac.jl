@@ -159,6 +159,12 @@ using LinearAlgebra
     include("test_terminterface_ext.jl")
 
     # ============================================================================
+    # MCP Server Extension Tests (070-mcp-server-integration)
+    # Verifies the GiacMCPExt extension exposes giac_mcp_server with two tools
+    # ============================================================================
+    include("test_mcp_ext.jl")
+
+    # ============================================================================
     # Doctests
     # Runs jldoctest blocks in Giac docstrings via Documenter.doctest
     # ============================================================================

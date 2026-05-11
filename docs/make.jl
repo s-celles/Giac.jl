@@ -53,6 +53,7 @@ makedocs(
         "Extensions" => [
              "Symbolics.jl" => "extensions/symbolics.md",
              "MathJSON.jl" => "extensions/mathjson.md",
+             "MCP Server" => "extensions/mcp.md",
         ],
         "Developer Guide" => [
             "Overview" => "developer/index.md",

@@ -155,6 +155,9 @@ using .Commands: hold_cmd, release
 # Conversion functions (extended by GiacSymbolicsExt and GiacMathJSONExt)
 export to_giac, to_symbolics, to_mathjson
 
+# MCP server entry point (extended by GiacMCPExt when ModelContextProtocol is loaded)
+export giac_mcp_server
+
 """
     to_giac(expr)
 
@@ -177,6 +180,36 @@ function to_symbolics end
 Convert a GiacExpr or GiacMatrix to a MathJSON.jl expression. Extended by GiacMathJSONExt.
 """
 function to_mathjson end
+
+"""
+    giac_mcp_server(; name="giac-cas", version=string(pkgversion(Giac)), kwargs...) -> ModelContextProtocol.Server
+
+Construct an MCP (Model Context Protocol) server exposing the Giac CAS engine
+to LLM clients such as Claude Desktop, Claude Code, and Cursor. The returned
+`Server` advertises two tools:
+
+- `giac_eval` — evaluate any Giac/Xcas expression (string in → result out).
+- `giac_search` — search Giac's ~2200 command catalogue by keyword.
+
+The `version` default reflects the currently loaded Giac.jl version, so the
+MCP `initialize` handshake's `serverInfo.version` stays in sync with the
+package automatically.
+
+This function is **extended by `GiacMCPExt` when `ModelContextProtocol` is loaded**.
+Calling it without first loading `ModelContextProtocol` raises a `MethodError`
+with Julia's standard weak-extension diagnostic — install and load
+`ModelContextProtocol.jl` to activate the extension:
+
+```julia
+using Pkg; Pkg.add("ModelContextProtocol")
+using Giac, ModelContextProtocol
+start!(giac_mcp_server())   # blocks on STDIO transport
+```
+
+`kwargs...` are forwarded to `ModelContextProtocol.mcp_server`. See
+`docs/src/extensions/mcp.md` for the full setup guide.
+"""
+function giac_mcp_server end
 
 # Note: Calculus and algebra functions (giac_diff, giac_integrate, giac_factor, etc.)
 # have been removed in favor of Giac.Commands equivalents.

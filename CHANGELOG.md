@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **MCP server integration**: `giac_mcp_server()` exposes Giac's CAS engine
+  to MCP-aware LLM clients (Claude Desktop, Claude Code, Cursor, …) through
+  a new weak-dependency package extension `GiacMCPExt` on
+  [`ModelContextProtocol.jl`](https://github.com/JuliaSMLM/ModelContextProtocol.jl).
+  The server advertises two tools — `giac_eval` (Giac/Xcas expression in →
+  textual result out, with `CallToolResult(isError=true, ...)` for genuine
+  Julia exceptions) and `giac_search` (keyword in → matching command names
+  out, with a prefix-then-substring fallback so LLM-style queries like
+  `"matrix"` or `"prime"` surface relevant commands). The MCP `initialize`
+  handshake's `serverInfo.version` defaults to the running Giac.jl version
+  so clients always see the right number. Users who do not load
+  `ModelContextProtocol.jl` are unaffected — no transitive dependency, no
+  precompilation cost. See `docs/src/extensions/mcp.md` for the full setup
+  guide.
+
 ## [0.14.1] - 2026-05-10
 
 ### Added
