@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-05-11
+
 ### Added
 
 - **MCP server integration**: `giac_mcp_server()` exposes Giac's CAS engine
@@ -23,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ModelContextProtocol.jl` are unaffected — no transitive dependency, no
   precompilation cost. See `docs/src/extensions/mcp.md` for the full setup
   guide.
-  
+
 - **Example MCP prompts in the documentation**: `docs/src/extensions/mcp.md`
   now ships a curated "Example prompts" gallery — French and English
   direct-style prompts (`factorise avec giac x²-1`, `with giac, factor
@@ -33,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the prime just after one billion — what is it?"*). A separate
   `giac_search` block shows catalogue-discovery prompts
   (*"which commands deal with matrices?"*).
-  
+
 - **Direct `Gen` fast path for `invoke_cmd` / `giac_cmd` (spec 069)**: the
   generic command dispatcher now bypasses the GIAC parser when all arguments
   have a direct `Gen` representation (`GiacExpr`, `Int32`, Int32-fitting
@@ -52,10 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fast path structurally eliminates the `Gen → string → parse → Gen`
   round-trip class of bug that motivated `_giac_subst_vec_tier1` (spec 065).
   Set `GIAC_INVOKE_CMD_STRING_PATH=1` to disable globally.
-
-## [0.14.1] - 2026-05-10
-
-### Added
 
 - **`CONTRIBUTORS.md`**: a top-level acknowledgements file listing the
   people who built, reviewed, and inspired this package — Giac authors
