@@ -62,9 +62,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DerivativeExpr` directly. Public arithmetic (`+`, `-`, `*`, `/`, `^`),
   equation (`~`), and string-conversion behavior is preserved.
 
-## [0.14.1] - 2026-05-10
+## [0.14.1] - 2026-05-11
 
 ### Added
+
+- **MCP server integration**: `giac_mcp_server()` exposes Giac's CAS engine
+  to MCP-aware LLM clients (Claude Desktop, Claude Code, Cursor, …) through
+  a new weak-dependency package extension `GiacMCPExt` on
+  [`ModelContextProtocol.jl`](https://github.com/JuliaSMLM/ModelContextProtocol.jl).
+  The server advertises two tools — `giac_eval` (Giac/Xcas expression in →
+  textual result out, with `CallToolResult(isError=true, ...)` for genuine
+  Julia exceptions) and `giac_search` (keyword in → matching command names
+  out, with a prefix-then-substring fallback so LLM-style queries like
+  `"matrix"` or `"prime"` surface relevant commands). The MCP `initialize`
+  handshake's `serverInfo.version` defaults to the running Giac.jl version
+  so clients always see the right number. Users who do not load
+  `ModelContextProtocol.jl` are unaffected — no transitive dependency, no
+  precompilation cost. See `docs/src/extensions/mcp.md` for the full setup
+  guide.
+
+- **Example MCP prompts in the documentation**: `docs/src/extensions/mcp.md`
+  now ships a curated "Example prompts" gallery — French and English
+  direct-style prompts (`factorise avec giac x²-1`, `with giac, factor
+  x^4 - 1`) plus natural-language, story-style prompts that exercise the
+  LLM's judgement when routing to `giac_eval` (e.g., *"between which two
+  integers does the real root of x^3 + x - 1 = 0 lie?"*, *"my password is
+  the prime just after one billion — what is it?"*). A separate
+  `giac_search` block shows catalogue-discovery prompts
+  (*"which commands deal with matrices?"*).
+
+- **Direct `Gen` fast path for `invoke_cmd` / `giac_cmd` (spec 069)**: the
+  generic command dispatcher now bypasses the GIAC parser when all arguments
+  have a direct `Gen` representation (`GiacExpr`, `Int32`, Int32-fitting
+  `Int64`, finite `Float64`). The path resolves arguments through
+  `_get_gen_or_eval` / `Gen(Int32(x))` / `Gen(Float64(x))` and routes to
+  `apply_func0`/`apply_func1`/`apply_func2`/`apply_func3` (positional, zero
+  `StdVector` allocation) for arity 0–3 and `apply_funcN` with a
+  `StdVector{Gen}` for arity ≥ 4. Geometric-mean speed-up across the standard
+  workload mix is ≈ 1.5× with per-workload wins up to ≈ 2× on commands whose
+  result is a long symbolic expression (`factor`, `expand`). The existing
+  string-concatenation path is preserved as a fallback for `Rational`,
+  `Complex`, `AbstractIrrational`, `AbstractVector`, `GiacMatrix`,
+  `±Inf`/`NaN`, `Symbol`, `String`, `DerivativeCondition`, `DerivativePoint`,
+  `Function`, `BigInt`, `Int128`, and out-of-Int32-range `Int64` — all
+  existing call shapes continue to work unchanged. Beyond the speed-up, the
+  fast path structurally eliminates the `Gen → string → parse → Gen`
+  round-trip class of bug that motivated `_giac_subst_vec_tier1` (spec 065).
+  Set `GIAC_INVOKE_CMD_STRING_PATH=1` to disable globally.
 
 - **`CONTRIBUTORS.md`**: a top-level acknowledgements file listing the
   people who built, reviewed, and inspired this package — Giac authors

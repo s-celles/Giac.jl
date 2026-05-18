@@ -9,6 +9,9 @@
 
 A Julia wrapper for the [Giac](https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac.html) computer algebra system.
 
+For LLM integration via the Model Context Protocol, see
+[`docs/src/extensions/mcp.md`](docs/src/extensions/mcp.md).
+
 ## Contributors
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the people who built, reviewed,
