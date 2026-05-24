@@ -126,6 +126,69 @@ function unwrap_const(ex::GiacExpr)
     return ex
 end
 
+"""
+    float(ex::GiacExpr)
+
+Convert a Giac number or array to a floating point data type.
+
+# Examples
+```jldoctest
+julia> using Giac
+
+julia> float(giac_eval("2"))
+2.0
+
+julia> float(giac_eval("2.34"))
+2.34
+
+julia> float(giac_eval("23456789012345678901"))
+2.3456789012345678901e+19
+
+julia> float(Giac.Commands.evalf(giac_eval("pi"), 100))
+3.141592653589793238462643383279502884197169399375105820974944592307816406286198
+
+julia> float(giac_eval("2 + 3i"))
+2.0 + 3.0im
+
+julia> float(giac_eval("1234567890/2345678901"))
+0.526315809667591
+
+julia> float(giac_eval("sin(2)"))
+0.9092974268256817
+
+julia> float(giac_eval("[1,2,3]"))
+3-element Vector{Float64}:
+ 1.0
+ 2.0
+ 3.0
+```
+"""
+function Base.float(ex::GiacExpr)
+    T = Giac.giac_type(ex)
+
+    if T ∈ (INT, DOUBLE, FLOAT)
+        return convert(Float64, _convert_by_type(ex, T))
+    elseif T ∈ (ZINT,)
+        return convert(BigFloat, _convert_by_type(ex, T))
+    elseif T ∈ (REAL,)
+        return parse(BigFloat, string(ex))
+    elseif T == CPLX
+        return Complex(float(real(ex)), float(imag(ex)))
+    elseif T == FRAC
+        return float(numer(ex)) / float(denom(ex))
+    elseif T == VECT
+        return [float(x) for x in ex]
+    elseif Constants.is_giac_constant(ex)
+        ex == Constants._pi[] && return float(π)
+        ex == Constants._e[] && return float(ℯ)
+        ex == Constants._i[] && return float(im)
+    elseif Giac.is_constant(ex)
+        return to_julia(Giac.Commands.evalf(ex, 16))
+    end
+    throw(ArgumentError("Can't convert expression to a floating point type"))
+end
+
+
 # ============================================================================
 # Scalar Conversion Helpers
 # ============================================================================
