@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`latex` and `mathml` no longer re-evaluate their argument**:
+  `latex(ifactor(360))` returned `"360"` instead of the factorization, and
+  the same expression rendered as `360` in any notebook that consumes the
+  `text/latex` MIME type (Pluto, Jupyter, KaimonSlate).
+  GIAC evaluates command arguments, and `ifactor(360)` is the product
+  `2^3*3^2*5`, which evaluates straight back to `360` — so the form was
+  lost before it could be typeset. `invoke_cmd` now quotes the `GiacExpr`
+  arguments of the rendering commands listed in `Giac.RENDER_COMMANDS`
+  (`:latex`, `:mathml`), on both the direct-`Gen` fast path and the string
+  path, so they typeset the expression as given:
+  `latex(ifactor(360))` → `"5\cdot 2^{3}\cdot 3^{2}"`. Every other command
+  keeps GIAC's normal evaluation semantics. Reported by
+  [@kahliburke](https://github.com/kahliburke).
+
 ## [0.14.1] - 2026-05-11
 
 ### Added

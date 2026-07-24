@@ -76,6 +76,9 @@ using LinearAlgebra
     # invoke_cmd fast path tests (069-invoke-cmd-fastpath)
     include("test_invoke_cmd_fastpath.jl")
 
+    # LaTeX/MathML rendering form-preservation tests (071-latex-render-form)
+    include("test_latex_render.jl")
+
     # Output handling tests (029-output-handling)
     include("test_output_handling.jl")
 

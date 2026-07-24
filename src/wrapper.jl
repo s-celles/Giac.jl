@@ -827,3 +827,39 @@ function _invoke_cmd_direct(cmd::Symbol, args::Tuple)::GiacExpr
     end
     return GiacExpr(_make_gen_ptr(result_gen))
 end
+
+# ============================================================================
+# Rendering commands: argument holding (071-latex-render-form)
+#
+# GIAC evaluates command arguments, and some results are not fixed points of
+# evaluation: `ifactor(360)` is the product `2^3*3^2*5`, which evaluates back
+# to `360`. Rendering commands must typeset the expression they are handed, so
+# each GiacExpr argument is wrapped in GIAC's `quote(...)` before dispatch.
+# This works on both invoke_cmd paths: the fast path passes the quoted Gen
+# straight to apply_func1, and the string path prints it as `'2^3*3^2*5'`,
+# which the GIAC parser reads back as a quoted expression.
+# ============================================================================
+
+"""
+    RENDER_COMMANDS
+
+GIAC commands that typeset their argument instead of computing with it. Their
+`GiacExpr` arguments are quoted by [`invoke_cmd`](@ref) so that GIAC renders
+the expression as given rather than a re-evaluated copy of it.
+"""
+const RENDER_COMMANDS = (:latex, :mathml)
+
+# Wrap a GiacExpr in GIAC's quote(...) without evaluating it.
+function _quote_gen(expr::GiacExpr)::GiacExpr
+    quoted_gen = with_giac_lock() do
+        args = StdVector{GiacCxxBindings.Gen}()
+        push!(args, _get_gen_or_eval(expr))
+        GiacCxxBindings.make_symbolic_unevaluated("quote", args)
+    end
+    return GiacExpr(_make_gen_ptr(quoted_gen))
+end
+
+# Hold a single rendering-command argument. Only GiacExpr can carry an
+# unevaluated GIAC tree; every other argument type is already a literal.
+_hold_render_arg(x::GiacExpr) = _quote_gen(x)
+_hold_render_arg(@nospecialize(x)) = x

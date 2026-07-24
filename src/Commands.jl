@@ -60,7 +60,8 @@ using ..Giac: GiacExpr, GiacMatrix, GiacInput, GiacError, giac_eval, with_giac_l
               suggest_commands, _format_suggestions, _warn_conflict,
               _arg_to_giac_string, _build_command_string, help, HelpResult,
               HeldCmd,
-              _fastpath_disabled, _has_direct_gen, _invoke_cmd_direct
+              _fastpath_disabled, _has_direct_gen, _invoke_cmd_direct,
+              RENDER_COMMANDS, _hold_render_arg
 import LinearAlgebra
 
 import CommonSolve: solve
@@ -108,6 +109,20 @@ result = invoke_cmd(:sin, giac_eval("pi/6"))  # Returns 1/2
 result = invoke_cmd(:eval, giac_eval("2+3"))  # Returns 5
 ```
 
+# Rendering commands
+
+The commands listed in [`Giac.RENDER_COMMANDS`](@ref) (`:latex`, `:mathml`)
+typeset their argument rather than compute with it, so their `GiacExpr`
+arguments are quoted before dispatch. Without that, GIAC would re-evaluate the
+argument first and results that are not fixed points of evaluation would lose
+their form — `ifactor(360)` is the product `2^3*3^2*5`, which evaluates back
+to `360`:
+
+```julia
+f = invoke_cmd(:ifactor, 360)   # 2^3*3^2*5
+invoke_cmd(:latex, f)           # "5\\cdot 2^{3}\\cdot 3^{2}", not "360"
+```
+
 # Performance
 
 Since v0.14.2, `invoke_cmd` takes a direct-`Gen` fast path that bypasses the
@@ -136,6 +151,13 @@ function invoke_cmd(cmd::Symbol, args...)::GiacExpr
     # Warn about Julia conflicts (008-all-giac-commands, FR-010)
     # This helps users understand why certain commands can't be exported directly
     _warn_conflict(cmd)
+
+    # Rendering commands (071-latex-render-form): GIAC re-evaluates command
+    # arguments, which collapses results like ifactor(360) == 2^3*3^2*5 back to
+    # 360. Quoting each GiacExpr argument keeps the expression as given.
+    if cmd in RENDER_COMMANDS
+        args = map(_hold_render_arg, args)
+    end
 
     # Fast path (069-invoke-cmd-fastpath): bypass _arg_to_giac_string + giac_eval
     # when every argument has a direct Gen representation. Set
