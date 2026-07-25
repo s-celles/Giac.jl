@@ -1,0 +1,35 @@
+# Par défaut, on lance le menu principal de Pluto
+default:
+    julia --project=.. -e 'using Pluto; Pluto.run()'
+
+# Lancer un notebook spécifique (ex: just run 01_basics.jl)
+run notebook:
+    julia --project=.. -e 'using Pluto; Pluto.run(notebook="{{notebook}}")'
+
+# Raccourci pour 01_basics.jl
+basics:
+    just run 01_basics.jl
+
+# Raccourci pour 02_latex.jl
+latex:
+    just run 02_latex.jl
+
+# Raccourci pour 03_examples.jl
+examples:
+    just run 03_examples.jl
+
+# Raccourci pour 04_plotting.jl
+plotting:
+    just run 04_plotting.jl
+
+# Raccourci pour 05_programming.jl
+programming:
+    just run 05_programming.jl
+
+# Raccourci pour 06_symbolics_bridge.jl
+symbolics:
+    just run 06_symbolics_bridge.jl
+
+# Script utilitaire pour désépingler les paquets (par défaut: tous les notebooks du dossier)
+unpin target=".":
+    julia unpin_pluto.jl {{target}}
