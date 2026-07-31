@@ -1,0 +1,67 @@
+name: CI (downgrade)
+
+# Resolves every dependency to the *lowest* version `[compat]` claims to
+# support, then runs the suite there.
+#
+# This is the complement to CompatHelper, which only ever raises ceilings.
+# Nothing else in CI tests the floors: the main matrix always resolves to the
+# newest compatible versions, so a lower bound can be wrong for years without
+# anyone noticing. Two were wrong when this job was written — `GIAC_jll = "2"`
+# (unsatisfiable: libgiac_julia_jll 0.5 needs >= 2.0.1) and
+# `CxxWrap = "0.16, 0.17"` (unsatisfiable: CxxWrap 0.16 needs
+# libcxxwrap_julia_jll 0.13, this package pins 0.14.9).
+#
+# Julia 1.10 on purpose, not `1`: the floors must be tested against the floor
+# Julia, and some of them do not resolve on newer versions — DataFrames 1.6,
+# for one, is not installable on 1.12.
+#
+# `skip` lists the standard libraries, whose versions are tied to Julia itself
+# and so cannot be downgraded independently.
+
+on:
+  push:
+    branches:
+      - main
+      - 'release-*'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  downgrade:
+    name: Lowest compatible dependencies - Julia 1.10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+          arch: x64
+      - uses: julia-actions/cache@v2
+      # Scope: the hard `[deps]` only.
+      #
+      # Standard libraries are versioned with Julia and cannot be downgraded
+      # independently. Test-only extras are skipped because their floors are
+      # not a contract with anyone — they exist to run the suite.
+      #
+      # Weak dependencies are skipped for a substantive reason: a weakdep
+      # floor is a *pairwise* promise — "this extension works against
+      # Symbolics 7.0" — but `Pkg.test` resolves the whole test target at
+      # once, forcing all five weakdeps to their floors *simultaneously*. That
+      # combination is unsatisfiable, and no user ever faces it: you load one
+      # extension, not five floor-pinned ones together. Testing it would fail
+      # the job for a situation that cannot arise.
+      - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          skip: >-
+            Libdl,LinearAlgebra,Random,Test,
+            Aqua,CSV,DataFrames,Documenter,ForwardDiff,
+            LibPARI,MathJSON,ModelContextProtocol,Symbolics,TermInterface
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1

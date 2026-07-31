@@ -9,6 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CompatHelper** and a **downgrade CI job**, closing two gaps in the
+  repository's automation.
+
+  `CompatHelper` opens a PR when a dependency's newest release falls outside
+  this package's `[compat]` ceiling. LibPARI.jl already ran it; Giac.jl did
+  not, despite having far more to watch. It would have caught a live problem:
+  `ModelContextProtocol` was pinned to `"0.4"` while 0.6.1 was current, so
+  `Pkg.add(Giac)` silently downgraded a user's MCP by two breaking minors.
+  Configured with `subdirs = ["", "docs"]` so `docs/Project.toml` is covered
+  too.
+
+  `CI-Downgrade.yml` resolves the hard `[deps]` to the lowest versions
+  `[compat]` claims to support and runs the suite there, on Julia 1.10 — the
+  floor Julia, since some floors are not installable on newer versions. It is
+  the complement to CompatHelper, which only ever raises ceilings: nothing
+  else in CI tests the floors, because the main matrix always resolves to the
+  newest compatible versions.
+
+  The job deliberately skips the weak dependencies. A weakdep floor is a
+  *pairwise* promise, but `Pkg.test` resolves the whole test target at once
+  and would force all five weakdeps to their floors simultaneously — a
+  combination that is unsatisfiable and that no user encounters, since one
+  loads a single extension rather than five floor-pinned ones together.
+
+### Fixed
+
+- **Two `[compat]` lower bounds were unsatisfiable**, found by the new
+  downgrade job on its first run:
+
+  - `GIAC_jll = "2"` claimed support for 2.0.0, but `libgiac_julia_jll` 0.5
+    requires `GIAC_jll >= 2.0.1`, so that floor could never resolve. Now
+    `"2.0.1"`.
+  - `CxxWrap = "0.16, 0.17"` claimed support for 0.16, but CxxWrap 0.16
+    requires `libcxxwrap_julia_jll` 0.13 while this package pins 0.14.9, so
+    0.16 could never resolve either. Now `"0.17"`.
+
+  Neither is a functional narrowing — no user could have been resolved onto
+  those versions; the bounds simply described versions that do not work. With
+  them corrected, the full suite passes at the floors on Julia 1.10.
+
+### Added
+
 - **`GiacTermInterfaceExt` now implements `head` and `children`**, completing
   the TermInterface protocol. TermInterface's `iscall` docstring makes them
   mandatory — *"If `iscall(x)` is true, then also `isexpr(x)` must be true.
