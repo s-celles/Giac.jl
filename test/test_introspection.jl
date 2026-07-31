@@ -110,8 +110,10 @@
         @testset "String" begin
             result = giac_eval("\"hello\"")
             julia_val = to_julia(result)
-            # Strings are returned as GiacExpr
-            @test occursin("hello", string(julia_val))
+            # A STRNG converts to its characters — not to GIAC's printed
+            # literal, which would carry the surrounding double quotes.
+            @test julia_val isa String
+            @test julia_val == "hello"
         end
 
         # Infinity

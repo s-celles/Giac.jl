@@ -111,6 +111,48 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
             @test result ≈ 3.14
         end
 
+        @testset "to_julia for STRNG returns the characters, not the literal" begin
+            # `to_julia` used to return GIAC's *printed form*, which for a
+            # STRNG includes the surrounding double quotes — so
+            # `to_julia(giac_eval("\"hello\""))` answered "\"hello\"" and
+            # every caller had to strip them. The documented conversion
+            # table says STRNG -> String, and this is that string.
+            g = giac_eval("\"hello\"")
+            result = to_julia(g)
+            @test result isa String
+            @test result == "hello"
+            @test !startswith(result, '"')
+            @test length(result) == 5
+
+            # Round trip: what comes out re-enters as the same STRNG.
+            @test to_julia(giac_eval("\"" * result * "\"")) == result
+        end
+
+        @testset "to_julia for STRNG across content shapes" begin
+            for (literal, want) in (
+                ("\"\"", ""),
+                ("\"a\"", "a"),
+                ("\"with space\"", "with space"),
+                ("\"a,b;c\"", "a,b;c"),
+                ("\"3+4\"", "3+4"),
+                ("\"x^2\"", "x^2"),
+                ("\"[1,2,3]\"", "[1,2,3]"),
+                ("\"unicode é ✓\"", "unicode é ✓"),
+            )
+                g = giac_eval(literal)
+                @test giac_type(g) == Giac.GenTypes.STRNG
+                @test to_julia(g) === want
+            end
+        end
+
+        @testset "a STRNG holding a number stays a String" begin
+            # The characters are the value; `to_julia` must not re-parse them.
+            g = giac_eval("\"42\"")
+            @test to_julia(g) isa String
+            @test to_julia(g) == "42"
+            @test to_julia(g) != 42
+        end
+
         @testset "to_julia for VECT returns Vector" begin
             g = giac_eval("[1, 2, 3]")
             result = to_julia(g)

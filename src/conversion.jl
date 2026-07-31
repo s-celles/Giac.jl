@@ -25,7 +25,7 @@ Recursively convert a GIAC expression to native Julia types.
 | `FRAC` | `Rational{Int64}` or `Rational{BigInt}` |
 | `CPLX` | `Complex{T}` (T promoted from parts) |
 | `VECT` | `Vector{T}` (T narrowed from elements) |
-| `STRNG` | `String` |
+| `STRNG` | `String` (the characters, without GIAC's quotes) |
 | `SYMB`, `IDNT`, `FUNC` (with no free variables) | numeric value via `evalf` |
 | `SYMB`, `IDNT`, `FUNC` (with at least one free variable) | `GiacExpr` (unchanged) |
 
@@ -54,6 +54,9 @@ julia> to_julia(giac_eval("[1,2,3]"))
 
 julia> to_julia(giac_eval("true"))
 true
+
+julia> to_julia(giac_eval("\\"hello\\""))
+"hello"
 ```
 
 # See also
@@ -159,8 +162,23 @@ function _convert_to_bigint(g::GiacExpr)::BigInt
     return parse(BigInt, str)
 end
 
+# A GIAC `STRNG` holds characters; its *printed* form is a source literal and
+# carries the surrounding double quotes. `string(g)` gives the literal, so
+# reading the value out of it would mean stripping quotes and un-escaping —
+# and GIAC's escaping of an embedded quote does not survive that round trip.
+# The wrapper exposes the characters directly, so ask for them.
+#
+# `strng_value` reads the `STRNG` payload without checking the tag, so this
+# helper must only ever be reached for a `STRNG`. `_convert_by_type` is the
+# sole caller and dispatches on the tag; the assertion here keeps that true if
+# a second caller ever appears.
 function _convert_to_string(g::GiacExpr)::String
-    return string(g)
+    giac_type(g) == STRNG || throw(
+        GiacError("Cannot read characters from a $(giac_type(g)); expected STRNG", :type),
+    )
+    return with_giac_lock() do
+        String(GiacCxxBindings.strng_value(_get_gen_or_eval(g)))
+    end
 end
 
 # ============================================================================
