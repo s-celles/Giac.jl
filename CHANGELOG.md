@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`GiacTermInterfaceExt` now implements `head` and `children`**, completing
+  the TermInterface protocol. TermInterface's `iscall` docstring makes them
+  mandatory — *"If `iscall(x)` is true, then also `isexpr(x)` must be true.
+  […] This means that, `head(x)` and `children(x)` must be defined. Together
+  with `operation(x)` and `arguments(x)."* — but the extension defined only
+  `iscall`/`isexpr`/`operation`/`arguments`/`maketerm`, so a consumer written
+  against the protocol's documented spelling hit a `MethodError` exactly where
+  `operation`/`arguments` would have answered.
+
+  Giac is a language in which every expression node is a function call, so the
+  two spellings coincide: `head` is `operation` and `children` is `arguments`.
+  `sorted_children` needs no method — TermInterface defaults it to `children`,
+  and Giac stores its arguments in order. On a leaf, where `isexpr` is false
+  and the protocol requires nothing, `head`/`children` raise the same
+  `ArgumentError` that `operation`/`arguments` raise rather than inventing a
+  head for a node that has none. Closes
+  [#41](https://github.com/s-celles/Giac.jl/issues/41).
+
+- **A documentation page for the TermInterface extension**
+  (`docs/src/extensions/terminterface.md`), which the extension previously
+  lacked. It documents the protocol table and calls out a trap for anyone
+  writing a traversal: a Giac numeric literal is a `GiacExpr`, **not** a
+  `Number` — `giac_eval("42") isa Number` is `false`, and `to_julia` is what
+  unwraps it — so a walk over `Number` / symbol / call looks exhaustive while
+  silently dropping every literal. Dispatch on `isexpr` instead. The same
+  shape caught SymbolicUtils.jl
+  ([JuliaSymbolics/SymbolicUtils.jl#1024](https://github.com/JuliaSymbolics/SymbolicUtils.jl/issues/1024)).
+  The caveat is repeated in the extension module's own header comment.
+
 ## [0.14.2] - 2026-07-24
 
 ### Fixed

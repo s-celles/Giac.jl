@@ -29,6 +29,7 @@
 - [Symbolics.jl](extensions/symbolics.html)
 - [MathJSON.jl](extensions/mathjson.html)
 - [MCP Server](extensions/mcp.html)
+- [TermInterface.jl](extensions/terminterface.html)
 - [Overview](developer/index.html)
 - [Package Architecture](developer/architecture.html)
 - [Performance Tiers](developer/tier-system.html)

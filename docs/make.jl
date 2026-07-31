@@ -43,6 +43,7 @@ _pages = [
          "Symbolics.jl" => "extensions/symbolics.md",
          "MathJSON.jl" => "extensions/mathjson.md",
          "MCP Server" => "extensions/mcp.md",
+         "TermInterface.jl" => "extensions/terminterface.md",
     ],
     "Developer Guide" => [
         "Overview" => "developer/index.md",
