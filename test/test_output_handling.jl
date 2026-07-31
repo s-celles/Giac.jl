@@ -145,6 +145,34 @@ using Giac: is_identifier, is_fraction, is_complex, is_boolean, real_part, imag_
             end
         end
 
+        @testset "to_julia for STRNG un-escapes a doubled quote" begin
+            # GIAC escapes an embedded quote by doubling it, so `a"b` prints
+            # as `"a""b"`. Stripping the first and last character of the
+            # printed form — the obvious workaround for the old behaviour —
+            # would leave `a""b`. Reading the characters from the wrapper
+            # gets this right without any un-escaping of our own.
+            g = giac_eval("cat(\"a\", char(34), \"b\")")
+            @test giac_type(g) == Giac.GenTypes.STRNG
+            @test to_julia(g) == "a\"b"
+            @test length(to_julia(g)) == 3
+            # The naive workaround, shown failing, so the reason is recorded.
+            @test string(g)[2:end-1] != to_julia(g)
+
+            # A lone quote, and a backslash, which GIAC does not escape.
+            @test to_julia(giac_eval("char(34)")) == "\""
+            @test to_julia(giac_eval("char(92)")) == "\\"
+        end
+
+        @testset "to_julia checks the tag on the Gen it dereferences" begin
+            # `strng_value` segfaults rather than raising if handed a
+            # non-STRNG, so the guard must not be bypassable. Every non-STRNG
+            # type routes elsewhere in `_convert_by_type`; calling the helper
+            # directly must raise, not crash.
+            for src in ("42", "3.5", "x", "x^2+1", "[1,2,3]", "3/4")
+                @test_throws GiacError Giac._convert_to_string(giac_eval(src))
+            end
+        end
+
         @testset "a STRNG holding a number stays a String" begin
             # The characters are the value; `to_julia` must not re-parse them.
             g = giac_eval("\"42\"")

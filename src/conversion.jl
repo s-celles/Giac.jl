@@ -163,21 +163,27 @@ function _convert_to_bigint(g::GiacExpr)::BigInt
 end
 
 # A GIAC `STRNG` holds characters; its *printed* form is a source literal and
-# carries the surrounding double quotes. `string(g)` gives the literal, so
-# reading the value out of it would mean stripping quotes and un-escaping —
-# and GIAC's escaping of an embedded quote does not survive that round trip.
-# The wrapper exposes the characters directly, so ask for them.
+# carries the surrounding double quotes. Reading the value out of that literal
+# would mean stripping the quotes and un-escaping: GIAC doubles an embedded
+# quote, so `a"b` prints as `"a""b"`, and dropping the first and last character
+# leaves `a""b`. The wrapper exposes the characters directly, so ask for them.
 #
-# `strng_value` reads the `STRNG` payload without checking the tag, so this
-# helper must only ever be reached for a `STRNG`. `_convert_by_type` is the
-# sole caller and dispatches on the tag; the assertion here keeps that true if
-# a second caller ever appears.
+# `strng_value` dereferences the `STRNG` payload *without checking the tag* —
+# handed anything else it segfaults the process rather than raising. So the tag
+# must be checked, and it must be checked on the very object that is about to
+# be dereferenced. `giac_type` is not that check: it re-parses the printed form
+# and reports the type of the result, which is a different `Gen` from the
+# cached one this reads. No expression is known where the two disagree, but the
+# gap is not one to leave open in front of a segfault, so both the check and
+# the read take the same `gen`.
 function _convert_to_string(g::GiacExpr)::String
-    giac_type(g) == STRNG || throw(
-        GiacError("Cannot read characters from a $(giac_type(g)); expected STRNG", :type),
-    )
     return with_giac_lock() do
-        String(GiacCxxBindings.strng_value(_get_gen_or_eval(g)))
+        gen = _get_gen_or_eval(g)
+        t = T(GiacCxxBindings.type(gen))
+        t == STRNG || throw(
+            GiacError("Cannot read characters from a $t; expected STRNG", :type),
+        )
+        return String(GiacCxxBindings.strng_value(gen))
     end
 end
 

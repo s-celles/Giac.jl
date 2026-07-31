@@ -44,8 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal.** `to_julia(giac_eval("\"hello\""))` answered `"\"hello\""` — the
   source literal, double quotes included — where the documented conversion
   table promises `STRNG` → `String`. Every caller had to strip the quotes,
-  and stripping is not enough in general: GIAC's escaping of an embedded
-  quote does not survive that round trip.
+  and stripping is not enough in general: GIAC escapes an embedded quote by
+  doubling it, so `a"b` prints as `"a""b"` and dropping the first and last
+  character leaves `a""b`.
 
   `_convert_to_string` returned `string(g)`, which is GIAC's *print* form,
   while the wrapper had exposed the payload directly as `strng_value` all
@@ -55,9 +56,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `STRNG` holding digits still converts to a `String` — the characters are
   the value, and `to_julia` does not re-parse them.
 
-  `strng_value` reads the payload without checking the tag, so the helper now
-  asserts the tag before dereferencing rather than relying on its single
-  caller staying single.
+  `strng_value` dereferences the payload *without checking the tag* — handed
+  anything else it segfaults the process rather than raising. The helper
+  therefore checks the tag itself, and checks it on the very `Gen` it is about
+  to dereference: `giac_type` would not do, because it re-parses the printed
+  form and reports the type of the result, which is a different `Gen` from the
+  cached one being read. No expression is known where the two disagree, but
+  that is not a gap to leave open in front of a segfault.
 
   **Behaviour change.** Code that worked around the old output — stripping
   the first and last character, matching on `"\"...\""`, or comparing against
