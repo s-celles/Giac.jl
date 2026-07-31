@@ -44,24 +44,26 @@ jobs:
           version: '1.10'
           arch: x64
       - uses: julia-actions/cache@v2
-      # Scope: the hard `[deps]` only.
+      # `mode: deps` scopes this to the hard `[deps]`. Test-only extras are
+      # excluded by construction — they are not dependencies — and so are the
+      # weak dependencies, which is deliberate rather than convenient.
       #
-      # Standard libraries are versioned with Julia and cannot be downgraded
-      # independently. Test-only extras are skipped because their floors are
-      # not a contract with anyone — they exist to run the suite.
+      # A weakdep floor is a *pairwise* promise: "this extension works against
+      # Symbolics 7.0". The default `alldeps` mode promotes every weakdep into
+      # one joint floor-resolve, forcing all five to their floors
+      # simultaneously — a combination that is unsatisfiable here and that no
+      # user meets, since you load one extension, not five floor-pinned ones
+      # together.
       #
-      # Weak dependencies are skipped for a substantive reason: a weakdep
-      # floor is a *pairwise* promise — "this extension works against
-      # Symbolics 7.0" — but `Pkg.test` resolves the whole test target at
-      # once, forcing all five weakdeps to their floors *simultaneously*. That
-      # combination is unsatisfiable, and no user ever faces it: you load one
-      # extension, not five floor-pinned ones together. Testing it would fail
-      # the job for a situation that cannot arise.
-      - uses: julia-actions/julia-downgrade-compat@v1
+      # `alldeps` with `no_promote` naming the specific offenders would give
+      # stronger coverage, and is the upgrade path once the weakdep floors
+      # have been audited one at a time.
+      #
+      # `skip` still lists the standard libraries: their versions are tied to
+      # Julia itself and cannot be downgraded independently.
+      - uses: julia-actions/julia-downgrade-compat@v2
         with:
-          skip: >-
-            Libdl,LinearAlgebra,Random,Test,
-            Aqua,CSV,DataFrames,Documenter,ForwardDiff,
-            LibPARI,MathJSON,ModelContextProtocol,Symbolics,TermInterface
+          mode: deps
+          skip: Libdl,LinearAlgebra,Random,Test
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
