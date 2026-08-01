@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The macOS CI jobs run natively on `aarch64`** instead of asking for `x64`.
+  `macos-latest` is Apple Silicon; `setup-julia` v2 tolerated the mismatch,
+  but v3 rejects it outright (*"x64 arch has been requested on a macOS runner
+  that has an arm64 (Apple Silicon) architecture"*), which is why
+  [#52](https://github.com/s-celles/Giac.jl/pull/52) fails on macOS. All four
+  binary dependencies — `GIAC_jll`, `libgiac_julia_jll`,
+  `libcxxwrap_julia_jll` and `PARI_jll` — ship an `aarch64-apple-darwin`
+  build, so nothing is lost by moving. Expressed as `exclude`/`include` rather
+  than by dropping the `arch` matrix dimension, so only the two macOS check
+  names change.
+
 ### Fixed
 
 - **The LibPARI bridge's real-number tests no longer fail the suite on
