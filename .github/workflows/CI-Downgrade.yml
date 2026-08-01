@@ -74,7 +74,7 @@ jobs:
       # once, forcing all five weakdeps to their floors simultaneously, which
       # is unsatisfiable here and is a situation no user meets: you load one
       # extension, not five floor-pinned ones together.
-      - uses: julia-actions/julia-downgrade-compat@v1
+      - uses: julia-actions/julia-downgrade-compat@v2.6.2
         with:
           skip: >-
             Libdl,LinearAlgebra,Random,Test,
