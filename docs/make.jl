@@ -44,6 +44,7 @@ _pages = [
          "MathJSON.jl" => "extensions/mathjson.md",
          "MCP Server" => "extensions/mcp.md",
          "TermInterface.jl" => "extensions/terminterface.md",
+         "LibPARI.jl" => "extensions/libpari.md",
     ],
     "Developer Guide" => [
         "Overview" => "developer/index.md",
