@@ -28,6 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The documentation is no longer deployed twice on every push to `main`.**
+  Both `documentation.yml` and `CI.yml`'s `docs` job built the docs *and*
+  pushed to `gh-pages`, so the two raced; the merge of
+  [#58](https://github.com/s-celles/Giac.jl/pull/58) is where one lost, with
+  `error: failed to push some refs`. Earlier pushes passed on luck, not
+  correctness — the published docs were never wrong, only the CI colour was.
+  The `docs` job is removed and the dedicated workflow kept, since it also
+  covers tags (`tags: '*'`), which Documenter needs for versioned
+  deployments. Its job is renamed to `Documentation` because the `Protect
+  main` ruleset requires a status check under that exact name: without the
+  rename, every pull request would wait forever on a check no workflow
+  produced.
+
 - **The LibPARI bridge's real-number tests no longer fail the suite on
   Windows**, and the platform difference behind them is documented rather than
   hidden. `main` was red on both Windows runners with 23 failures, all of them
