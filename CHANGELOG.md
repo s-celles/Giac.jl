@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`GiacLibPARIExt` accepts LibPARI 0.18** — compat widened from `"0.17"`
+  to `"0.17, 0.18"`. LibPARI 0.18.0 changed nothing in its core API: it
+  narrows *its own* optional Symbolics bridge to Symbolics 7, which Giac.jl
+  already requires (`Symbolics = "7"`). Without this, installing Giac.jl
+  alongside LibPARI holds the latter back at 0.17.
+
 - **The macOS CI jobs run natively on `aarch64`** instead of asking for `x64`.
   `macos-latest` is Apple Silicon; `setup-julia` v2 tolerated the mismatch,
   but v3 rejects it outright (*"x64 arch has been requested on a macOS runner
