@@ -31,6 +31,28 @@ jobs:
           - windows-latest
         arch:
           - x64
+        # macos-latest is Apple Silicon. Asking for x64 there was tolerated by
+        # setup-julia v2 but is rejected outright by v3:
+        #
+        #   [setup-julia] x64 arch has been requested on a macOS runner that
+        #   has an arm64 (Apple Silicon) architecture
+        #
+        # so the macOS jobs run natively on aarch64. GIAC_jll,
+        # libgiac_julia_jll, libcxxwrap_julia_jll and PARI_jll all ship an
+        # aarch64-apple-darwin build, so nothing is lost by moving.
+        #
+        # Expressed as exclude/include rather than by dropping the `arch`
+        # dimension, so only the two macOS check names change.
+        exclude:
+          - os: macos-latest
+            arch: x64
+        include:
+          - os: macos-latest
+            arch: aarch64
+            version: '1.10'
+          - os: macos-latest
+            arch: aarch64
+            version: '1'
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v2
