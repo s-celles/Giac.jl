@@ -46,7 +46,7 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: x64
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - name: Build a project holding only Giac and LibPARI
         run: |
           mkdir -p bridge-env
