@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.24
+# v1.0.3
 
 using Markdown
 using InteractiveUtils
@@ -704,7 +704,7 @@ Giac = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
-Giac = "~0.14.0"
+Giac = "~0.14.2"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -713,7 +713,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "798ba8487a726f3cfc4fc724243df21378ea919c"
+project_hash = "9ed4c7f9eb5ba9236c908ff9b2499111284a1b07"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -728,9 +728,9 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 version = "1.11.0"
 
 [[deps.CommonSolve]]
-git-tree-sha1 = "78ea4ddbcf9c241827e7035c3a03e2e456711470"
+git-tree-sha1 = "eeaad7cef88554c2fa56b5a3f71cfd5cb708c662"
 uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
-version = "0.2.6"
+version = "0.2.11"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -786,17 +786,19 @@ version = "0.21.0+0"
 
 [[deps.Giac]]
 deps = ["CommonSolve", "CxxWrap", "GIAC_jll", "Libdl", "LinearAlgebra", "Tables", "libcxxwrap_julia_jll", "libgiac_julia_jll"]
-git-tree-sha1 = "89dd61ed83bf686cfc68b280416b32cc541e1bf5"
+git-tree-sha1 = "3ce34049d5c964d81b92b83dc60ee0f6c99efde5"
 uuid = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
-version = "0.14.0"
+version = "0.14.2"
 
     [deps.Giac.extensions]
+    GiacMCPExt = "ModelContextProtocol"
     GiacMathJSONExt = "MathJSON"
     GiacSymbolicsExt = "Symbolics"
     GiacTermInterfaceExt = "TermInterface"
 
     [deps.Giac.weakdeps]
     MathJSON = "77215b4b-6f01-425c-beac-950ae6536d4d"
+    ModelContextProtocol = "c58f755f-f2a7-4f48-bf29-4e9659b78499"
     Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
     TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
 
@@ -807,9 +809,9 @@ version = "1.0.0"
 
 [[deps.JLLWrappers]]
 deps = ["Artifacts", "Preferences"]
-git-tree-sha1 = "0533e564aae234aff59ab625543145446d8b6ec2"
+git-tree-sha1 = "7204148362dafe5fe6a273f855b8ccbe4df8173e"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.7.1"
+version = "1.8.0"
 
 [[deps.JuliaSyntaxHighlighting]]
 deps = ["StyledStrings"]
@@ -900,9 +902,9 @@ uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "3.5.4+0"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "05868e21324cede2207c6f0f466b4bfef6d5e7ee"
+git-tree-sha1 = "05f45c2e0de6259db764adbfd2f1dc6d3f8de13c"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.8.1"
+version = "2.0.1"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -958,9 +960,9 @@ version = "1.0.1"
 
 [[deps.Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "OrderedCollections", "TableTraits"]
-git-tree-sha1 = "f2c1efbc8f3a609aadf318094f8fc5204bdaf344"
+git-tree-sha1 = "0f38a06c83f0007bbab3cf911262841c9a0f07e0"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.12.1"
+version = "1.13.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -994,9 +996,9 @@ version = "5.15.0+0"
 
 [[deps.libcxxwrap_julia_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "a0b6eb05dde4ededa688ecf05e33caa5bffd42a5"
+git-tree-sha1 = "ded0ec008143feba86aceba3cecd27f5625db8d8"
 uuid = "3eaa8342-bff7-56a5-9981-c04077f7cee7"
-version = "0.14.9+0"
+version = "0.14.10+1"
 
 [[deps.libgiac_julia_jll]]
 deps = ["Artifacts", "GIAC_jll", "GMP_jll", "JLLWrappers", "Libdl", "MPFR_jll", "libcxxwrap_julia_jll"]

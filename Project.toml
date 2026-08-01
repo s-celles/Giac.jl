@@ -1,6 +1,6 @@
 name = "Giac"
 uuid = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
-version = "0.14.1"
+version = "0.14.2"
 authors = ["Sébastien Celles <s.celles@gmail.com>"]
 
 [deps]
@@ -14,12 +14,14 @@ libcxxwrap_julia_jll = "3eaa8342-bff7-56a5-9981-c04077f7cee7"
 libgiac_julia_jll = "ec39d2da-6bdf-580b-ada4-cd6e059515c9"
 
 [weakdeps]
+LibPARI = "75bc234d-eb99-4f80-8816-cb1dc773483e"
 MathJSON = "77215b4b-6f01-425c-beac-950ae6536d4d"
 ModelContextProtocol = "c58f755f-f2a7-4f48-bf29-4e9659b78499"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
 
 [extensions]
+GiacLibPARIExt = "LibPARI"
 GiacMCPExt = "ModelContextProtocol"
 GiacMathJSONExt = "MathJSON"
 GiacSymbolicsExt = "Symbolics"
@@ -29,11 +31,12 @@ GiacTermInterfaceExt = "TermInterface"
 Aqua = "0.8"
 CSV = "0.10"
 CommonSolve = "0.2"
-CxxWrap = "0.16, 0.17"
+CxxWrap = "0.17"
 DataFrames = "1.6, 1.7, 1.8"
 Documenter = "1"
 ForwardDiff = "0.10, 1"
-GIAC_jll = "2"
+GIAC_jll = "2.0.1"
+LibPARI = "0.17"
 Libdl = "1.10"
 LinearAlgebra = "1.10"
 MathJSON = "0.2, 0.3"
@@ -53,6 +56,7 @@ CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LibPARI = "75bc234d-eb99-4f80-8816-cb1dc773483e"
 MathJSON = "77215b4b-6f01-425c-beac-950ae6536d4d"
 ModelContextProtocol = "c58f755f-f2a7-4f48-bf29-4e9659b78499"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -61,4 +65,4 @@ TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Aqua", "Documenter", "Symbolics", "MathJSON", "ModelContextProtocol", "DataFrames", "CSV", "TermInterface", "Random", "ForwardDiff"]
+test = ["Test", "Aqua", "Documenter", "Symbolics", "MathJSON", "ModelContextProtocol", "DataFrames", "CSV", "TermInterface", "Random", "ForwardDiff", "LibPARI"]

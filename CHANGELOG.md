@@ -9,6 +9,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dependabot for the pinned GitHub Actions** (`.github/dependabot.yml`),
+  completing the automation added alongside CompatHelper. CompatHelper watches
+  Julia dependencies and never looks at workflows, so nothing tracked the
+  actions themselves — four of the eight pinned were one to three majors
+  behind when this was written: `actions/checkout` v4 → v7.0.1,
+  `codecov/codecov-action` v4 → v7.0.0, `julia-actions/setup-julia` v2 →
+  v3.0.2, `julia-actions/cache` v2 → v3.2.0. Configured for one PR per action
+  rather than a combined bump, so a failure is attributable to the action that
+  caused it.
+
+  This required one line in `.gitignore`. That file ignores everything by
+  default (`*`) and allows files back a pattern at a time; the allowlist
+  covered `.github/workflows/*.yml`, which does not reach the root of
+  `.github/`, and GitHub requires the Dependabot config at exactly
+  `.github/dependabot.yml`. The added line is a single negation for that one
+  path — no other file changes status.
+
+- **CompatHelper** and a **downgrade CI job**, closing two gaps in the
+  repository's automation.
+
+  `CompatHelper` opens a PR when a dependency's newest release falls outside
+  this package's `[compat]` ceiling. LibPARI.jl already ran it; Giac.jl did
+  not, despite having far more to watch. It would have caught a live problem:
+  `ModelContextProtocol` was pinned to `"0.4"` while 0.6.1 was current, so
+  `Pkg.add(Giac)` silently downgraded a user's MCP by two breaking minors.
+  Configured with `subdirs = ["", "docs"]` so `docs/Project.toml` is covered
+  too.
+
+  `CI-Downgrade.yml` resolves the hard `[deps]` to the lowest versions
+  `[compat]` claims to support and runs the suite there, on Julia 1.10 — the
+  floor Julia, since some floors are not installable on newer versions. It is
+  the complement to CompatHelper, which only ever raises ceilings: nothing
+  else in CI tests the floors, because the main matrix always resolves to the
+  newest compatible versions.
+
+  The job deliberately skips the weak dependencies. A weakdep floor is a
+  *pairwise* promise, but `Pkg.test` resolves the whole test target at once
+  and would force all five weakdeps to their floors simultaneously — a
+  combination that is unsatisfiable and that no user encounters, since one
+  loads a single extension rather than five floor-pinned ones together.
+
+- **`GiacTermInterfaceExt` now implements `head` and `children`**, completing
+  the TermInterface protocol. TermInterface's `iscall` docstring makes them
+  mandatory — *"If `iscall(x)` is true, then also `isexpr(x)` must be true.
+  […] This means that, `head(x)` and `children(x)` must be defined. Together
+  with `operation(x)` and `arguments(x)."* — but the extension defined only
+  `iscall`/`isexpr`/`operation`/`arguments`/`maketerm`, so a consumer written
+  against the protocol's documented spelling hit a `MethodError` exactly where
+  `operation`/`arguments` would have answered.
+
+  Giac is a language in which every expression node is a function call, so the
+  two spellings coincide: `head` is `operation` and `children` is `arguments`.
+  `sorted_children` needs no method — TermInterface defaults it to `children`,
+  and Giac stores its arguments in order. On a leaf, where `isexpr` is false
+  and the protocol requires nothing, `head`/`children` raise the same
+  `ArgumentError` that `operation`/`arguments` raise rather than inventing a
+  head for a node that has none. Closes
+  [#41](https://github.com/s-celles/Giac.jl/issues/41).
+
+- **A documentation page for the TermInterface extension**
+  (`docs/src/extensions/terminterface.md`), which the extension previously
+  lacked. It documents the protocol table and calls out a trap for anyone
+  writing a traversal: a Giac numeric literal is a `GiacExpr`, **not** a
+  `Number` — `giac_eval("42") isa Number` is `false`, and `to_julia` is what
+  unwraps it — so a walk over `Number` / symbol / call looks exhaustive while
+  silently dropping every literal. Dispatch on `isexpr` instead. The same
+  shape caught SymbolicUtils.jl
+  ([JuliaSymbolics/SymbolicUtils.jl#1024](https://github.com/JuliaSymbolics/SymbolicUtils.jl/issues/1024)).
+  The caveat is repeated in the extension module's own header comment.
+
+- **LibPARI.jl bridge**: values can now cross between Giac and
+  [PARI/GP](https://pari.math.u-bordeaux.fr/) through a new weak-dependency
+  package extension `GiacLibPARIExt` on
+  [`LibPARI.jl`](https://github.com/s-celles/LibPARI.jl) 0.17. Two entry
+  points, one per direction: `to_giac(g::LibPARI.Gen)` outward and a method
+  on LibPARI's own `pari(e::GiacExpr)` inward — no second inward name. The
+  bridge is hosted here rather than in LibPARI.jl because hosting means
+  paying the CI cost, and `PARI_jll` (19 MB, ~13 dependencies) is far cheaper
+  for Giac.jl to pull than `GIAC_jll` (73 MB, ~56 dependencies) would be the
+  other way round.
+
+  The bridge is **value-preserving and name-preserving, not
+  representation-preserving**: PARI's variable priority is process-global and
+  Giac orders by its own rules, so round trips are compared with `==` (PARI's
+  `gequal`) and never with `string`. It covers `T_INT`, `T_FRAC`, `T_REAL`,
+  `T_COMPLEX`, `T_POL`, `T_VEC`, `T_COL`, `T_VECSMALL`, `T_LIST` and `T_MAT`
+  outward, and `INT`, `ZINT`, `FRAC`, `DOUBLE`, `REAL`, `CPLX`, `IDNT`,
+  polynomial `SYMB` and `VECT` inward. Everything else is refused with an
+  `ArgumentError` that names the tag it could not translate.
+
+  Reals cross carrying the *value's* own precision rather than the ambient
+  `setprecision(LibPARI.Gen, …)` setting, and never through a printed decimal
+  — injecting a PARI real into GP as text silently truncates a 512-bit value
+  to 128 bits. Known limitations (`T_COL`/`T_VECSMALL`/`T_LIST` widening to
+  `T_VEC`, float tags not surviving, `MOD` and string types refused) are
+  documented in `docs/src/extensions/libpari.md` and each is pinned by a test.
+
+  The bridge has a dedicated CI job that runs its tests against a project
+  containing only Giac and LibPARI, so a bridge failure is attributable and
+  an accidental dependence on another extension would be caught.
+
 - **`Differential` operator** (spec 068): canonical SciML/ModelingToolkit-style
   partial-differentiation operator. `Differential(x)(f)` for a declared function
   `f(x, y)` returns a `DerivativeExpr` representing `∂f/∂x`. Composition handles
@@ -54,6 +155,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   equation) using the canonical `Differential` operator. Linked from
   `docs/src/pluto.md`.
 
+### Changed
+
+- **The macOS CI jobs run natively on `aarch64`** instead of asking for `x64`.
+  `macos-latest` is Apple Silicon; `setup-julia` v2 tolerated the mismatch,
+  but v3 rejects it outright (*"x64 arch has been requested on a macOS runner
+  that has an arm64 (Apple Silicon) architecture"*), which is why
+  [#52](https://github.com/s-celles/Giac.jl/pull/52) fails on macOS. All four
+  binary dependencies — `GIAC_jll`, `libgiac_julia_jll`,
+  `libcxxwrap_julia_jll` and `PARI_jll` — ship an `aarch64-apple-darwin`
+  build, so nothing is lost by moving. Expressed as `exclude`/`include` rather
+  than by dropping the `arch` matrix dimension, so only the two macOS check
+  names change.
+
+- **`DerivativeExpr` internal layout** (spec 068): the `varname::String` and
+  `order::Int` fields are replaced by `steps::Vector{Tuple{String, Int}}`.
+  This is an internal change — no user code is expected to construct
+  `DerivativeExpr` directly. Public arithmetic (`+`, `-`, `*`, `/`, `^`),
+  equation (`~`), and string-conversion behavior is preserved.
+
 ### Deprecated
 
 - **`D` operator** (spec 068): every call shape (`D(u)`, `D(u, n)`, `D(D(u))`,
@@ -66,15 +186,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   underlying derivative to be mono-variable; partial derivatives of mixed
   variables must be composed via `Differential(var)(d)`.
 
-### Changed
-
-- **`DerivativeExpr` internal layout** (spec 068): the `varname::String` and
-  `order::Int` fields are replaced by `steps::Vector{Tuple{String, Int}}`.
-  This is an internal change — no user code is expected to construct
-  `DerivativeExpr` directly. Public arithmetic (`+`, `-`, `*`, `/`, `^`),
-  equation (`~`), and string-conversion behavior is preserved.
-
 ### Fixed
+
+- **The LibPARI bridge's real-number tests no longer fail the suite on
+  Windows**, and the platform difference behind them is documented rather than
+  hidden. `main` was red on both Windows runners with 23 failures, all of them
+  in `test_libpari_ext.jl`, all in reals.
+
+  The cause is not Giac and not the bridge: it is a known ABI bug between the
+  two binaries. `class gen` stored its tag as a bitfield, GCC fuses adjacent
+  bitfield writes with version-dependent bit placement, and `GIAC_jll` is
+  built with GCC 8 against `libgiac_julia_jll`'s GCC 10 — so libgiac writes a
+  gen tagged `_REAL` and the wrapper reads back `_DOUBLE_`. The suite observes
+  it directly: `Giac.giac_type(wide) == REAL` evaluates to `DOUBLE == REAL`.
+
+  Everything else follows. Giac.jl believes it holds a `Float64`, prints at
+  the global `Digits` — default 12 — and every real crosses truncated to
+  twelve significant digits, identically at 64, 128, 256, 512 and 1024 bits,
+  because 53 bits is all a mis-tagged `DOUBLE` ever had. Raising `Digits`
+  would change nothing: the precision is lost at the tag, not at the printer.
+
+  Fix in flight upstream:
+  [Yggdrasil#13717](https://github.com/JuliaPackaging/Yggdrasil/pull/13717)
+  bumps `GIAC_jll` to v2.0.2 with `GIAC_TYPE_ON_8BITS=1`, making the ABI
+  compiler-invariant, followed by a `libgiac_julia_jll` bump. Same root cause
+  as [#22](https://github.com/s-celles/Giac.jl/pull/22) and the probe in
+  [#26](https://github.com/s-celles/Giac.jl/pull/26).
+
+  One thing this did establish about the bridge itself: its decode *verifies
+  itself* by re-encoding the candidate and comparing printed forms, and that
+  check is blind here. Re-encoding the truncated value also prints twelve
+  digits, the forms agree, and a wrong answer is confirmed. The check
+  establishes the printer's self-consistency, not its fidelity — the two
+  coincide only where the tag is right.
+
+  The affected assertions are now marked `@test_broken` on Windows rather than
+  skipped, so that when the two JLLs land the suite reports *unexpected
+  passes* and tells whoever did it to delete the markers. Everything else
+  in the bridge passes on Windows: integers, rationals, complex numbers,
+  polynomials, vectors, matrices, refusals, variable names, the PARI stack
+  check and the piracy check. A `DOUBLE`, needing no more than twelve digits,
+  crosses correctly.
+
+  The documentation said Giac's printer emits a `REAL` at the value's own
+  precision "rather than at a global setting", presented as a measured fact.
+  It was measured on Linux only. Corrected, with a dedicated section and a
+  warning admonition on the reals section.
 
 - **Partial-derivative pretty-print convention (right-to-left Leibniz)**: the
   multi-step `Base.show` for `DerivativeExpr` previously printed
@@ -87,6 +244,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `diff(diff(f(x,y),x),y)` string are unchanged; only the human-facing
   ∂-notation flips. By Schwarz/Clairaut the underlying value is symmetric
   for sufficiently smooth functions, so this is purely a notation fix.
+
+- **Two `[compat]` lower bounds were unsatisfiable**, found by the new
+  downgrade job on its first run:
+
+  - `GIAC_jll = "2"` claimed support for 2.0.0, but `libgiac_julia_jll` 0.5
+    requires `GIAC_jll >= 2.0.1`, so that floor could never resolve. Now
+    `"2.0.1"`.
+  - `CxxWrap = "0.16, 0.17"` claimed support for 0.16, but CxxWrap 0.16
+    requires `libcxxwrap_julia_jll` 0.13 while this package pins 0.14.9, so
+    0.16 could never resolve either. Now `"0.17"`.
+
+  Neither is a functional narrowing — no user could have been resolved onto
+  those versions; the bounds simply described versions that do not work. With
+  them corrected, the full suite passes at the floors on Julia 1.10.
+
+- **`to_julia` on a `STRNG` now returns the characters, not GIAC's printed
+  literal.** `to_julia(giac_eval("\"hello\""))` answered `"\"hello\""` — the
+  source literal, double quotes included — where the documented conversion
+  table promises `STRNG` → `String`. Every caller had to strip the quotes,
+  and stripping is not enough in general: GIAC escapes an embedded quote by
+  doubling it, so `a"b` prints as `"a""b"` and dropping the first and last
+  character leaves `a""b`.
+
+  `_convert_to_string` returned `string(g)`, which is GIAC's *print* form,
+  while the wrapper had exposed the payload directly as `strng_value` all
+  along without the conversion path using it. It now reads the characters
+  from the wrapper, so `to_julia(giac_eval("\"hello\""))` is `"hello"`, an
+  empty GIAC string converts to `""`, and Unicode content survives intact. A
+  `STRNG` holding digits still converts to a `String` — the characters are
+  the value, and `to_julia` does not re-parse them.
+
+  `strng_value` dereferences the payload *without checking the tag* — handed
+  anything else it segfaults the process rather than raising. The helper
+  therefore checks the tag itself, and checks it on the very `Gen` it is about
+  to dereference: `giac_type` would not do, because it re-parses the printed
+  form and reports the type of the result, which is a different `Gen` from the
+  cached one being read. No expression is known where the two disagree, but
+  that is not a gap to leave open in front of a segfault.
+
+  **Behaviour change.** Code that worked around the old output — stripping
+  the first and last character, matching on `"\"...\""`, or comparing against
+  a quoted literal — must drop the workaround. Code that used `string(expr)`
+  to obtain the literal form is unaffected: `string` still prints the GIAC
+  literal, quotes and all.
+
+## [0.14.2] - 2026-07-24
+
+### Fixed
+
+- **`latex` and `mathml` no longer re-evaluate their argument**:
+  `latex(ifactor(360))` returned `"360"` instead of the factorization, and
+  the same expression rendered as `360` in any notebook that consumes the
+  `text/latex` MIME type (Pluto, Jupyter, KaimonSlate).
+  GIAC evaluates command arguments, and `ifactor(360)` is the product
+  `2^3*3^2*5`, which evaluates straight back to `360` — so the form was
+  lost before it could be typeset. `invoke_cmd` now quotes the `GiacExpr`
+  arguments of the rendering commands listed in `Giac.RENDER_COMMANDS`
+  (`:latex`, `:mathml`), on both the direct-`Gen` fast path and the string
+  path, so they typeset the expression as given:
+  `latex(ifactor(360))` → `"5\cdot 2^{3}\cdot 3^{2}"`. Every other command
+  keeps GIAC's normal evaluation semantics. Reported by
+  [@kahliburke](https://github.com/kahliburke).
 
 ## [0.14.1] - 2026-05-11
 
