@@ -46,6 +46,9 @@ _pages = [
          "TermInterface.jl" => "extensions/terminterface.md",
          "LibPARI.jl" => "extensions/libpari.md",
     ],
+    "Migration" => [
+        "D → Differential" => "migration/d_to_differential.md",
+    ],
     "Developer Guide" => [
         "Overview" => "developer/index.md",
         "Package Architecture" => "developer/architecture.md",

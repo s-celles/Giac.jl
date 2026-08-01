@@ -7,66 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- **The macOS CI jobs run natively on `aarch64`** instead of asking for `x64`.
-  `macos-latest` is Apple Silicon; `setup-julia` v2 tolerated the mismatch,
-  but v3 rejects it outright (*"x64 arch has been requested on a macOS runner
-  that has an arm64 (Apple Silicon) architecture"*), which is why
-  [#52](https://github.com/s-celles/Giac.jl/pull/52) fails on macOS. All four
-  binary dependencies — `GIAC_jll`, `libgiac_julia_jll`,
-  `libcxxwrap_julia_jll` and `PARI_jll` — ship an `aarch64-apple-darwin`
-  build, so nothing is lost by moving. Expressed as `exclude`/`include` rather
-  than by dropping the `arch` matrix dimension, so only the two macOS check
-  names change.
-
-### Fixed
-
-- **The LibPARI bridge's real-number tests no longer fail the suite on
-  Windows**, and the platform difference behind them is documented rather than
-  hidden. `main` was red on both Windows runners with 23 failures, all of them
-  in `test_libpari_ext.jl`, all in reals.
-
-  The cause is not Giac and not the bridge: it is a known ABI bug between the
-  two binaries. `class gen` stored its tag as a bitfield, GCC fuses adjacent
-  bitfield writes with version-dependent bit placement, and `GIAC_jll` is
-  built with GCC 8 against `libgiac_julia_jll`'s GCC 10 — so libgiac writes a
-  gen tagged `_REAL` and the wrapper reads back `_DOUBLE_`. The suite observes
-  it directly: `Giac.giac_type(wide) == REAL` evaluates to `DOUBLE == REAL`.
-
-  Everything else follows. Giac.jl believes it holds a `Float64`, prints at
-  the global `Digits` — default 12 — and every real crosses truncated to
-  twelve significant digits, identically at 64, 128, 256, 512 and 1024 bits,
-  because 53 bits is all a mis-tagged `DOUBLE` ever had. Raising `Digits`
-  would change nothing: the precision is lost at the tag, not at the printer.
-
-  Fix in flight upstream:
-  [Yggdrasil#13717](https://github.com/JuliaPackaging/Yggdrasil/pull/13717)
-  bumps `GIAC_jll` to v2.0.2 with `GIAC_TYPE_ON_8BITS=1`, making the ABI
-  compiler-invariant, followed by a `libgiac_julia_jll` bump. Same root cause
-  as [#22](https://github.com/s-celles/Giac.jl/pull/22) and the probe in
-  [#26](https://github.com/s-celles/Giac.jl/pull/26).
-
-  One thing this did establish about the bridge itself: its decode *verifies
-  itself* by re-encoding the candidate and comparing printed forms, and that
-  check is blind here. Re-encoding the truncated value also prints twelve
-  digits, the forms agree, and a wrong answer is confirmed. The check
-  establishes the printer's self-consistency, not its fidelity — the two
-  coincide only where the tag is right.
-
-  The affected assertions are now marked `@test_broken` on Windows rather than
-  skipped, so that when the two JLLs land the suite reports *unexpected
-  passes* and tells whoever did it to delete the markers. Everything else
-  in the bridge passes on Windows: integers, rationals, complex numbers,
-  polynomials, vectors, matrices, refusals, variable names, the PARI stack
-  check and the piracy check. A `DOUBLE`, needing no more than twelve digits,
-  crosses correctly.
-
-  The documentation said Giac's printer emits a `REAL` at the value's own
-  precision "rather than at a global setting", presented as a measured fact.
-  It was measured on Linux only. Corrected, with a dedicated section and a
-  warning admonition on the reals section.
-
 ### Added
 
 - **Dependabot for the pinned GitHub Actions** (`.github/dependabot.yml`),
@@ -170,7 +110,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   containing only Giac and LibPARI, so a bridge failure is attributable and
   an accidental dependence on another extension would be caught.
 
+- **`Differential` operator** (spec 068): canonical SciML/ModelingToolkit-style
+  partial-differentiation operator. `Differential(x)(f)` for a declared function
+  `f(x, y)` returns a `DerivativeExpr` representing `∂f/∂x`. Composition handles
+  cross and higher-order partials: `Differential(y)(Differential(x)(f))` is
+  `∂²f/∂y∂x` (right-to-left Leibniz convention — see *Fixed* below);
+  `Differential(x)(Differential(x)(f))` is `∂²f/∂x²` (adjacent same-variable
+  steps collapse). Mono-variable functions also work: `Differential(t)(u)`.
+- **Symbolics-compatible algebraic surface on `Differential`**:
+  `Differential(t)^n` for `n ≥ 0` returns an order-`n` operator —
+  `Differential(t)^2 === Differential(t, 2)` and `Differential(t)^0 === identity`,
+  matching Symbolics.jl. `Differential * Differential` composes via Julia's
+  generic `∘`, so `(Differential(y) * Differential(x))(f) ==
+  (Differential(y) ∘ Differential(x))(f) == Differential(y)(Differential(x)(f))`.
+- **`expand_derivatives`** (Symbolics.jl parity): forces evaluation of a
+  `DerivativeExpr` to a plain `GiacExpr` (delegates to GIAC's `diff`), and is
+  the identity on any other value. Lets code written in the Symbolics.jl style
+  (`expand_derivatives(Differential(x)(expr))`) run unchanged on Giac.jl. Note
+  that Giac.jl's bare-expression branch already evaluates eagerly, so the
+  no-op fallback covers the common case.
+- **Two-argument `Differential(var, n)` shorthand**: `Differential(x, 2)(f)`
+  is exactly equivalent to `Differential(x)(Differential(x)(f))`, matching
+  Symbolics.jl's `Differential(x, 2)` form. The default `Differential(var)`
+  is `Differential(var, 1)`. Applies uniformly to function-form and
+  bare-expression operands.
+- **Bare-expression differentiation** via `Differential` (spec 068):
+  `Differential(x)(x^2 + y*x)` returns the plain `GiacExpr` `2*x + y`,
+  matching SymPy.jl's `diff(expr, var)` and Symbolics.jl's `Differential`.
+- **Multi-variable partial derivative support**: `DerivativeExpr` now records
+  an ordered sequence of `(variable, order)` differentiation steps, enabling
+  cross partials and arbitrary-depth composition. The single-step case is the
+  original mono-variable behavior.
+- **Math-convention `n`-th derivative display**: high-order derivatives
+  (`n ≥ 4`) now render with parenthesized superscript notation in `Base.show`
+  rather than long strings of primes. So `D(u, 5)` displays as `D: u⁽⁵⁾(t)`
+  (instead of `D: u'''''(t)`). The same applies to `DerivativePoint` display.
+  `Base.string` for `DerivativePoint` keeps prime notation regardless of order
+  because GIAC consumes prime-form initial-condition strings.
+- See `docs/migration/d_to_differential.md` for a full mapping table from the
+  deprecated `D` shapes to `Differential`.
+- **`examples/07_odes_pdes.jl`**: new Pluto notebook walking through symbolic
+  ODE solutions (first-order, harmonic, damped, third-order, RLC, forced) and
+  PDE expressions (heat, wave, transport, separation of variables for the heat
+  equation) using the canonical `Differential` operator. Linked from
+  `docs/src/pluto.md`.
+
+### Changed
+
+- **The macOS CI jobs run natively on `aarch64`** instead of asking for `x64`.
+  `macos-latest` is Apple Silicon; `setup-julia` v2 tolerated the mismatch,
+  but v3 rejects it outright (*"x64 arch has been requested on a macOS runner
+  that has an arm64 (Apple Silicon) architecture"*), which is why
+  [#52](https://github.com/s-celles/Giac.jl/pull/52) fails on macOS. All four
+  binary dependencies — `GIAC_jll`, `libgiac_julia_jll`,
+  `libcxxwrap_julia_jll` and `PARI_jll` — ship an `aarch64-apple-darwin`
+  build, so nothing is lost by moving. Expressed as `exclude`/`include` rather
+  than by dropping the `arch` matrix dimension, so only the two macOS check
+  names change.
+
+- **`DerivativeExpr` internal layout** (spec 068): the `varname::String` and
+  `order::Int` fields are replaced by `steps::Vector{Tuple{String, Int}}`.
+  This is an internal change — no user code is expected to construct
+  `DerivativeExpr` directly. Public arithmetic (`+`, `-`, `*`, `/`, `^`),
+  equation (`~`), and string-conversion behavior is preserved.
+
+### Deprecated
+
+- **`D` operator** (spec 068): every call shape (`D(u)`, `D(u, n)`, `D(D(u))`,
+  `D(d::DerivativeExpr, n)`) now emits a one-time-per-call-site
+  `Base.depwarn` pointing to the `Differential` replacement. `D` will be
+  removed in the next published release. The multi-arg ambiguity case
+  (`D(f)` on `f(x, y)`) raises `ArgumentError` instead of warning, since
+  the previous silent-default-to-first-variable behavior was a correctness
+  hazard. The `D(d::DerivativeExpr)` chained call also now requires the
+  underlying derivative to be mono-variable; partial derivatives of mixed
+  variables must be composed via `Differential(var)(d)`.
+
 ### Fixed
+
+- **The LibPARI bridge's real-number tests no longer fail the suite on
+  Windows**, and the platform difference behind them is documented rather than
+  hidden. `main` was red on both Windows runners with 23 failures, all of them
+  in `test_libpari_ext.jl`, all in reals.
+
+  The cause is not Giac and not the bridge: it is a known ABI bug between the
+  two binaries. `class gen` stored its tag as a bitfield, GCC fuses adjacent
+  bitfield writes with version-dependent bit placement, and `GIAC_jll` is
+  built with GCC 8 against `libgiac_julia_jll`'s GCC 10 — so libgiac writes a
+  gen tagged `_REAL` and the wrapper reads back `_DOUBLE_`. The suite observes
+  it directly: `Giac.giac_type(wide) == REAL` evaluates to `DOUBLE == REAL`.
+
+  Everything else follows. Giac.jl believes it holds a `Float64`, prints at
+  the global `Digits` — default 12 — and every real crosses truncated to
+  twelve significant digits, identically at 64, 128, 256, 512 and 1024 bits,
+  because 53 bits is all a mis-tagged `DOUBLE` ever had. Raising `Digits`
+  would change nothing: the precision is lost at the tag, not at the printer.
+
+  Fix in flight upstream:
+  [Yggdrasil#13717](https://github.com/JuliaPackaging/Yggdrasil/pull/13717)
+  bumps `GIAC_jll` to v2.0.2 with `GIAC_TYPE_ON_8BITS=1`, making the ABI
+  compiler-invariant, followed by a `libgiac_julia_jll` bump. Same root cause
+  as [#22](https://github.com/s-celles/Giac.jl/pull/22) and the probe in
+  [#26](https://github.com/s-celles/Giac.jl/pull/26).
+
+  One thing this did establish about the bridge itself: its decode *verifies
+  itself* by re-encoding the candidate and comparing printed forms, and that
+  check is blind here. Re-encoding the truncated value also prints twelve
+  digits, the forms agree, and a wrong answer is confirmed. The check
+  establishes the printer's self-consistency, not its fidelity — the two
+  coincide only where the tag is right.
+
+  The affected assertions are now marked `@test_broken` on Windows rather than
+  skipped, so that when the two JLLs land the suite reports *unexpected
+  passes* and tells whoever did it to delete the markers. Everything else
+  in the bridge passes on Windows: integers, rationals, complex numbers,
+  polynomials, vectors, matrices, refusals, variable names, the PARI stack
+  check and the piracy check. A `DOUBLE`, needing no more than twelve digits,
+  crosses correctly.
+
+  The documentation said Giac's printer emits a `REAL` at the value's own
+  precision "rather than at a global setting", presented as a measured fact.
+  It was measured on Linux only. Corrected, with a dedicated section and a
+  warning admonition on the reals section.
+
+- **Partial-derivative pretty-print convention (right-to-left Leibniz)**: the
+  multi-step `Base.show` for `DerivativeExpr` previously printed
+  `Differential(y)(Differential(x)(f))` as `D: ∂²f/∂x∂y`, which is consistent
+  with the index/`f_{xy}` convention but inconsistent with the operator-product
+  reading `(∂/∂y)(∂/∂x)f = ∂²f/∂y∂x`. The display now uses the right-to-left
+  Leibniz convention — the **rightmost** variable in `∂ⁿf/∂v₁…∂vₙ` is applied
+  **first**, the leftmost last — so the same expression now prints as
+  `D: ∂²f/∂y∂x`. The `steps` field (innermost-first) and the GIAC-side
+  `diff(diff(f(x,y),x),y)` string are unchanged; only the human-facing
+  ∂-notation flips. By Schwarz/Clairaut the underlying value is symmetric
+  for sufficiently smooth functions, so this is purely a notation fix.
 
 - **Two `[compat]` lower bounds were unsatisfiable**, found by the new
   downgrade job on its first run:
