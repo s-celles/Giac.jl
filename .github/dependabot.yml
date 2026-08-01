@@ -1,0 +1,32 @@
+# Keeps the pinned GitHub Actions current.
+#
+# CompatHelper watches Julia dependencies and never looks at workflows, so
+# without this nothing tracks the actions themselves. When this was written
+# four of the eight pinned actions were one to three majors behind:
+#
+#   actions/checkout                v4  ->  v7.0.1
+#   codecov/codecov-action          v4  ->  v7.0.0
+#   julia-actions/setup-julia       v2  ->  v3.0.2
+#   julia-actions/cache             v2  ->  v3.2.0
+#
+# Julia dependencies are deliberately absent: Dependabot has no Julia
+# ecosystem, and `[compat]` is CompatHelper's job.
+#
+# NOTE: `.gitignore` ignores everything by default and allows files back one
+# pattern at a time. This file needs its own entry — `!.github/dependabot.yml`
+# — because the allowlist's `.github/workflows/*.yml` does not reach the root
+# of `.github/`, and GitHub requires the config at exactly this path.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # One PR per action rather than a combined bump, so a failure is
+    # attributable to the action that caused it.
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencies

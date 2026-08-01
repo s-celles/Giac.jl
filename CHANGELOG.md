@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dependabot for the pinned GitHub Actions** (`.github/dependabot.yml`),
+  completing the automation added alongside CompatHelper. CompatHelper watches
+  Julia dependencies and never looks at workflows, so nothing tracked the
+  actions themselves — four of the eight pinned were one to three majors
+  behind when this was written: `actions/checkout` v4 → v7.0.1,
+  `codecov/codecov-action` v4 → v7.0.0, `julia-actions/setup-julia` v2 →
+  v3.0.2, `julia-actions/cache` v2 → v3.2.0. Configured for one PR per action
+  rather than a combined bump, so a failure is attributable to the action that
+  caused it.
+
+  This required one line in `.gitignore`. That file ignores everything by
+  default (`*`) and allows files back a pattern at a time; the allowlist
+  covered `.github/workflows/*.yml`, which does not reach the root of
+  `.github/`, and GitHub requires the Dependabot config at exactly
+  `.github/dependabot.yml`. The added line is a single negation for that one
+  path — no other file changes status.
+
 - **CompatHelper** and a **downgrade CI job**, closing two gaps in the
   repository's automation.
 
