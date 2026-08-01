@@ -50,24 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   combination that is unsatisfiable and that no user encounters, since one
   loads a single extension rather than five floor-pinned ones together.
 
-### Fixed
-
-- **Two `[compat]` lower bounds were unsatisfiable**, found by the new
-  downgrade job on its first run:
-
-  - `GIAC_jll = "2"` claimed support for 2.0.0, but `libgiac_julia_jll` 0.5
-    requires `GIAC_jll >= 2.0.1`, so that floor could never resolve. Now
-    `"2.0.1"`.
-  - `CxxWrap = "0.16, 0.17"` claimed support for 0.16, but CxxWrap 0.16
-    requires `libcxxwrap_julia_jll` 0.13 while this package pins 0.14.9, so
-    0.16 could never resolve either. Now `"0.17"`.
-
-  Neither is a functional narrowing — no user could have been resolved onto
-  those versions; the bounds simply described versions that do not work. With
-  them corrected, the full suite passes at the floors on Julia 1.10.
-
-### Added
-
 - **`GiacTermInterfaceExt` now implements `head` and `children`**, completing
   the TermInterface protocol. TermInterface's `iscall` docstring makes them
   mandatory — *"If `iscall(x)` is true, then also `isexpr(x)` must be true.
@@ -97,7 +79,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([JuliaSymbolics/SymbolicUtils.jl#1024](https://github.com/JuliaSymbolics/SymbolicUtils.jl/issues/1024)).
   The caveat is repeated in the extension module's own header comment.
 
+- **LibPARI.jl bridge**: values can now cross between Giac and
+  [PARI/GP](https://pari.math.u-bordeaux.fr/) through a new weak-dependency
+  package extension `GiacLibPARIExt` on
+  [`LibPARI.jl`](https://github.com/s-celles/LibPARI.jl) 0.17. Two entry
+  points, one per direction: `to_giac(g::LibPARI.Gen)` outward and a method
+  on LibPARI's own `pari(e::GiacExpr)` inward — no second inward name. The
+  bridge is hosted here rather than in LibPARI.jl because hosting means
+  paying the CI cost, and `PARI_jll` (19 MB, ~13 dependencies) is far cheaper
+  for Giac.jl to pull than `GIAC_jll` (73 MB, ~56 dependencies) would be the
+  other way round.
+
+  The bridge is **value-preserving and name-preserving, not
+  representation-preserving**: PARI's variable priority is process-global and
+  Giac orders by its own rules, so round trips are compared with `==` (PARI's
+  `gequal`) and never with `string`. It covers `T_INT`, `T_FRAC`, `T_REAL`,
+  `T_COMPLEX`, `T_POL`, `T_VEC`, `T_COL`, `T_VECSMALL`, `T_LIST` and `T_MAT`
+  outward, and `INT`, `ZINT`, `FRAC`, `DOUBLE`, `REAL`, `CPLX`, `IDNT`,
+  polynomial `SYMB` and `VECT` inward. Everything else is refused with an
+  `ArgumentError` that names the tag it could not translate.
+
+  Reals cross carrying the *value's* own precision rather than the ambient
+  `setprecision(LibPARI.Gen, …)` setting, and never through a printed decimal
+  — injecting a PARI real into GP as text silently truncates a 512-bit value
+  to 128 bits. Known limitations (`T_COL`/`T_VECSMALL`/`T_LIST` widening to
+  `T_VEC`, float tags not surviving, `MOD` and string types refused) are
+  documented in `docs/src/extensions/libpari.md` and each is pinned by a test.
+
+  The bridge has a dedicated CI job that runs its tests against a project
+  containing only Giac and LibPARI, so a bridge failure is attributable and
+  an accidental dependence on another extension would be caught.
+
 ### Fixed
+
+- **Two `[compat]` lower bounds were unsatisfiable**, found by the new
+  downgrade job on its first run:
+
+  - `GIAC_jll = "2"` claimed support for 2.0.0, but `libgiac_julia_jll` 0.5
+    requires `GIAC_jll >= 2.0.1`, so that floor could never resolve. Now
+    `"2.0.1"`.
+  - `CxxWrap = "0.16, 0.17"` claimed support for 0.16, but CxxWrap 0.16
+    requires `libcxxwrap_julia_jll` 0.13 while this package pins 0.14.9, so
+    0.16 could never resolve either. Now `"0.17"`.
+
+  Neither is a functional narrowing — no user could have been resolved onto
+  those versions; the bounds simply described versions that do not work. With
+  them corrected, the full suite passes at the floors on Julia 1.10.
 
 - **`to_julia` on a `STRNG` now returns the characters, not GIAC's printed
   literal.** `to_julia(giac_eval("\"hello\""))` answered `"\"hello\""` — the
