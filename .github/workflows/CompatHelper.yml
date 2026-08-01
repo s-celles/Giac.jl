@@ -1,0 +1,50 @@
+name: CompatHelper
+
+# Opens a PR whenever a dependency's newest registered version falls outside
+# this package's `[compat]` ceiling.
+#
+# Why it matters here: `ModelContextProtocol` sat at `"0.4"` while 0.6.1 was
+# current, so `Pkg.add(Giac)` silently downgraded a user's MCP by two breaking
+# minors. CompatHelper turns that into a pull request the day it happens, and
+# CI answers the question you actually care about — does the extension still
+# work against the new version.
+#
+# `subdirs` covers `docs/Project.toml`, which carries its own `[compat]`.
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  CompatHelper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if Julia is already available in the PATH
+        id: julia_in_path
+        run: which julia
+        continue-on-error: true
+      - name: Install Julia, but only if it is not already available in the PATH
+        uses: julia-actions/setup-julia@v3
+        with:
+          version: "1"
+        if: steps.julia_in_path.outcome != 'success'
+      - name: "Add the General registry via Git"
+        run: |
+          import Pkg
+          ENV["JULIA_PKG_SERVER"] = ""
+          Pkg.Registry.add("General")
+        shell: julia --color=yes {0}
+      - name: "Install CompatHelper"
+        run: import Pkg; Pkg.add("CompatHelper")
+        shell: julia --color=yes {0}
+      - name: "Run CompatHelper"
+        run: import CompatHelper; CompatHelper.main(; subdirs = ["", "docs"])
+        shell: julia --color=yes {0}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPATHELPER_PRIV: ${{ secrets.DOCUMENTER_KEY }}

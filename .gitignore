@@ -20,6 +20,9 @@
 !test/
 !test/*.jl
 
+!bench/
+!bench/*.jl
+
 !examples/
 !examples/*.jl
 !examples/*.png
@@ -28,6 +31,7 @@
 !docs/**
 
 !.github/
+!.github/dependabot.yml
 !.github/workflows/
 !.github/workflows/*.yml
 

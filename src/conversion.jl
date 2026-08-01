@@ -25,7 +25,7 @@ Recursively convert a GIAC expression to native Julia types.
 | `FRAC` | `Rational{Int64}` or `Rational{BigInt}` |
 | `CPLX` | `Complex{T}` (T promoted from parts) |
 | `VECT` | `Vector{T}` (T narrowed from elements) |
-| `STRNG` | `String` |
+| `STRNG` | `String` (the characters, without GIAC's quotes) |
 | `SYMB`, `IDNT`, `FUNC` (with no free variables) | numeric value via `evalf` |
 | `SYMB`, `IDNT`, `FUNC` (with at least one free variable) | `GiacExpr` (unchanged) |
 
@@ -54,6 +54,9 @@ julia> to_julia(giac_eval("[1,2,3]"))
 
 julia> to_julia(giac_eval("true"))
 true
+
+julia> to_julia(giac_eval("\\"hello\\""))
+"hello"
 ```
 
 # See also
@@ -159,8 +162,29 @@ function _convert_to_bigint(g::GiacExpr)::BigInt
     return parse(BigInt, str)
 end
 
+# A GIAC `STRNG` holds characters; its *printed* form is a source literal and
+# carries the surrounding double quotes. Reading the value out of that literal
+# would mean stripping the quotes and un-escaping: GIAC doubles an embedded
+# quote, so `a"b` prints as `"a""b"`, and dropping the first and last character
+# leaves `a""b`. The wrapper exposes the characters directly, so ask for them.
+#
+# `strng_value` dereferences the `STRNG` payload *without checking the tag* —
+# handed anything else it segfaults the process rather than raising. So the tag
+# must be checked, and it must be checked on the very object that is about to
+# be dereferenced. `giac_type` is not that check: it re-parses the printed form
+# and reports the type of the result, which is a different `Gen` from the
+# cached one this reads. No expression is known where the two disagree, but the
+# gap is not one to leave open in front of a segfault, so both the check and
+# the read take the same `gen`.
 function _convert_to_string(g::GiacExpr)::String
-    return string(g)
+    return with_giac_lock() do
+        gen = _get_gen_or_eval(g)
+        t = T(GiacCxxBindings.type(gen))
+        t == STRNG || throw(
+            GiacError("Cannot read characters from a $t; expected STRNG", :type),
+        )
+        return String(GiacCxxBindings.strng_value(gen))
+    end
 end
 
 # ============================================================================
