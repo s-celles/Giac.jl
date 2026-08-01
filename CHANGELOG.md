@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The LibPARI bridge's real-number tests no longer fail the suite on
+  Windows**, and the platform difference behind them is documented rather than
+  hidden. `main` was red on both Windows runners with 23 failures, all of them
+  in `test_libpari_ext.jl`, all in reals.
+
+  On Linux and macOS, GIAC renders a `REAL` at *that value's* precision — 156
+  significant digits for a 512-bit value — and the global `Digits` setting has
+  no effect on it. The bridge reads a Giac `REAL` back by decoding its printed
+  decimal, and relies on exactly that.
+
+  On Windows, GIAC honours `Digits` instead, whose default is 12. Every real
+  crossed truncated to twelve significant digits — `3.14159265359…` for π at
+  any requested precision, 64 through 1024 bits alike. `Digits` governs
+  GIAC's parser on Windows too, so `convert(GiacExpr, ::BigFloat)` cannot even
+  store a wide value: it lands on `DOUBLE` rather than `REAL`.
+
+  Worth recording plainly: the bridge's decode *verifies itself* by
+  re-encoding the candidate and comparing printed forms, and that check was
+  blind here. Re-encoding the truncated value also prints twelve digits, so
+  the forms agreed and a wrong answer was confirmed. The check establishes the
+  printer's self-consistency, not its fidelity — the two coincide only where
+  the printer is faithful.
+
+  The affected assertions are now marked `@test_broken` on Windows rather than
+  skipped, so the suite reports an error if they ever start passing and tells
+  whoever fixed the platform difference to remove the marker. Everything else
+  in the bridge passes on Windows: integers, rationals, complex numbers,
+  polynomials, vectors, matrices, refusals, variable names, the PARI stack
+  check and the piracy check. A `DOUBLE`, needing no more than twelve digits,
+  crosses correctly.
+
+  The documentation said Giac's printer emits a `REAL` at the value's own
+  precision "rather than at a global setting", presented as a measured fact.
+  It was measured on Linux only. Corrected, with a dedicated section and a
+  warning admonition on the reals section.
+
 ### Added
 
 - **Dependabot for the pinned GitHub Actions** (`.github/dependabot.yml`),

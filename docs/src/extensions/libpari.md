@@ -145,6 +145,12 @@ the value itself, in both directions — a 512-bit `t_REAL` reaches Giac with
 all 512 bits even while the ambient setting is 64, and comes back a 512-bit
 `t_REAL`.
 
+!!! warning "Linux and macOS only"
+    This section describes reals on Linux and macOS. **On Windows a real does
+    not cross at all**: it arrives truncated to twelve significant digits.
+    See [Reals do not cross on Windows](@ref) before relying on any of what
+    follows.
+
 ```julia
 using Giac, LibPARI
 
@@ -179,20 +185,62 @@ by construction.
 Reading a Giac `REAL` back out is the exception, and it is worth stating
 plainly. The libgiac wrapper exposes `to_double` — a `Float64`, and therefore
 lossy — and nothing for an MPFR value; reaching past it into an undeclared
-libgiac C symbol is a call this project does not make. Giac's printer does,
-however, emit a `REAL` at that value's *own* precision rather than at a global
-setting, so the decimal it produces is faithful and only the bit width has to
-be recovered.
+libgiac C symbol is a call this project does not make. **On Linux and macOS**
+Giac's printer emits a `REAL` at that value's *own* precision rather than at
+the global `Digits` setting, so the decimal it produces is faithful and only
+the bit width has to be recovered.
 
-The bridge recovers that width by search and then **verifies** it: a candidate
-is accepted only when re-encoding it reproduces Giac's own printed form
-character for character. A width that cannot be verified raises rather than
-returning a quietly-rounded value. The behaviour is pinned by tests at 64,
-128, 192, 256, 384, 512 and 1024 bits.
+The bridge recovers that width by search and then re-encodes the candidate,
+accepting it only when the printed forms agree character for character. A
+width for which nothing agrees raises rather than returning a quietly-rounded
+value. The behaviour is pinned by tests at 64, 128, 192, 256, 384, 512 and
+1024 bits.
+
+Note precisely what that check does and does not establish. It tests the
+**printer's self-consistency**, not its fidelity to the stored value. Those
+coincide only where the printer is faithful — which is why the check is sound
+on Linux and macOS and blind on Windows, where it confirms a truncated answer
+without complaint. See [Reals do not cross on Windows](@ref).
 
 This would become unnecessary if the wrapper gained an MPFR accessor for
-`REAL`; until then it is the bridge's only text-mediated step, and it is
-checked rather than trusted.
+`REAL`; until then it is the bridge's only text-mediated step.
+
+## Reals do not cross on Windows
+
+**On Windows, a `t_REAL` does not survive the crossing.** Every real arrives
+truncated to twelve significant digits, whatever precision was asked for:
+
+```julia
+p = setprecision(() -> LibPARI.PARI.mppi(), LibPARI.Gen, 512)
+
+pari(to_giac(p)) == p     # false on Windows, true elsewhere
+# expected  3.1415926535897932384626433832795028842
+# obtained  3.14159265359 0000062
+```
+
+Twelve is the default of Giac's global `Digits`. Where Linux and macOS render
+a `REAL` at the value's own precision — 156 significant digits for a 512-bit
+value — Windows honours `Digits` instead. The same applies to Giac's
+*parser*, so `convert(GiacExpr, ::BigFloat)` cannot even store a wide value on
+Windows: it lands on `DOUBLE` rather than `REAL`.
+
+64, 128, 192, 256, 384, 512 and 1024 bits all yield the same twelve digits, so
+this is not a rounding difference but a hard ceiling.
+
+**Everything else in the bridge works on Windows** — integers, rationals,
+complex numbers, polynomials, vectors, matrices, the refusal list, variable
+names. Only reals are affected, and a `DOUBLE` (which needs no more than
+twelve digits) crosses correctly.
+
+The affected assertions are marked `@test_broken` on Windows rather than
+skipped, so that if the platform difference is ever fixed the test suite
+reports an error telling whoever fixed it to remove the marker.
+
+This is a Giac platform difference, not something the bridge introduces, and
+the bridge cannot work around it: the wrapper offers no way to read a `REAL`
+other than through its printed form. If you need reals to cross on Windows,
+convert them to an exact type first — `Rational` crosses faithfully on every
+platform.
 
 ## Known limitations
 
@@ -220,16 +268,21 @@ Giac.jl's suite rather than in your results.
    PARI's `t_REAL`; coming back, Giac picks `DOUBLE` or `REAL` according to
    how much precision the value needs. Values are preserved either way.
 
-4. **A `Gen` is not a `Number`.** It is a `LibPARI.PariObject`. Generic
+4. **Reals do not cross on Windows** — see the dedicated section above. A
+   `t_REAL` arrives truncated to twelve significant digits, because Giac on
+   Windows renders and parses a `REAL` at the global `Digits` rather than at
+   the value's own precision. Every other type is unaffected.
+
+5. **A `Gen` is not a `Number`.** It is a `LibPARI.PariObject`. Generic
    numeric code bounded by `T<:Number` will not accept one, and `Number`
    methods must not be assumed to apply.
 
-5. **`LibPARI.PARI.gpolvar` takes a keyword**, not a positional argument:
+6. **`LibPARI.PARI.gpolvar` takes a keyword**, not a positional argument:
    `gpolvar(; x1 = g)`. Most of LibPARI's generated bindings pass the first
    argument positionally and the rest as keywords; check the signature before
    calling one.
 
-6. **`gp_eval` does not honour `setprecision(LibPARI.Gen, …)`.** It goes
+7. **`gp_eval` does not honour `setprecision(LibPARI.Gen, …)`.** It goes
    through the GP interpreter, which reads PARI's process-global
    `realprecision`, so `setprecision(() -> gp_eval("Pi"), LibPARI.Gen, 512)`
    returns a 128-bit value. This is documented, intended LibPARI behaviour —

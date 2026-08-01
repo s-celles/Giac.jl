@@ -26,6 +26,53 @@ using LibPARI
 const PT = LibPARI.PariType
 const GP = LibPARI.PARI
 
+# ---------------------------------------------------------------------------
+# Windows: a REAL does not survive the crossing.
+#
+# On Linux and macOS, GIAC renders a REAL at *that value's* precision — 156
+# significant digits for a 512-bit value, exactly `ceil(p*log10(2)) + 1` — and
+# the global `Digits` setting does not affect it. The bridge relies on that:
+# it reads a Giac REAL back by decoding its printed decimal.
+#
+# On Windows, GIAC instead honours the global `Digits`, whose default is 12.
+# Every real crosses truncated to twelve significant digits:
+#
+#     expected  3.1415926535897932384626433832795028842
+#     obtained  3.14159265359 0000062
+#
+# regardless of the precision requested — 64, 128, 192, 256, 384, 512 or 1024
+# bits all yield the same twelve digits. `Digits` governs GIAC's *parser* on
+# Windows too, so `convert(GiacExpr, ::BigFloat)` cannot even store a wide
+# value: it lands on DOUBLE rather than REAL.
+#
+# The bridge's decode verifies itself by re-encoding and comparing printed
+# forms. That check is blind here: re-encoding the truncated value also prints
+# twelve digits, so the two forms agree and a wrong answer is confirmed. The
+# check tests the printer's self-consistency, not its fidelity — equivalent
+# only where the printer is faithful.
+#
+# These assertions are therefore marked broken on Windows rather than removed
+# or silently skipped. `@test_broken` reports an *error* if the expression
+# starts passing, so whoever fixes this is told to delete the marker.
+#
+# Everything else in the bridge passes on Windows: integers, rationals,
+# complex numbers, polynomials, vectors, matrices, refusals, variable names,
+# the PARI stack check and the piracy check. Only reals are affected.
+#
+# See docs/src/extensions/libpari.md, "Reals do not cross on Windows".
+# ---------------------------------------------------------------------------
+const REALS_BROKEN_ON_WINDOWS = Sys.iswindows()
+
+macro test_real(ex)
+    quote
+        if REALS_BROKEN_ON_WINDOWS
+            @test_broken $(esc(ex))
+        else
+            @test $(esc(ex))
+        end
+    end
+end
+
 @testset "LibPARI Extension" begin
 
     @testset "Extension loads" begin
@@ -145,7 +192,7 @@ const GP = LibPARI.PARI
             for bits in (64, 128, 192, 256, 384, 512, 1024)
                 p = setprecision(() -> GP.mppi(), LibPARI.Gen, bits)
                 @test precision(p) == bits
-                @test LibPARI.pari(to_giac(p)) == p
+                @test_real LibPARI.pari(to_giac(p)) == p
             end
         end
 
@@ -153,7 +200,7 @@ const GP = LibPARI.PARI
             for src in ("sqrt(2)", "1/3.", "-Pi", "Pi*2^-300", "Pi*2^300", "exp(1)")
                 p = LibPARI.gp_eval(src)
                 @test LibPARI.gentype(p) === PT.T_REAL
-                @test LibPARI.pari(to_giac(p)) == p
+                @test_real LibPARI.pari(to_giac(p)) == p
             end
         end
 
@@ -163,14 +210,14 @@ const GP = LibPARI.PARI
             wide = setprecision(() -> GP.mppi(), LibPARI.Gen, 512)
             narrow = setprecision(() -> GP.mppi(), LibPARI.Gen, 64)
             setprecision(LibPARI.Gen, 64) do
-                @test LibPARI.pari(to_giac(wide)) == wide
+                @test_real LibPARI.pari(to_giac(wide)) == wide
             end
             setprecision(LibPARI.Gen, 512) do
-                @test LibPARI.pari(to_giac(narrow)) == narrow
+                @test_real LibPARI.pari(to_giac(narrow)) == narrow
             end
             # The ambient `BigFloat` precision is likewise not consulted.
             setprecision(BigFloat, 53) do
-                @test LibPARI.pari(to_giac(wide)) == wide
+                @test_real LibPARI.pari(to_giac(wide)) == wide
             end
         end
 
@@ -182,9 +229,9 @@ const GP = LibPARI.PARI
             onevec = GP.extract0(GP.gconcat(wide; x2 = wide), LibPARI.pari(1); x3 = nothing)
             onemat = GP.gtomat(; x1 = GP.gtocol0(onevec; x2 = 0))
             for g in (onevec, onemat, GP.gconcat(wide; x2 = LibPARI.pari(1)))
-                @test LibPARI.pari(to_giac(g)) == g
+                @test_real LibPARI.pari(to_giac(g)) == g
             end
-            @test precision(LibPARI.pari(to_giac(onevec))[1]) == 512
+            @test_real precision(LibPARI.pari(to_giac(onevec))[1]) == 512
         end
 
         @testset "float tags are not preserved, only values" begin
@@ -200,7 +247,7 @@ const GP = LibPARI.PARI
             narrow = to_giac(LibPARI.pari(1.5))
             wide = to_giac(setprecision(() -> GP.mppi(), LibPARI.Gen, 512))
             @test Giac.giac_type(narrow) in (DOUBLE, REAL)
-            @test Giac.giac_type(wide) == REAL
+            @test_real Giac.giac_type(wide) == REAL
             @test LibPARI.pari(narrow) == LibPARI.pari(1.5)
         end
     end
@@ -365,8 +412,8 @@ const GP = LibPARI.PARI
             viatext = LibPARI.gp_eval(string(p))
             @test precision(viatext) < precision(p)
             @test !(viatext == p)
-            @test LibPARI.pari(to_giac(p)) == p
-            @test precision(LibPARI.pari(to_giac(p))) == precision(p)
+            @test_real LibPARI.pari(to_giac(p)) == p
+            @test_real precision(LibPARI.pari(to_giac(p))) == precision(p)
         end
 
         @testset "gpolvar takes a keyword" begin
