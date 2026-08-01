@@ -43,7 +43,7 @@ jobs:
         with:
           version: '1.10'
           arch: x64
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       # PINNED TO v1 ON PURPOSE. v2 exists and is newer, but it does not work
       # for this package, and bumping it to v2 is what broke this job on main.
       #

@@ -27,7 +27,7 @@ jobs:
         with:
           version: '1.10'
 
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
 
       - name: Install documentation dependencies
         run: |
