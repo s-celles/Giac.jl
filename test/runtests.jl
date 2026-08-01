@@ -171,6 +171,15 @@ using LinearAlgebra
     include("test_mcp_ext.jl")
 
     # ============================================================================
+    # LibPARI Extension Tests (071-libpari-bridge)
+    # Verifies to_giac(::LibPARI.Gen) / LibPARI.pari(::GiacExpr) round trips,
+    # the refusal list and the documented limitations.
+    # A dedicated CI job also runs this file standalone, against a project
+    # holding only Giac and LibPARI.
+    # ============================================================================
+    include("test_libpari_ext.jl")
+
+    # ============================================================================
     # Doctests
     # Runs jldoctest blocks in Giac docstrings via Documenter.doctest
     # ============================================================================
