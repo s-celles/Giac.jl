@@ -1,0 +1,67 @@
+name: CI (LibPARI bridge)
+
+# The LibPARI.jl bridge gets its own job rather than a place in the main
+# matrix. Two reasons:
+#
+#   * Attribution. A failure here says "the bridge broke", not "one of the six
+#     main-matrix cells broke somewhere in a 3000-assertion suite".
+#   * Isolation. This job builds a project containing *only* Giac and LibPARI,
+#     so it fails if the bridge ever comes to depend on another extension
+#     having loaded first — something the full test run, which loads
+#     Symbolics, MathJSON, TermInterface and the MCP server, cannot detect.
+#
+# The bridge is also covered by the main matrix via the `test` target; this
+# job is the signal, not the only coverage.
+
+on:
+  push:
+    branches:
+      - main
+      - 'release-*'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  libpari-bridge:
+    name: LibPARI bridge - Julia ${{ matrix.version }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.10'  # LTS
+          - '1'     # Latest stable
+        os:
+          - ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+          arch: x64
+      - uses: julia-actions/cache@v3
+      - name: Build a project holding only Giac and LibPARI
+        run: |
+          mkdir -p bridge-env
+          julia --project=bridge-env -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path = pwd()))
+            Pkg.add("LibPARI")
+            Pkg.instantiate()
+            Pkg.status()'
+      - name: Assert the extension is loaded
+        run: |
+          julia --project=bridge-env -e '
+            using Giac, LibPARI
+            ext = Base.get_extension(Giac, :GiacLibPARIExt)
+            ext === nothing && error("GiacLibPARIExt did not load")
+            @info "GiacLibPARIExt loaded" ext'
+      - name: Run the bridge tests standalone
+        run: julia --project=bridge-env test/test_libpari_ext.jl

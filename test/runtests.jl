@@ -76,6 +76,9 @@ using LinearAlgebra
     # invoke_cmd fast path tests (069-invoke-cmd-fastpath)
     include("test_invoke_cmd_fastpath.jl")
 
+    # LaTeX/MathML rendering form-preservation tests (071-latex-render-form)
+    include("test_latex_render.jl")
+
     # Output handling tests (029-output-handling)
     include("test_output_handling.jl")
 
@@ -166,6 +169,15 @@ using LinearAlgebra
     # Verifies the GiacMCPExt extension exposes giac_mcp_server with two tools
     # ============================================================================
     include("test_mcp_ext.jl")
+
+    # ============================================================================
+    # LibPARI Extension Tests (071-libpari-bridge)
+    # Verifies to_giac(::LibPARI.Gen) / LibPARI.pari(::GiacExpr) round trips,
+    # the refusal list and the documented limitations.
+    # A dedicated CI job also runs this file standalone, against a project
+    # holding only Giac and LibPARI.
+    # ============================================================================
+    include("test_libpari_ext.jl")
 
     # ============================================================================
     # Doctests

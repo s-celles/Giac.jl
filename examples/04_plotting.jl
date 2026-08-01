@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.24
+# v1.0.3
 
 using Markdown
 using InteractiveUtils
@@ -15,18 +15,6 @@ macro bind(def, element)
     end
     #! format: on
 end
-
-# ╔═╡ 041f89da-c388-4a22-8ee5-6bf98b2382f8
-# ╠═╡ disabled = true
-#=╠═╡
-begin
-    import Pkg
-    Pkg.activate(dirname(@__FILE__))  # activates the notebook environment
-    # Remove the overly strict constraint on Giac
-    Pkg.compat("Giac", "0.14")
-    Pkg.update("Giac")
-end
-  ╠═╡ =#
 
 # ╔═╡ b1c2d3e4-f5a6-7890-abcd-200000000001
 begin
@@ -56,6 +44,18 @@ begin
 	#Pkg.develop(PackageSpec(path=".."))
 	#Pkg.add("Plots")
 	#Pkg.add("PlutoUI")
+end
+  ╠═╡ =#
+
+# ╔═╡ 041f89da-c388-4a22-8ee5-6bf98b2382f8
+# ╠═╡ disabled = true
+#=╠═╡
+begin
+    import Pkg
+    Pkg.activate(dirname(@__FILE__))  # activates the notebook environment
+    # Remove the overly strict constraint on Giac
+    Pkg.compat("Giac", "0.14")
+    Pkg.update("Giac")
 end
   ╠═╡ =#
 

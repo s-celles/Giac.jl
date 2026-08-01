@@ -31,17 +31,39 @@ jobs:
           - windows-latest
         arch:
           - x64
+        # macos-latest is Apple Silicon. Asking for x64 there was tolerated by
+        # setup-julia v2 but is rejected outright by v3:
+        #
+        #   [setup-julia] x64 arch has been requested on a macOS runner that
+        #   has an arm64 (Apple Silicon) architecture
+        #
+        # so the macOS jobs run natively on aarch64. GIAC_jll,
+        # libgiac_julia_jll, libcxxwrap_julia_jll and PARI_jll all ship an
+        # aarch64-apple-darwin build, so nothing is lost by moving.
+        #
+        # Expressed as exclude/include rather than by dropping the `arch`
+        # dimension, so only the two macOS check names change.
+        exclude:
+          - os: macos-latest
+            arch: x64
+        include:
+          - os: macos-latest
+            arch: aarch64
+            version: '1.10'
+          - os: macos-latest
+            arch: aarch64
+            version: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -54,11 +76,11 @@ jobs:
       contents: write
       statuses: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - name: Install dependencies
         run: julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy

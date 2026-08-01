@@ -22,7 +22,7 @@ You install it explicitly when (and only when) you want the MCP server.
 ```julia
 using Giac, ModelContextProtocol
 
-server = giac_mcp_server()   # construct the server (no I/O yet)
+server = Giac.giac_mcp_server()   # construct the server (no I/O yet)
 start!(server)                # blocks on STDIO transport
 ```
 
@@ -66,7 +66,7 @@ equivalent) and add a `mcpServers` entry:
       "args": [
         "--project=/path/to/env",
         "-e",
-        "using Giac, ModelContextProtocol; start!(giac_mcp_server())"
+        "using Giac, ModelContextProtocol; start!(Giac.giac_mcp_server())"
       ]
     }
   }
@@ -81,7 +81,7 @@ as quickly as Julia allows. Restart Claude Desktop after editing the config.
 ## Setup with Claude Code
 
 ```bash
-claude mcp add-json "giac-cas" '{"command":"julia","args":["--project=/path/to/env","-e","using Giac, ModelContextProtocol; start!(giac_mcp_server())"]}'
+claude mcp add-json "giac-cas" '{"command":"julia","args":["--project=/path/to/env","-e","using Giac, ModelContextProtocol; start!(Giac.giac_mcp_server())"]}'
 ```
 
 Confirm with `claude mcp list`. From any Claude Code session, ask:
@@ -105,7 +105,7 @@ To verify the server end-to-end without an LLM client:
 printf '%s\n%s\n' \
   '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}' \
   '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"giac_eval","arguments":{"expr":"factor(x^4-1)"}},"id":2}' \
-| julia --project -e 'using Giac, ModelContextProtocol; start!(giac_mcp_server())' \
+| julia --project -e 'using Giac, ModelContextProtocol; start!(Giac.giac_mcp_server())' \
   2>/dev/null | jq .
 ```
 
@@ -181,7 +181,7 @@ Use the `giac_search` tool when you don't remember the exact command name:
 ## API reference
 
 ```@docs
-giac_mcp_server
+Giac.giac_mcp_server
 ```
 
 ## Limitations and future work

@@ -1,0 +1,89 @@
+name: CI (downgrade)
+
+# Resolves every dependency to the *lowest* version `[compat]` claims to
+# support, then runs the suite there.
+#
+# This is the complement to CompatHelper, which only ever raises ceilings.
+# Nothing else in CI tests the floors: the main matrix always resolves to the
+# newest compatible versions, so a lower bound can be wrong for years without
+# anyone noticing. Two were wrong when this job was written — `GIAC_jll = "2"`
+# (unsatisfiable: libgiac_julia_jll 0.5 needs >= 2.0.1) and
+# `CxxWrap = "0.16, 0.17"` (unsatisfiable: CxxWrap 0.16 needs
+# libcxxwrap_julia_jll 0.13, this package pins 0.14.9).
+#
+# Julia 1.10 on purpose, not `1`: the floors must be tested against the floor
+# Julia, and some of them do not resolve on newer versions — DataFrames 1.6,
+# for one, is not installable on 1.12.
+#
+# `skip` lists the standard libraries, whose versions are tied to Julia itself
+# and so cannot be downgraded independently.
+
+on:
+  push:
+    branches:
+      - main
+      - 'release-*'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  downgrade:
+    name: Lowest compatible dependencies - Julia 1.10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.10'
+          arch: x64
+      - uses: julia-actions/cache@v3
+      # PINNED TO v1 ON PURPOSE. v2 exists and is newer, but it does not work
+      # for this package, and bumping it to v2 is what broke this job on main.
+      #
+      # v1 only rewrites `[compat]` entries. v2 additionally *promotes* the
+      # weak dependencies and the test extras into `[deps]` so it can perform
+      # one joint floor-resolve — and `Aqua.test_stale_deps`, which
+      # `runtests.jl` runs, then correctly reports ten packages sitting in
+      # `deps` that `using Giac` never loads:
+      #
+      #     Some package(s) in `deps` of Giac are not loaded via `using Giac`
+      #     * CSV  * Documenter  * ForwardDiff  * TermInterface
+      #     * ModelContextProtocol  * Symbolics  * Aqua  * LibPARI
+      #     * DataFrames  * MathJSON
+      #
+      # `Aqua.test_persistent_tasks` fails as a knock-on, its subprocess
+      # unable to precompile against the rewritten project.
+      #
+      # v2's `no_promote` can exempt named extensions, but every weakdep here
+      # would have to be listed, which is v1's behaviour reached the long way
+      # round. Revisit only if the weakdep floors are ever audited so that a
+      # joint resolve becomes satisfiable — see the note below on why it is
+      # not today.
+      #
+      # This comment is not enough on its own: Dependabot cannot read it, and
+      # re-applied the v2 bump in #50 within hours of #47 reverting it. The
+      # binding statement is the `ignore` rule for this action in
+      # `.github/dependabot.yml`; keep the two in step.
+      #
+      # SCOPE. The `skip` list leaves this testing the hard `[deps]` only.
+      # Standard libraries cannot be downgraded independently of Julia. A
+      # weakdep floor is a *pairwise* promise — "this extension works against
+      # Symbolics 7.0" — but `Pkg.test` resolves the whole test target at
+      # once, forcing all five weakdeps to their floors simultaneously, which
+      # is unsatisfiable here and is a situation no user meets: you load one
+      # extension, not five floor-pinned ones together.
+      - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          skip: >-
+            Libdl,LinearAlgebra,Random,Test,
+            Aqua,CSV,DataFrames,Documenter,ForwardDiff,
+            LibPARI,MathJSON,ModelContextProtocol,Symbolics,TermInterface
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1

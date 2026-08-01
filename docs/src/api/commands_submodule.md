@@ -43,6 +43,12 @@ Giac.Commands.factor(giac_eval("x^2-1"))
 Giac.Commands.invoke_cmd
 ```
 
+## Rendering Commands
+
+```@docs
+Giac.RENDER_COMMANDS
+```
+
 ## Conflicting Commands
 
 Commands that conflict with Julia keywords, builtins, or standard library functions
