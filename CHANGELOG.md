@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The LibPARI bridge's real-number tests no longer fail the suite on
+  Windows**, and the platform difference behind them is documented rather than
+  hidden. `main` was red on both Windows runners with 23 failures, all of them
+  in `test_libpari_ext.jl`, all in reals.
+
+  The cause is not Giac and not the bridge: it is a known ABI bug between the
+  two binaries. `class gen` stored its tag as a bitfield, GCC fuses adjacent
+  bitfield writes with version-dependent bit placement, and `GIAC_jll` is
+  built with GCC 8 against `libgiac_julia_jll`'s GCC 10 — so libgiac writes a
+  gen tagged `_REAL` and the wrapper reads back `_DOUBLE_`. The suite observes
+  it directly: `Giac.giac_type(wide) == REAL` evaluates to `DOUBLE == REAL`.
+
+  Everything else follows. Giac.jl believes it holds a `Float64`, prints at
+  the global `Digits` — default 12 — and every real crosses truncated to
+  twelve significant digits, identically at 64, 128, 256, 512 and 1024 bits,
+  because 53 bits is all a mis-tagged `DOUBLE` ever had. Raising `Digits`
+  would change nothing: the precision is lost at the tag, not at the printer.
+
+  Fix in flight upstream:
+  [Yggdrasil#13717](https://github.com/JuliaPackaging/Yggdrasil/pull/13717)
+  bumps `GIAC_jll` to v2.0.2 with `GIAC_TYPE_ON_8BITS=1`, making the ABI
+  compiler-invariant, followed by a `libgiac_julia_jll` bump. Same root cause
+  as [#22](https://github.com/s-celles/Giac.jl/pull/22) and the probe in
+  [#26](https://github.com/s-celles/Giac.jl/pull/26).
+
+  One thing this did establish about the bridge itself: its decode *verifies
+  itself* by re-encoding the candidate and comparing printed forms, and that
+  check is blind here. Re-encoding the truncated value also prints twelve
+  digits, the forms agree, and a wrong answer is confirmed. The check
+  establishes the printer's self-consistency, not its fidelity — the two
+  coincide only where the tag is right.
+
+  The affected assertions are now marked `@test_broken` on Windows rather than
+  skipped, so that when the two JLLs land the suite reports *unexpected
+  passes* and tells whoever did it to delete the markers. Everything else
+  in the bridge passes on Windows: integers, rationals, complex numbers,
+  polynomials, vectors, matrices, refusals, variable names, the PARI stack
+  check and the piracy check. A `DOUBLE`, needing no more than twelve digits,
+  crosses correctly.
+
+  The documentation said Giac's printer emits a `REAL` at the value's own
+  precision "rather than at a global setting", presented as a measured fact.
+  It was measured on Linux only. Corrected, with a dedicated section and a
+  warning admonition on the reals section.
+
 ### Added
 
 - **Dependabot for the pinned GitHub Actions** (`.github/dependabot.yml`),
