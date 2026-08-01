@@ -147,7 +147,8 @@ all 512 bits even while the ambient setting is 64, and comes back a 512-bit
 
 !!! warning "Linux and macOS only"
     This section describes reals on Linux and macOS. **On Windows a real does
-    not cross at all**: it arrives truncated to twelve significant digits.
+    not cross at all**: a binary ABI mismatch makes the wrapper read a `_REAL`
+    tag as `_DOUBLE_`, so it arrives truncated to twelve significant digits.
     See [Reals do not cross on Windows](@ref) before relying on any of what
     follows.
 
@@ -218,29 +219,52 @@ pari(to_giac(p)) == p     # false on Windows, true elsewhere
 # obtained  3.14159265359 0000062
 ```
 
-Twelve is the default of Giac's global `Digits`. Where Linux and macOS render
-a `REAL` at the value's own precision — 156 significant digits for a 512-bit
-value — Windows honours `Digits` instead. The same applies to Giac's
-*parser*, so `convert(GiacExpr, ::BigFloat)` cannot even store a wide value on
-Windows: it lands on `DOUBLE` rather than `REAL`.
+This is **not** a Giac printing quirk and not something the bridge can work
+around. It is a known ABI bug between the two binaries, already diagnosed,
+with a fix in flight upstream.
 
-64, 128, 192, 256, 384, 512 and 1024 bits all yield the same twelve digits, so
-this is not a rounding difference but a hard ceiling.
+`class gen` historically stored its tag as a bitfield —
+`unsigned char type:5; unsigned char type_unused:3;`. GCC fuses adjacent
+bitfield writes into one wider store and chooses the bit placement in a
+version-dependent way. `GIAC_jll` is built with GCC 8 and
+`libgiac_julia_jll` with GCC 10, so the two disagree about which bits hold
+`type`: libgiac writes a gen tagged `_REAL`, and the wrapper reads back
+`_DOUBLE_`. Giac.jl then believes it is holding a `Float64`, prints it at the
+global `Digits` — default 12 — and the extra precision is gone.
+
+That the loss is identical at 64, 128, 256, 512 and 1024 bits is the tell:
+53 bits is all a mis-tagged `DOUBLE` ever had. **Raising `Digits` would change
+nothing** — the precision is lost at the tag, not at the printer.
+
+The fix is [JuliaPackaging/Yggdrasil#13717](https://github.com/JuliaPackaging/Yggdrasil/pull/13717),
+which bumps `GIAC_jll` to v2.0.2 built with `GIAC_TYPE_ON_8BITS=1` — making
+`type` a plain byte at offset 0, so the ABI no longer depends on the compiler
+version — followed by a matching `libgiac_julia_jll` bump. Same root cause as
+[Giac.jl#22](https://github.com/s-celles/Giac.jl/pull/22) and the diagnostic
+probe in [Giac.jl#26](https://github.com/s-celles/Giac.jl/pull/26).
 
 **Everything else in the bridge works on Windows** — integers, rationals,
 complex numbers, polynomials, vectors, matrices, the refusal list, variable
-names. Only reals are affected, and a `DOUBLE` (which needs no more than
-twelve digits) crosses correctly.
+names. Only reals are affected, and a `DOUBLE` crosses correctly, since a
+`DOUBLE` is what the mis-tag claims it already is.
 
 The affected assertions are marked `@test_broken` on Windows rather than
-skipped, so that if the platform difference is ever fixed the test suite
-reports an error telling whoever fixed it to remove the marker.
+skipped. When the two JLLs land, those markers will start reporting
+*unexpected passes*, which is the signal to delete them.
 
-This is a Giac platform difference, not something the bridge introduces, and
-the bridge cannot work around it: the wrapper offers no way to read a `REAL`
-other than through its printed form. If you need reals to cross on Windows,
-convert them to an exact type first — `Rational` crosses faithfully on every
-platform.
+If you need reals to cross on Windows before then, convert to an exact type
+first — `Rational` crosses faithfully on every platform.
+
+### What this says about the bridge's own safety check
+
+The bridge reads a Giac `REAL` back by decoding its printed decimal, and
+verifies the result by re-encoding it and comparing printed forms. On Windows
+that check is **blind**: re-encoding the truncated value also prints twelve
+digits, the forms agree, and a wrong answer is confirmed without complaint.
+
+The check establishes the printer's *self-consistency*, not its *fidelity to
+the stored value*. Those coincide only where the tag is right. A guard worth
+having, but not one that can detect a lie told further down the stack.
 
 ## Known limitations
 
@@ -269,9 +293,11 @@ Giac.jl's suite rather than in your results.
    how much precision the value needs. Values are preserved either way.
 
 4. **Reals do not cross on Windows** — see the dedicated section above. A
-   `t_REAL` arrives truncated to twelve significant digits, because Giac on
-   Windows renders and parses a `REAL` at the global `Digits` rather than at
-   the value's own precision. Every other type is unaffected.
+   `t_REAL` arrives truncated to twelve significant digits, because a GCC
+   bitfield-ABI mismatch between `GIAC_jll` and `libgiac_julia_jll` makes the
+   wrapper read a `_REAL` tag as `_DOUBLE_`. Fix in flight upstream
+   ([Yggdrasil#13717](https://github.com/JuliaPackaging/Yggdrasil/pull/13717));
+   every other type is unaffected.
 
 5. **A `Gen` is not a `Number`.** It is a `LibPARI.PariObject`. Generic
    numeric code bounded by `T<:Number` will not accept one, and `Number`

@@ -29,31 +29,49 @@ const GP = LibPARI.PARI
 # ---------------------------------------------------------------------------
 # Windows: a REAL does not survive the crossing.
 #
-# On Linux and macOS, GIAC renders a REAL at *that value's* precision — 156
-# significant digits for a 512-bit value, exactly `ceil(p*log10(2)) + 1` — and
-# the global `Digits` setting does not affect it. The bridge relies on that:
-# it reads a Giac REAL back by decoding its printed decimal.
+# NOT a Giac printing quirk, and not something this bridge can work around:
+# it is a known ABI bug between the two binaries, already diagnosed and with
+# a fix in flight upstream.
 #
-# On Windows, GIAC instead honours the global `Digits`, whose default is 12.
-# Every real crosses truncated to twelve significant digits:
+# `class gen` historically stored its tag as a bitfield —
+# `unsigned char type:5; unsigned char type_unused:3;`. GCC fuses adjacent
+# bitfield writes into one wider store, and picks the bit placement in a
+# version-dependent way. `GIAC_jll` is built with GCC 8 and
+# `libgiac_julia_jll` with GCC 10, so they disagree about which bits hold
+# `type`: libgiac writes a gen tagged `_REAL` (3) and the wrapper reads back
+# `_DOUBLE_` (1).
+#
+# The test suite observes exactly that:
+#
+#     Expression: Giac.giac_type(wide) == REAL
+#     Evaluated:  DOUBLE == REAL
+#
+# Everything else follows from the mis-tag. Giac.jl believes it holds a
+# Float64, so it prints at the global `Digits` — default 12 — and every real
+# crosses truncated to twelve significant digits:
 #
 #     expected  3.1415926535897932384626433832795028842
 #     obtained  3.14159265359 0000062
 #
-# regardless of the precision requested — 64, 128, 192, 256, 384, 512 or 1024
-# bits all yield the same twelve digits. `Digits` governs GIAC's *parser* on
-# Windows too, so `convert(GiacExpr, ::BigFloat)` cannot even store a wide
-# value: it lands on DOUBLE rather than REAL.
+# identically at 64, 128, 192, 256, 384, 512 and 1024 bits, because 53 bits
+# is all a mis-tagged DOUBLE ever had.
 #
-# The bridge's decode verifies itself by re-encoding and comparing printed
-# forms. That check is blind here: re-encoding the truncated value also prints
-# twelve digits, so the two forms agree and a wrong answer is confirmed. The
-# check tests the printer's self-consistency, not its fidelity — equivalent
-# only where the printer is faithful.
+# Raising `Digits` would therefore change nothing: the precision is lost at
+# the tag, not at the printer.
 #
-# These assertions are therefore marked broken on Windows rather than removed
-# or silently skipped. `@test_broken` reports an *error* if the expression
-# starts passing, so whoever fixes this is told to delete the marker.
+# Fix: JuliaPackaging/Yggdrasil#13717 bumps GIAC_jll to v2.0.2 with
+# `GIAC_TYPE_ON_8BITS=1`, making `type` a plain byte at offset 0 and the ABI
+# compiler-invariant, followed by a `libgiac_julia_jll` bump. When both land,
+# these markers should start failing as unexpected passes — which is the point
+# of `@test_broken` over a skip. Same root cause as Giac.jl#22 and the probe
+# in Giac.jl#26.
+#
+# One thing this episode did establish about the bridge itself: its decode
+# *verifies itself* by re-encoding the candidate and comparing printed forms,
+# and that check is blind here. Re-encoding the truncated value also prints
+# twelve digits, the forms agree, and a wrong answer is confirmed. The check
+# establishes the printer's self-consistency, not its fidelity to the stored
+# value — the two coincide only where the tag is right.
 #
 # Everything else in the bridge passes on Windows: integers, rationals,
 # complex numbers, polynomials, vectors, matrices, refusals, variable names,

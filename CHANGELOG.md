@@ -14,27 +14,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hidden. `main` was red on both Windows runners with 23 failures, all of them
   in `test_libpari_ext.jl`, all in reals.
 
-  On Linux and macOS, GIAC renders a `REAL` at *that value's* precision — 156
-  significant digits for a 512-bit value — and the global `Digits` setting has
-  no effect on it. The bridge reads a Giac `REAL` back by decoding its printed
-  decimal, and relies on exactly that.
+  The cause is not Giac and not the bridge: it is a known ABI bug between the
+  two binaries. `class gen` stored its tag as a bitfield, GCC fuses adjacent
+  bitfield writes with version-dependent bit placement, and `GIAC_jll` is
+  built with GCC 8 against `libgiac_julia_jll`'s GCC 10 — so libgiac writes a
+  gen tagged `_REAL` and the wrapper reads back `_DOUBLE_`. The suite observes
+  it directly: `Giac.giac_type(wide) == REAL` evaluates to `DOUBLE == REAL`.
 
-  On Windows, GIAC honours `Digits` instead, whose default is 12. Every real
-  crossed truncated to twelve significant digits — `3.14159265359…` for π at
-  any requested precision, 64 through 1024 bits alike. `Digits` governs
-  GIAC's parser on Windows too, so `convert(GiacExpr, ::BigFloat)` cannot even
-  store a wide value: it lands on `DOUBLE` rather than `REAL`.
+  Everything else follows. Giac.jl believes it holds a `Float64`, prints at
+  the global `Digits` — default 12 — and every real crosses truncated to
+  twelve significant digits, identically at 64, 128, 256, 512 and 1024 bits,
+  because 53 bits is all a mis-tagged `DOUBLE` ever had. Raising `Digits`
+  would change nothing: the precision is lost at the tag, not at the printer.
 
-  Worth recording plainly: the bridge's decode *verifies itself* by
-  re-encoding the candidate and comparing printed forms, and that check was
-  blind here. Re-encoding the truncated value also prints twelve digits, so
-  the forms agreed and a wrong answer was confirmed. The check establishes the
-  printer's self-consistency, not its fidelity — the two coincide only where
-  the printer is faithful.
+  Fix in flight upstream:
+  [Yggdrasil#13717](https://github.com/JuliaPackaging/Yggdrasil/pull/13717)
+  bumps `GIAC_jll` to v2.0.2 with `GIAC_TYPE_ON_8BITS=1`, making the ABI
+  compiler-invariant, followed by a `libgiac_julia_jll` bump. Same root cause
+  as [#22](https://github.com/s-celles/Giac.jl/pull/22) and the probe in
+  [#26](https://github.com/s-celles/Giac.jl/pull/26).
+
+  One thing this did establish about the bridge itself: its decode *verifies
+  itself* by re-encoding the candidate and comparing printed forms, and that
+  check is blind here. Re-encoding the truncated value also prints twelve
+  digits, the forms agree, and a wrong answer is confirmed. The check
+  establishes the printer's self-consistency, not its fidelity — the two
+  coincide only where the tag is right.
 
   The affected assertions are now marked `@test_broken` on Windows rather than
-  skipped, so the suite reports an error if they ever start passing and tells
-  whoever fixed the platform difference to remove the marker. Everything else
+  skipped, so that when the two JLLs land the suite reports *unexpected
+  passes* and tells whoever did it to delete the markers. Everything else
   in the bridge passes on Windows: integers, rationals, complex numbers,
   polynomials, vectors, matrices, refusals, variable names, the PARI stack
   check and the piracy check. A `DOUBLE`, needing no more than twelve digits,
