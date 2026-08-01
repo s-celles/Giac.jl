@@ -26,6 +26,71 @@ using LibPARI
 const PT = LibPARI.PariType
 const GP = LibPARI.PARI
 
+# ---------------------------------------------------------------------------
+# Windows: a REAL does not survive the crossing.
+#
+# NOT a Giac printing quirk, and not something this bridge can work around:
+# it is a known ABI bug between the two binaries, already diagnosed and with
+# a fix in flight upstream.
+#
+# `class gen` historically stored its tag as a bitfield —
+# `unsigned char type:5; unsigned char type_unused:3;`. GCC fuses adjacent
+# bitfield writes into one wider store, and picks the bit placement in a
+# version-dependent way. `GIAC_jll` is built with GCC 8 and
+# `libgiac_julia_jll` with GCC 10, so they disagree about which bits hold
+# `type`: libgiac writes a gen tagged `_REAL` (3) and the wrapper reads back
+# `_DOUBLE_` (1).
+#
+# The test suite observes exactly that:
+#
+#     Expression: Giac.giac_type(wide) == REAL
+#     Evaluated:  DOUBLE == REAL
+#
+# Everything else follows from the mis-tag. Giac.jl believes it holds a
+# Float64, so it prints at the global `Digits` — default 12 — and every real
+# crosses truncated to twelve significant digits:
+#
+#     expected  3.1415926535897932384626433832795028842
+#     obtained  3.14159265359 0000062
+#
+# identically at 64, 128, 192, 256, 384, 512 and 1024 bits, because 53 bits
+# is all a mis-tagged DOUBLE ever had.
+#
+# Raising `Digits` would therefore change nothing: the precision is lost at
+# the tag, not at the printer.
+#
+# Fix: JuliaPackaging/Yggdrasil#13717 bumps GIAC_jll to v2.0.2 with
+# `GIAC_TYPE_ON_8BITS=1`, making `type` a plain byte at offset 0 and the ABI
+# compiler-invariant, followed by a `libgiac_julia_jll` bump. When both land,
+# these markers should start failing as unexpected passes — which is the point
+# of `@test_broken` over a skip. Same root cause as Giac.jl#22 and the probe
+# in Giac.jl#26.
+#
+# One thing this episode did establish about the bridge itself: its decode
+# *verifies itself* by re-encoding the candidate and comparing printed forms,
+# and that check is blind here. Re-encoding the truncated value also prints
+# twelve digits, the forms agree, and a wrong answer is confirmed. The check
+# establishes the printer's self-consistency, not its fidelity to the stored
+# value — the two coincide only where the tag is right.
+#
+# Everything else in the bridge passes on Windows: integers, rationals,
+# complex numbers, polynomials, vectors, matrices, refusals, variable names,
+# the PARI stack check and the piracy check. Only reals are affected.
+#
+# See docs/src/extensions/libpari.md, "Reals do not cross on Windows".
+# ---------------------------------------------------------------------------
+const REALS_BROKEN_ON_WINDOWS = Sys.iswindows()
+
+macro test_real(ex)
+    quote
+        if REALS_BROKEN_ON_WINDOWS
+            @test_broken $(esc(ex))
+        else
+            @test $(esc(ex))
+        end
+    end
+end
+
 @testset "LibPARI Extension" begin
 
     @testset "Extension loads" begin
@@ -145,7 +210,7 @@ const GP = LibPARI.PARI
             for bits in (64, 128, 192, 256, 384, 512, 1024)
                 p = setprecision(() -> GP.mppi(), LibPARI.Gen, bits)
                 @test precision(p) == bits
-                @test LibPARI.pari(to_giac(p)) == p
+                @test_real LibPARI.pari(to_giac(p)) == p
             end
         end
 
@@ -153,7 +218,7 @@ const GP = LibPARI.PARI
             for src in ("sqrt(2)", "1/3.", "-Pi", "Pi*2^-300", "Pi*2^300", "exp(1)")
                 p = LibPARI.gp_eval(src)
                 @test LibPARI.gentype(p) === PT.T_REAL
-                @test LibPARI.pari(to_giac(p)) == p
+                @test_real LibPARI.pari(to_giac(p)) == p
             end
         end
 
@@ -163,14 +228,14 @@ const GP = LibPARI.PARI
             wide = setprecision(() -> GP.mppi(), LibPARI.Gen, 512)
             narrow = setprecision(() -> GP.mppi(), LibPARI.Gen, 64)
             setprecision(LibPARI.Gen, 64) do
-                @test LibPARI.pari(to_giac(wide)) == wide
+                @test_real LibPARI.pari(to_giac(wide)) == wide
             end
             setprecision(LibPARI.Gen, 512) do
-                @test LibPARI.pari(to_giac(narrow)) == narrow
+                @test_real LibPARI.pari(to_giac(narrow)) == narrow
             end
             # The ambient `BigFloat` precision is likewise not consulted.
             setprecision(BigFloat, 53) do
-                @test LibPARI.pari(to_giac(wide)) == wide
+                @test_real LibPARI.pari(to_giac(wide)) == wide
             end
         end
 
@@ -182,9 +247,9 @@ const GP = LibPARI.PARI
             onevec = GP.extract0(GP.gconcat(wide; x2 = wide), LibPARI.pari(1); x3 = nothing)
             onemat = GP.gtomat(; x1 = GP.gtocol0(onevec; x2 = 0))
             for g in (onevec, onemat, GP.gconcat(wide; x2 = LibPARI.pari(1)))
-                @test LibPARI.pari(to_giac(g)) == g
+                @test_real LibPARI.pari(to_giac(g)) == g
             end
-            @test precision(LibPARI.pari(to_giac(onevec))[1]) == 512
+            @test_real precision(LibPARI.pari(to_giac(onevec))[1]) == 512
         end
 
         @testset "float tags are not preserved, only values" begin
@@ -200,7 +265,7 @@ const GP = LibPARI.PARI
             narrow = to_giac(LibPARI.pari(1.5))
             wide = to_giac(setprecision(() -> GP.mppi(), LibPARI.Gen, 512))
             @test Giac.giac_type(narrow) in (DOUBLE, REAL)
-            @test Giac.giac_type(wide) == REAL
+            @test_real Giac.giac_type(wide) == REAL
             @test LibPARI.pari(narrow) == LibPARI.pari(1.5)
         end
     end
@@ -365,8 +430,8 @@ const GP = LibPARI.PARI
             viatext = LibPARI.gp_eval(string(p))
             @test precision(viatext) < precision(p)
             @test !(viatext == p)
-            @test LibPARI.pari(to_giac(p)) == p
-            @test precision(LibPARI.pari(to_giac(p))) == precision(p)
+            @test_real LibPARI.pari(to_giac(p)) == p
+            @test_real precision(LibPARI.pari(to_giac(p))) == precision(p)
         end
 
         @testset "gpolvar takes a keyword" begin
