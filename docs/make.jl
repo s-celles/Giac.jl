@@ -114,6 +114,10 @@ makedocs(
     format = Documenter.HTML(
         prettyurls = get(ENV, "CI", "false") == "true",
         canonical = "https://s-celles.github.io/Giac.jl",
+        # api/core.md legitimately exceeds the 100 KiB soft threshold: it carries
+        # the full core-API docstring set plus worked examples. Ignoring it here
+        # is Documenter's own recommended alternative to raising the general limit.
+        size_threshold_ignore = ["api/core.md"],
     ),
     pages = _pages,
     checkdocs = :exports,

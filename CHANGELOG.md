@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.3] - 2026-08-07
+
 ### Changed
 
 - **`GiacLibPARIExt` accepts LibPARI 0.18** — compat widened from `"0.17"`
@@ -27,6 +29,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   names change.
 
 ### Fixed
+
+- **The docs build no longer warns about `api/core.md`'s HTML output size**
+  (103.68 KiB against a 100 KiB soft threshold). The page legitimately carries
+  the full core-API docstring set plus worked examples; `docs/make.jl` now
+  lists it in `size_threshold_ignore`, Documenter's own recommended
+  alternative to raising the general limit. The `missing_docs` warning for
+  the ~2000 auto-generated `Giac.Commands` functions stays in `warnonly` by
+  design — `commands_submodule.md` documents their usage pattern rather than
+  each function individually, and `checkdocs_ignored_modules` was tried and
+  rejected: it drops the whole submodule from Documenter's known bindings,
+  breaking the `@ref`s that already resolve for `invoke_cmd`, `hold_cmd`,
+  `release` and `Giac.Commands` itself.
 
 - **The documentation is no longer deployed twice on every push to `main`.**
   Both `documentation.yml` and `CI.yml`'s `docs` job built the docs *and*
