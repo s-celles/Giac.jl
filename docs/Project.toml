@@ -5,3 +5,5 @@ Giac = "e4421f97-9838-4fd0-9fa5-94f11373bf78"
 
 [compat]
 Documenter = "1"
+DocumenterMermaid = "0.2"
+Giac = "0.14"
