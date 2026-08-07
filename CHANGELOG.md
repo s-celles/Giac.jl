@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   already requires (`Symbolics = "7"`). Without this, installing Giac.jl
   alongside LibPARI holds the latter back at 0.17.
 
+- **`ModelContextProtocol` compat widened from `"0.4"` to `"0.4, 0.6"`**
+  ([#60](https://github.com/s-celles/Giac.jl/pull/60),
+  [#61](https://github.com/s-celles/Giac.jl/pull/61)). 0.5 is skipped
+  deliberately, matching upstream. This PR was initially blocked: forcing
+  MCP to its latest compatible version left `LibPARI` unresolvable, since
+  the registered LibPARI 0.18.0 still capped its own MCP compat at `"0.4"`.
+  Unblocked by releasing
+  [LibPARI.jl 0.18.1](https://github.com/s-celles/LibPARI.jl/releases/tag/v0.18.1),
+  which widens that bound the same way.
+
 - **The macOS CI jobs run natively on `aarch64`** instead of asking for `x64`.
   `macos-latest` is Apple Silicon; `setup-julia` v2 tolerated the mismatch,
   but v3 rejects it outright (*"x64 arch has been requested on a macOS runner
