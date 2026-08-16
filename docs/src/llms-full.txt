@@ -193,6 +193,7 @@ integrate(exp(x), x, -Inf, 0)    # 1
 - [Giac](https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac.html) - The underlying computer algebra system
 - [libgiac-julia-wrapper](https://github.com/s-celles/libgiac-julia-wrapper) - CxxWrap bindings for Giac
 - [CxxWrap.jl](https://github.com/JuliaInterop/CxxWrap.jl) - C++ wrapper generator for Julia
+- [GiacSlate.jl](https://github.com/JuliaGiac/GiacSlate.jl) - Integrates Giac.jl with KaimonSlate
 
 
 ---

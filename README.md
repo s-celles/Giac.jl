@@ -10,7 +10,9 @@
 A Julia wrapper for the [Giac](https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac.html) computer algebra system.
 
 For LLM integration via the Model Context Protocol, see
-[`docs/src/extensions/mcp.md`](docs/src/extensions/mcp.md).
+[`docs/src/extensions/mcp.md`](https://juliagiac.github.io/Giac.jl/dev/extensions/mcp/).
+
+For a KaimonSlate integration, see [GiacSlate.jl](https://github.com/JuliaGiac/GiacSlate.jl).
 
 ## Contributors
 
