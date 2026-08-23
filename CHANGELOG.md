@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`GiacSymPyExt` implements `to_sympy(::GiacExpr)`** (080-sympy-bridge): the
+  Giac.jl ↔ SymPy.jl bridge now converts Giac expressions to `SymPy.Sym`
+  objects via direct C++ Gen tree traversal, preserving symbolic functions
+  (`sin`, `cos`, `exp`, `sqrt`, `ln` → `log`, …), rational/complex numbers,
+  arbitrary-precision integers, and mapping GIAC constants to their SymPy
+  counterparts (`pi` → `SymPy.PI`, `e` → `SymPy.E`, `i` → `SymPy.IM`).
+  The reverse direction (`to_giac(::SymPy.Sym)`) remains tracked separately.
+  Extension loads automatically when `SymPy` is loaded alongside `Giac`.
+
 ## [0.14.3] - 2026-08-07
 
 ### Changed
