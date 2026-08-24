@@ -180,6 +180,13 @@ using LinearAlgebra
     include("test_libpari_ext.jl")
 
     # ============================================================================
+    # Nemo Extension Tests (081-nemo-oscar-bridge)
+    # Bidirectional Giac <-> Nemo bridge: to_giac(::Nemo.RingElem) and
+    # to_nemo(::GiacExpr, parent), with the documented refusal list.
+    # ============================================================================
+    include("test_nemo_conversion.jl")
+
+    # ============================================================================
     # Doctests
     # Runs jldoctest blocks in Giac docstrings via Documenter.doctest
     # ============================================================================
