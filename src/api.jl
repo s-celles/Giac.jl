@@ -8,7 +8,16 @@ Evaluate a GIAC expression string and return a GiacExpr.
 
 # Arguments
 - `expr::String`: A string containing a valid GIAC expression
-- `ctx::GiacContext`: Optional evaluation context (uses DEFAULT_CONTEXT if not provided)
+- `ctx::GiacContext`: Optional evaluation context
+
+!!! warning "Context isolation is not yet implemented"
+    `ctx` is currently accepted for forward compatibility but ignored at the
+    C++ layer: all evaluations share a single process-wide Giac context, so
+    variable bindings made with `:=` persist across calls regardless of the
+    `ctx` passed in. Tracked upstream in
+    [libgiac-julia-wrapper#3](https://github.com/s-celles/libgiac-julia-wrapper/issues/3).
+    Use `giac_eval("purge(name)")` or `giac_eval("restart")` to clear state
+    until per-context evaluation lands.
 
 # Returns
 - `GiacExpr`: The evaluated expression

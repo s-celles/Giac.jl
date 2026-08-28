@@ -37,7 +37,11 @@ Domains and example expressions:
 
 Multiple statements can be separated by semicolons; the result is the value of the last one.
 Variables are symbolic by default.
-Each call is independent — variable bindings (a := 5) do NOT persist across calls.
+
+Note: variable bindings created with `:=` PERSIST across calls, because the
+underlying Giac C++ context is a process-wide singleton (see
+https://github.com/s-celles/libgiac-julia-wrapper/issues/3). Use `purge(name)`
+to clear a specific binding, or `restart` to clear them all.
 """
 
 const _SEARCH_DESCRIPTION = """

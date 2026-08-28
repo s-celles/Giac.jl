@@ -292,6 +292,11 @@ function _get_expr_string(ptr::Ptr{Cvoid})::String
 end
 
 function _giac_eval_string(expr::String, ctx_ptr::Ptr{Cvoid})::Ptr{Cvoid}
+    # NOTE: `ctx_ptr` is accepted for forward compatibility but ignored. The
+    # CxxWrap binding `GiacCxxBindings.giac_eval(expr)` does not expose a
+    # context parameter today, so all calls share the singleton context
+    # returned by `_get_cxxwrap_context()`. Tracked upstream in
+    # https://github.com/s-celles/libgiac-julia-wrapper (per-context eval).
     gen = GiacCxxBindings.giac_eval(expr)
     return _make_gen_ptr(gen)
 end
