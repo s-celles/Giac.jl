@@ -129,6 +129,13 @@ function unwrap_const(ex::GiacExpr)
     return ex
 end
 
+function Base.AbstractFloat(x::GiacExpr)
+    is_vector(x) && return [float(xᵢ) for xᵢ ∈ x]
+    is_constant(x) && return float(to_julia(x))
+
+    throw(ArgumentError("Can convert $x to a floating point value"))
+end
+
 # ============================================================================
 # Scalar Conversion Helpers
 # ============================================================================
@@ -387,6 +394,8 @@ function Base.convert(::Type{Float64}, g::GiacExpr)::Float64
     elseif t == FRAC
         r = _convert_to_rational(g)
         return Float64(r)
+    elseif is_constant(g)
+        Float64(to_julia(g))
     else
         throw(MethodError(convert, (Float64, g)))
     end
